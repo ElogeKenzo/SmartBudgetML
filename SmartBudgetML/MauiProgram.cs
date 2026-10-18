@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using SmartBudgetML.Services.Auth;
 using SmartBudgetML.Services.Database;
+using SmartBudgetML.Services.ML;
 
 namespace SmartBudgetML;
 
@@ -29,6 +30,10 @@ public static class MauiProgram
         // Security & Authentication
         builder.Services.AddSingleton<IBiometricService, BiometricService>();
         builder.Services.AddSingleton<ILocalAuthService, LocalAuthService>();
+
+        // On-Device Machine Learning (ML.NET)
+        builder.Services.AddSingleton<IExpenseCategorizerService, ExpenseCategorizerService>();
+        builder.Services.AddSingleton<IBudgetForecastingService, BudgetForecastingService>();
 
         return builder.Build();
     }
