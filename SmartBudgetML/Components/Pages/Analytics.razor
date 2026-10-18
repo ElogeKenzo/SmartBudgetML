@@ -163,39 +163,84 @@
     </div>
 </div>
 
+@inject ILocalAuthService AuthService
+
 @code {
     private string Currency = "$";
-    private string SelectedPeriod = "October 2026";
+    private string SelectedPeriod = DateTime.Today.ToString("MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
     private BudgetForecastResult Forecast = new();
     private List<CategoryStatItem> CategoryBreakdown = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        LoadAnalyticsData();
+        await LoadAnalyticsDataAsync();
     }
 
-    private void LoadAnalyticsData()
+    private async Task LoadAnalyticsDataAsync()
     {
-        // Preview matching Figma reference
-        Forecast = new BudgetForecastResult
+        try
         {
-            MonthlyBudget = 3000m,
-            CurrentTotalSpend = 1200m,
-            DaysElapsed = 18,
-            DaysInMonth = 31,
-            AverageDailySpend = 66.67m,
-            DailyBurnRateSlope = 62.50m,
-            ProjectedEndMonthSpend = 1750m,
-            Status = BudgetHealthStatus.OnTrack
-        };
+            var profile = await AuthService.GetUserProfileAsync();
+            if (profile != null)
+            {
+                Currency = profile.CurrencySymbol;
+            }
 
-        CategoryBreakdown = new()
+            decimal monthlyBudget = (profile != null && profile.MonthlyIncome > 0)
+                ? Math.Max(100m, profile.MonthlyIncome - profile.MonthlySavingsGoal)
+                : 3000m;
+
+            var allExpenses = await DbService.Expenses.GetAllAsync();
+            var allCategories = await DbService.Categories.GetAllAsync();
+            var today = DateTime.Today;
+
+            var monthExpenses = allExpenses
+                .Where(e => e.Date.Month == today.Month && e.Date.Year == today.Year)
+                .ToList();
+
+            if (monthExpenses.Count > 0)
+            {
+                // Run on-device Linear Regression ML forecast
+                Forecast = Forecaster.ForecastMonthEnd(monthExpenses, monthlyBudget, today);
+
+                var nonIncome = monthExpenses.Where(e => !e.IsIncome).ToList();
+                var totalSpent = nonIncome.Sum(e => e.Amount);
+
+                CategoryBreakdown = nonIncome
+                    .GroupBy(e => e.CategoryId)
+                    .Select(g =>
+                    {
+                        var cat = allCategories.FirstOrDefault(c => c.Id == g.Key);
+                        var name = cat?.Name ?? "General";
+                        var color = cat?.ColorHex ?? "#6366F1";
+                        var amt = g.Sum(x => x.Amount);
+                        var pct = totalSpent > 0 ? (double)(amt / totalSpent) * 100.0 : 0.0;
+                        return new CategoryStatItem(name, amt, pct, color);
+                    })
+                    .OrderByDescending(x => x.Amount)
+                    .ToList();
+            }
+            else
+            {
+                // Baseline initial preview matching Figma mock
+                Forecast = Forecaster.ForecastMonthEnd(Array.Empty<Expense>(), monthlyBudget, today);
+                Forecast.CurrentTotalSpend = 1200m;
+                Forecast.ProjectedEndMonthSpend = 1750m;
+                Forecast.Status = BudgetHealthStatus.OnTrack;
+
+                CategoryBreakdown = new()
+                {
+                    new("Food & Dining", 540m, 45, "#F59E0B"),
+                    new("Transportation", 276m, 23, "#3B82F6"),
+                    new("Shopping", 192m, 16, "#8B5CF6"),
+                    new("Subscriptions", 192m, 16, "#EC4899")
+                };
+            }
+        }
+        catch (Exception ex)
         {
-            new("Food & Dining", 540m, 45, "#F59E0B"),
-            new("Transportation", 276m, 23, "#3B82F6"),
-            new("Shopping", 192m, 16, "#8B5CF6"),
-            new("Subscriptions", 192m, 16, "#EC4899")
-        };
+            Console.WriteLine($"[Analytics] Error loading data: {ex.Message}");
+        }
     }
 
     private sealed record CategoryStatItem(string Name, decimal Amount, double Percentage, string Color);

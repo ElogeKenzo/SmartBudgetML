@@ -75,6 +75,11 @@
     }
 </section>
 
+@inject IDatabaseService DbService
+@inject ILocalAuthService AuthService
+@inject IBudgetForecastingService Forecaster
+@inject NavigationManager NavManager
+
 @code {
     private string Currency = "$";
     private BudgetForecastResult Forecast = new();
@@ -93,33 +98,57 @@
         _ => ""
     };
 
-    protected override void OnInitialized() => LoadPreviewData();
-
-    /// <summary>
-    /// Design-preview state matching the Figma mock.
-    /// Phase 5: replace with IDatabaseService.Expenses + IBudgetForecastingService.ForecastMonthEnd().
-    /// </summary>
-    private void LoadPreviewData()
+    protected override async Task OnInitializedAsync()
     {
-        Forecast = new BudgetForecastResult
-        {
-            MonthlyBudget = 3000m,
-            CurrentTotalSpend = 550m,
-            DaysElapsed = 18,
-            DaysInMonth = 31,
-            AverageDailySpend = 30.56m,
-            DailyBurnRateSlope = 29.80m,
-            ProjectedEndMonthSpend = 947m,
-            Status = BudgetHealthStatus.OnTrack
-        };
+        await LoadDashboardDataAsync();
+    }
 
-        var today = DateTime.Today;
-        RecentTransactions = new()
+    private async Task LoadDashboardDataAsync()
+    {
+        try
         {
-            new() { Id = 1, Description = "Whole Foods", Amount = 84.50m, Date = today, CategoryName = "Groceries", CategoryIcon = "shopping-cart", CategoryColor = "#10B981", IsMlPredicted = true },
-            new() { Id = 2, Description = "Uber", Amount = 18.40m, Date = today.AddDays(-1), CategoryName = "Transportation", CategoryIcon = "car", CategoryColor = "#3B82F6", IsMlPredicted = true },
-            new() { Id = 3, Description = "Netflix", Amount = 15.99m, Date = today.AddDays(-2), CategoryName = "Entertainment", CategoryIcon = "film", CategoryColor = "#EC4899", IsMlPredicted = true },
-            new() { Id = 4, Description = "Salary", Amount = 3500m, Date = today.AddDays(-3), CategoryName = "Salary / Income", CategoryIcon = "wallet", CategoryColor = "#10B981", IsIncome = true }
-        };
+            var profile = await AuthService.GetUserProfileAsync();
+            if (profile != null)
+            {
+                Currency = profile.CurrencySymbol;
+            }
+
+            decimal monthlyBudget = (profile != null && profile.MonthlyIncome > 0)
+                ? Math.Max(100m, profile.MonthlyIncome - profile.MonthlySavingsGoal)
+                : 3000m;
+
+            var allExpenses = await DbService.Expenses.GetAllAsync();
+            var allCategories = await DbService.Categories.GetAllAsync();
+            var catDict = allCategories.ToDictionary(c => c.Id);
+
+            foreach (var exp in allExpenses)
+            {
+                if (catDict.TryGetValue(exp.CategoryId, out var cat))
+                {
+                    exp.CategoryName = cat.Name;
+                    exp.CategoryColor = cat.ColorHex;
+                    exp.CategoryIcon = cat.Icon;
+                }
+            }
+
+            var today = DateTime.Today;
+            var monthExpenses = allExpenses
+                .Where(e => e.Date.Month == today.Month && e.Date.Year == today.Year)
+                .ToList();
+
+            // Run on-device Linear Regression forecasting
+            Forecast = Forecaster.ForecastMonthEnd(monthExpenses, monthlyBudget, today);
+
+            // Latest 5 transactions
+            RecentTransactions = allExpenses
+                .OrderByDescending(e => e.Date)
+                .ThenByDescending(e => e.Id)
+                .Take(5)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Home] Error loading dashboard: {ex.Message}");
+        }
     }
 }

@@ -1,44 +1,54 @@
 @inherits LayoutComponentBase
 @implements IDisposable
 @inject NavigationManager NavManager
+@inject IDatabaseService DbService
+@inject ILocalAuthService AuthService
+@inject IExpenseCategorizerService Categorizer
 
 <div class="app-container">
-    @if (!IsChromeless)
+    @if (_isInitializing)
     {
-        <header class="app-header">
-            <div class="brand-section">
-                <div class="brand-title">
-                    SmartBudget <span class="brand-ml-tag">ML</span>
-                </div>
-                <div class="brand-subtitle">@GreetingText</div>
-            </div>
-
-            <button id="btn-notifications" class="header-action-btn" type="button" title="Notifications">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                </svg>
-                <span class="notification-badge-dot"></span>
-            </button>
-        </header>
+        <div class="app-loading-screen">
+            <div class="spinner-glow"></div>
+            <div class="loading-title">SmartBudget <span>ML</span></div>
+            <div class="loading-subtitle">Initializing Local Vault</div>
+        </div>
     }
-
-    <main class="app-content @(IsChromeless ? "chromeless" : "")">
-        @Body
-    </main>
-
-    @if (!IsChromeless)
+    else
     {
-        <NavMenu />
+        @if (!IsChromeless)
+        {
+            <header class="app-header">
+                <div class="brand-section">
+                    <div class="brand-title">
+                        SmartBudget <span class="brand-ml-tag">ML</span>
+                    </div>
+                    <div class="brand-subtitle">@GreetingText</div>
+                </div>
+
+                <button id="btn-notifications" class="header-action-btn" type="button" title="Lock App" @onclick="LockApp">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                </button>
+            </header>
+        }
+
+        <main class="app-content @(IsChromeless ? "chromeless" : "")">
+            @Body
+        </main>
+
+        @if (!IsChromeless)
+        {
+            <NavMenu />
+        }
     }
 </div>
 
 @code {
-    /// <summary>
-    /// Phase 5: replace with the user's name from ILocalAuthService.GetUserProfileAsync().
-    /// </summary>
-    [CascadingParameter(Name = "UserDisplayName")]
-    public string? UserDisplayName { get; set; }
+    private bool _isInitializing = true;
+    private string? UserDisplayName;
 
     private string GreetingText
     {
@@ -50,7 +60,6 @@
         }
     }
 
-    // Screens rendered full-bleed, without header and bottom navigation
     private static readonly string[] ChromelessRoutes = { "onboarding", "unlock" };
 
     private bool IsChromeless
@@ -62,9 +71,69 @@
         }
     }
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         NavManager.LocationChanged += OnLocationChanged;
+
+        try
+        {
+            // 1. Initialize SQLite Database & tables
+            await DbService.InitializeAsync();
+            await DbService.SeedDefaultDataAsync();
+
+            // 2. Ensure ML categorizer is trained on-device in background
+            _ = Task.Run(async () =>
+            {
+                try { await Categorizer.EnsureTrainedAsync(); } catch { }
+            });
+
+            // 3. Check registration & lock state
+            await CheckAuthRouteAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MainLayout] Init error: {ex.Message}");
+        }
+        finally
+        {
+            _isInitializing = false;
+        }
+    }
+
+    private async Task CheckAuthRouteAsync()
+    {
+        var relative = NavManager.ToBaseRelativePath(NavManager.Uri).Split('?', '#')[0].Trim('/');
+        var isRegistered = await AuthService.IsUserRegisteredAsync();
+
+        if (!isRegistered)
+        {
+            if (!string.Equals(relative, "onboarding", StringComparison.OrdinalIgnoreCase))
+            {
+                NavManager.NavigateTo("onboarding");
+            }
+            return;
+        }
+
+        var profile = await AuthService.GetUserProfileAsync();
+        if (profile != null)
+        {
+            UserDisplayName = profile.FullName;
+        }
+
+        if (!AuthService.IsAppUnlocked)
+        {
+            if (!string.Equals(relative, "unlock", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(relative, "onboarding", StringComparison.OrdinalIgnoreCase))
+            {
+                NavManager.NavigateTo("unlock");
+            }
+        }
+    }
+
+    private void LockApp()
+    {
+        AuthService.LockApp();
+        NavManager.NavigateTo("unlock");
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
