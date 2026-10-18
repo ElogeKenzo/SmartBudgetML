@@ -1,0 +1,67 @@
+# =========================
+# SmartBudgetML .gitignore
+# .NET / MAUI Blazor Hybrid
+# =========================
+
+## Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+## NuGet Packages
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+
+## Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+[Tt]est[Rr]esult*/
+[Dd]ebugPublic/
+
+## VS Code
+.vscode/
+
+## Rider
+.idea/
+*.sln.iml
+
+## OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+## .NET publish output
+publish/
+
+## MAUI / Android specific
+*.apk
+*.aab
+*.ipa
+*.keystore
+google-services.json
+
+## ML.NET trained models (will be regenerated)
+*.zip
+!Resources/Raw/*.zip
+
+## User secrets
+secrets.json
+
+## Antigravity / Gemini
+.gemini/
+.agents/

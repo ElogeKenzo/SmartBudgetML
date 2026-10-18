@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="Moq" Version="4.20.70" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <!-- 
+    Note: We reference the main project's C# service/model files via shared code compilation,
+    not a direct ProjectReference, because the MAUI project targets net8.0-android/ios/etc.
+    while this test project targets net8.0. The services and models are platform-agnostic.
+  -->
+  <ItemGroup>
+    <Compile Include="..\SmartBudgetML\Models\**\*.cs" LinkBase="Models" />
+    <Compile Include="..\SmartBudgetML\Services\**\*.cs" LinkBase="Services" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
+    <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.9" />
+    <PackageReference Include="Microsoft.ML" Version="3.0.1" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,4 @@
+// SmartBudgetML.Models
+// This namespace will contain all SQLite entity models:
+// - Expense, UserProfile, Category, Budget, AppSettings
+// Placeholder file to preserve folder in Git.

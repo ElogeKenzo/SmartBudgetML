@@ -1,0 +1,88 @@
+# ============================================================
+# SmartBudgetML — Android CI/CD Pipeline
+# Triggers on PRs to develop and main
+# Builds the .NET MAUI Android project and uploads APK artifact
+# ============================================================
+
+name: MAUI Android CI
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  PROJECT_PATH: 'SmartBudgetML/SmartBudgetML.csproj'
+  TEST_PROJECT_PATH: 'SmartBudgetML.Tests/SmartBudgetML.Tests.csproj'
+
+jobs:
+  # ─────────────────────────────────────────────
+  # Job 1: Run Unit Tests
+  # ─────────────────────────────────────────────
+  test:
+    name: 🧪 Run Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: 📦 Restore test dependencies
+        run: dotnet restore ${{ env.TEST_PROJECT_PATH }}
+
+      - name: 🧪 Run xUnit tests
+        run: dotnet test ${{ env.TEST_PROJECT_PATH }} --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+      - name: 📊 Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: '**/test-results.trx'
+
+  # ─────────────────────────────────────────────
+  # Job 2: Build Android APK
+  # ─────────────────────────────────────────────
+  build-android:
+    name: 🤖 Build Android APK
+    runs-on: windows-latest
+    needs: test
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: 📱 Install MAUI Workload
+        run: dotnet workload install maui
+
+      - name: 📦 Restore dependencies
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: 🏗️ Build Android APK
+        run: >
+          dotnet publish ${{ env.PROJECT_PATH }}
+          -c Release
+          -f net8.0-android
+          -p:AndroidPackageFormat=apk
+          -o ./artifacts/android
+
+      - name: 📤 Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartBudgetML-Android-APK
+          path: ./artifacts/android/**/*.apk
+          retention-days: 14
+          if-no-files-found: error

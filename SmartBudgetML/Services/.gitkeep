@@ -1,0 +1,4 @@
+// SmartBudgetML.Services
+// This namespace will contain all business logic services:
+// - DbService (SQLite Repository), LocalAuthService, MLCategorizationService, MLForecastService
+// Placeholder file to preserve folder in Git.
