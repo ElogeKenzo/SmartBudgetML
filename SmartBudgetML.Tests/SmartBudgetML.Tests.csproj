@@ -13,7 +13,8 @@
     <PackageReference Include="xunit" Version="2.5.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
     <PackageReference Include="Moq" Version="4.20.70" />
-    <PackageReference Include="coverlet.collector" Version="6.0.0" />
+    <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
+    <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.9" />
   </ItemGroup>
 
   <ItemGroup>
@@ -22,10 +23,13 @@
 
   <!--
     Shared source link to platform-agnostic models and services in main project.
+    Excludes the hardware-dependent BiometricService which is mocked in tests via IBiometricService.
   -->
   <ItemGroup>
     <Compile Include="..\SmartBudgetML\Models\**\*.cs" LinkBase="Models" />
-    <Compile Include="..\SmartBudgetML\Services\**\*.cs" LinkBase="Services" />
+    <Compile Include="..\SmartBudgetML\Services\**\*.cs" 
+             Exclude="..\SmartBudgetML\Services\Auth\BiometricService.cs" 
+             LinkBase="Services" />
   </ItemGroup>
 
 </Project>
