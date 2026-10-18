@@ -1,0 +1,67 @@
+<div class="lock-overlay" id="lock-screen">
+    <div class="lock-card">
+        <div class="lock-icon-glow">
+            <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+        </div>
+        <h1 class="lock-title">SmartBudget <span>ML</span></h1>
+        <p class="lock-sub">@Subtitle</p>
+
+        <div class="pin-dots @(HasError ? "shake" : "")" aria-label="PIN progress">
+            @for (var i = 0; i < PinLength; i++)
+            {
+                <div class="pin-dot @(_pin.Length > i ? "filled" : "")"></div>
+            }
+        </div>
+
+        <div class="lock-error" role="alert">@ErrorMessage</div>
+
+        <div class="lock-keypad">
+            <NumericKeypad IdPrefix="lock" LeftKey="@(ShowBiometric ? KeypadLeftKey.Biometric : KeypadLeftKey.None)" OnKey="HandleKey" />
+        </div>
+    </div>
+</div>
+
+@code {
+    private const int PinLength = 4;
+    private string _pin = string.Empty;
+
+    [Parameter] public string Subtitle { get; set; } = "Enter your 4-digit PIN to unlock";
+    [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter] public bool ShowBiometric { get; set; } = true;
+
+    /// <summary>Raised with the full PIN once 4 digits are entered.</summary>
+    [Parameter] public EventCallback<string> OnPinComplete { get; set; }
+
+    /// <summary>Raised when the fingerprint / Face ID key is pressed.</summary>
+    [Parameter] public EventCallback OnBiometricRequested { get; set; }
+
+    private bool HasError => !string.IsNullOrEmpty(ErrorMessage);
+
+    private async Task HandleKey(string key)
+    {
+        switch (key)
+        {
+            case "bio":
+                await OnBiometricRequested.InvokeAsync();
+                return;
+            case "back":
+                if (_pin.Length > 0) _pin = _pin[..^1];
+                return;
+            case ".":
+                return;
+        }
+
+        if (_pin.Length >= PinLength) return;
+        _pin += key;
+
+        if (_pin.Length == PinLength)
+        {
+            var completed = _pin;
+            _pin = string.Empty; // never keep the PIN in component state
+            await OnPinComplete.InvokeAsync(completed);
+        }
+    }
+}

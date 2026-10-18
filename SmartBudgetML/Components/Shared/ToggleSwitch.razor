@@ -1,0 +1,17 @@
+<label class="toggle-switch" for="@Id">
+    <input id="@Id" type="checkbox" checked="@Value" disabled="@Disabled" @onchange="HandleChange" />
+    <span class="toggle-slider"></span>
+</label>
+
+@code {
+    [Parameter, EditorRequired] public string Id { get; set; } = default!;
+    [Parameter] public bool Value { get; set; }
+    [Parameter] public EventCallback<bool> ValueChanged { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    private async Task HandleChange(ChangeEventArgs e)
+    {
+        Value = e.Value is bool b && b;
+        await ValueChanged.InvokeAsync(Value);
+    }
+}

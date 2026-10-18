@@ -1,0 +1,200 @@
+@page "/settings"
+@inject NavigationManager NavManager
+@inject IDatabaseService DbService
+@inject IExpenseCategorizerService Categorizer
+
+<PageTitle>Settings · SmartBudget ML</PageTitle>
+
+<div class="settings-container">
+    @* Screen Header *@
+    <div class="screen-header-row">
+        <div>
+            <h1 class="screen-title">Settings</h1>
+            <p class="screen-subtitle">Configure AI and edge storage</p>
+        </div>
+        <button id="btn-settings-back" class="header-action-btn" type="button" title="Back" @onclick="GoHome">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </button>
+    </div>
+
+    @* Section 1: AI & ML Model Settings *@
+    <div class="settings-section-card" id="section-ai-settings">
+        <div class="settings-section-header">
+            <span class="settings-section-title">
+                <span>🤖</span> AI & Model Settings
+            </span>
+            <span class="status-badge-live">● On-Device ML</span>
+        </div>
+
+        <div class="switch-container">
+            <div class="switch-label-group">
+                <span class="switch-title">Auto-categorize transactions</span>
+                <span class="switch-desc">Categorize expense descriptions using SDCA NLP</span>
+            </div>
+            <ToggleSwitch Id="toggle-auto-categorize" @bind-Value="AutoCategorizeEnabled" />
+        </div>
+
+        <div class="slider-container bordered-top">
+            <div class="slider-label-row">
+                <span>ML Model Sensitivity / Threshold</span>
+                <span class="slider-value">@MlConfidenceThreshold%</span>
+            </div>
+            <input id="slider-ml-threshold" type="range" min="50" max="95" step="5" class="range-slider-dark"
+                   @bind="MlConfidenceThreshold" @bind:event="oninput" />
+            <span class="card-footnote">Only predict when model confidence exceeds this threshold.</span>
+        </div>
+
+        <div style="margin-top: 6px;">
+            <button id="btn-retrain-model" type="button" class="retrain-action-btn" disabled="@IsRetraining" @onclick="RetrainModel">
+                @if (IsRetraining)
+                {
+                    <span>Retraining on-device SDCA model...</span>
+                }
+                else
+                {
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <polyline points="1 20 1 14 7 14"></polyline>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    <span>Retrain Model with My Data</span>
+                }
+            </button>
+            <div class="model-metric-track">
+                <div class="model-metric-fill" style="width: @ModelAccuracy%"></div>
+            </div>
+            <div class="slider-label-row" style="margin-top: 4px;">
+                <span class="card-footnote">Accuracy score: <strong style="color:var(--accent-cyan)">@ModelAccuracy%</strong></span>
+                <span class="card-footnote">@SampleCount samples</span>
+            </div>
+        </div>
+    </div>
+
+    @* Section 2: Budget & Notifications *@
+    <div class="settings-section-card" id="section-budget-settings">
+        <span class="settings-section-title">
+            <span>📊</span> Budget & Notifications
+        </span>
+
+        <div class="form-group-dark">
+            <label class="form-label-dark" for="input-monthly-budget">Monthly Budget Limit ($)</label>
+            <input id="input-monthly-budget" type="number" min="0" step="50" class="form-input-dark" @bind="MonthlyBudget" />
+        </div>
+
+        <div class="switch-container bordered-top">
+            <div class="switch-label-group">
+                <span class="switch-title">Over-budget alerts</span>
+                <span class="switch-desc">Notify when spending trajectory exceeds monthly cap</span>
+            </div>
+            <ToggleSwitch Id="toggle-overbudget-alerts" @bind-Value="OverBudgetAlertsEnabled" />
+        </div>
+
+        <div class="switch-container bordered-top">
+            <div class="switch-label-group">
+                <span class="switch-title">Daily expense reminders</span>
+                <span class="switch-desc">Gentle reminder to log your daily receipts</span>
+            </div>
+            <ToggleSwitch Id="toggle-daily-reminders" @bind-Value="DailyRemindersEnabled" />
+        </div>
+    </div>
+
+    @* Section 3: Data & Storage *@
+    <div class="settings-section-card" id="section-data-storage">
+        <span class="settings-section-title">
+            <span>💾</span> Data & Edge Storage
+        </span>
+
+        <div class="settings-action-row" id="row-export-data" @onclick="ExportData">
+            <div class="action-row-left">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Export Expense Data (CSV / JSON)</span>
+            </div>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+        </div>
+
+        <div class="settings-action-row" id="row-backup-data" @onclick="BackupDatabase">
+            <div class="action-row-left">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                <span>Backup Local Database</span>
+            </div>
+            <span style="font-size: 11px; color: var(--text-muted);">@DbSize</span>
+        </div>
+
+        <div class="settings-action-row danger" id="row-clear-data" @onclick="ConfirmClearDatabase">
+            <div class="action-row-left">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                <span>Clear Local Database</span>
+            </div>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+        </div>
+    </div>
+
+    @* App Version Footnote *@
+    <p class="card-footnote" style="text-align: center; margin: 12px 0 24px 0;">
+        SmartBudget ML v1.0.0 · 100% On-Device · Zero Cloud · Local-First
+    </p>
+</div>
+
+@code {
+    private bool AutoCategorizeEnabled = true;
+    private int MlConfidenceThreshold = 70;
+    private bool IsRetraining = false;
+    private double ModelAccuracy = 95.8;
+    private int SampleCount = 120;
+
+    private decimal MonthlyBudget = 3000m;
+    private bool OverBudgetAlertsEnabled = true;
+    private bool DailyRemindersEnabled = false;
+    private string DbSize = "240 KB";
+
+    private async Task RetrainModel()
+    {
+        IsRetraining = true;
+        try
+        {
+            // Simulate ML.NET pipeline retraining
+            await Task.Delay(1000);
+            ModelAccuracy = 96.4;
+            SampleCount += 5;
+        }
+        finally
+        {
+            IsRetraining = false;
+        }
+    }
+
+    private void ExportData()
+    {
+        // Handled in integration layer
+    }
+
+    private void BackupDatabase()
+    {
+        // Handled in integration layer
+    }
+
+    private void ConfirmClearDatabase()
+    {
+        // Safe placeholder
+    }
+
+    private void GoHome() => NavManager.NavigateTo("");
+}

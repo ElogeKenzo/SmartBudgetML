@@ -1,17 +1,77 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject NavigationManager NavManager
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+<div class="app-container">
+    @if (!IsChromeless)
+    {
+        <header class="app-header">
+            <div class="brand-section">
+                <div class="brand-title">
+                    SmartBudget <span class="brand-ml-tag">ML</span>
+                </div>
+                <div class="brand-subtitle">@GreetingText</div>
+            </div>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+            <button id="btn-notifications" class="header-action-btn" type="button" title="Notifications">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <span class="notification-badge-dot"></span>
+            </button>
+        </header>
+    }
 
-        <article class="content px-4">
-            @Body
-        </article>
+    <main class="app-content @(IsChromeless ? "chromeless" : "")">
+        @Body
     </main>
+
+    @if (!IsChromeless)
+    {
+        <NavMenu />
+    }
 </div>
+
+@code {
+    /// <summary>
+    /// Phase 5: replace with the user's name from ILocalAuthService.GetUserProfileAsync().
+    /// </summary>
+    [CascadingParameter(Name = "UserDisplayName")]
+    public string? UserDisplayName { get; set; }
+
+    private string GreetingText
+    {
+        get
+        {
+            var hour = DateTime.Now.Hour;
+            var salutation = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+            return string.IsNullOrWhiteSpace(UserDisplayName) ? salutation : $"{salutation}, {UserDisplayName}";
+        }
+    }
+
+    // Screens rendered full-bleed, without header and bottom navigation
+    private static readonly string[] ChromelessRoutes = { "onboarding", "unlock" };
+
+    private bool IsChromeless
+    {
+        get
+        {
+            var relative = NavManager.ToBaseRelativePath(NavManager.Uri).Split('?', '#')[0].Trim('/');
+            return ChromelessRoutes.Contains(relative, StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        NavManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+        => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        NavManager.LocationChanged -= OnLocationChanged;
+    }
+}
