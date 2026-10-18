@@ -111,6 +111,8 @@
     </p>
 </section>
 
+@inject ILocalAuthService AuthService
+
 @code {
     private static readonly string[] Currencies = { "$", "€", "£", "FCFA", "MAD", "¥" };
 
@@ -152,10 +154,20 @@
         _busy = true;
         try
         {
-            // Phase 5: await AuthService.CompleteOnboardingAsync(_model.FullName, _model.CurrencySymbol,
-            //          _model.MonthlyIncome, _model.Pin, _model.EnableBiometrics, _model.MonthlySavingsGoal);
-            await Task.Delay(300);
+            await AuthService.CompleteOnboardingAsync(
+                _model.FullName.Trim(),
+                _model.CurrencySymbol,
+                _model.MonthlyIncome,
+                _model.Pin,
+                _model.EnableBiometrics,
+                _model.MonthlySavingsGoal);
+
+            AuthService.MarkAppUnlocked();
             NavManager.NavigateTo("");
+        }
+        catch (Exception ex)
+        {
+            _error = $"Registration failed: {ex.Message}";
         }
         finally
         {

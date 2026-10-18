@@ -21,6 +21,7 @@
             var isValid = await AuthService.VerifyPinAsync(pin);
             if (isValid)
             {
+                AuthService.MarkAppUnlocked();
                 NavManager.NavigateTo("");
             }
             else
@@ -30,9 +31,10 @@
         }
         catch
         {
-            // For design preview if no PIN is registered yet
-            if (pin == "1234" || pin.Length == 4)
+            // For initial preview fallback if no PIN was registered
+            if (pin == "1234")
             {
+                AuthService.MarkAppUnlocked();
                 NavManager.NavigateTo("");
             }
             else
@@ -46,14 +48,15 @@
     {
         try
         {
-            var auth = await AuthService.AuthenticateBiometricAsync("Unlock SmartBudget ML");
-            if (auth.Authenticated)
+            var authenticated = await AuthService.AuthenticateWithBiometricsAsync("Unlock SmartBudget ML");
+            if (authenticated)
             {
+                AuthService.MarkAppUnlocked();
                 NavManager.NavigateTo("");
             }
-            else if (!string.IsNullOrEmpty(auth.ErrorMessage))
+            else
             {
-                ErrorMessage = auth.ErrorMessage;
+                ErrorMessage = "Biometric authentication failed.";
             }
         }
         catch

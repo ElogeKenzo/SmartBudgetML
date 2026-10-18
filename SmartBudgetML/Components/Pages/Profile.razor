@@ -146,6 +146,7 @@
             {
                 User = profile;
             }
+            BiometricsEnabled = await AuthService.IsBiometricEnabledAsync();
         }
         catch
         {
@@ -153,14 +154,24 @@
         }
     }
 
-    private void SetCurrency(string symbol)
+    private async Task SetCurrency(string symbol)
     {
         User.CurrencySymbol = symbol;
+        try
+        {
+            await AuthService.UpdateUserProfileAsync(User);
+        }
+        catch { }
     }
 
-    private void OnToggleBiometrics(bool enabled)
+    private async Task OnToggleBiometrics(bool enabled)
     {
         BiometricsEnabled = enabled;
+        try
+        {
+            await AuthService.SetBiometricEnabledAsync(enabled);
+        }
+        catch { }
     }
 
     private void PromptResetPin() => NavManager.NavigateTo("onboarding");
@@ -169,7 +180,7 @@
     {
         try
         {
-            await AuthService.AuthenticateBiometricAsync("Authenticate to verify your biometrics");
+            await AuthService.AuthenticateWithBiometricsAsync("Authenticate to verify your biometrics");
         }
         catch
         {
@@ -179,5 +190,9 @@
 
     private void GoToSettings() => NavManager.NavigateTo("settings");
 
-    private void LockApp() => NavManager.NavigateTo("unlock");
+    private void LockApp()
+    {
+        AuthService.LockApp();
+        NavManager.NavigateTo("unlock");
+    }
 }
