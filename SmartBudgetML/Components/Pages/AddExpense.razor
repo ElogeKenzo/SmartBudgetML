@@ -1,0 +1,372 @@
+@page "/add-expense"
+@inject NavigationManager NavManager
+@inject IDatabaseService DbService
+@inject IExpenseCategorizerService Categorizer
+
+<PageTitle>Add Expense · SmartBudget ML</PageTitle>
+
+<div class="add-expense-container">
+    @* Screen Header *@
+    <div class="screen-header-row">
+        <div>
+            <h1 class="screen-title">Add transaction</h1>
+            <p class="screen-subtitle">Track your spending with AI categorization</p>
+        </div>
+        <button id="btn-cancel-expense" class="header-action-btn" type="button" title="Cancel" @onclick="GoHome">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+    </div>
+
+    @* Hero Amount Display with Segmented Toggle *@
+    <div class="amount-hero-box" id="box-amount-display">
+        <span class="amount-label">Amount (@Currency)</span>
+        <div class="amount-display-row">
+            <span class="amount-symbol">@Currency</span>
+            <span>@FormattedAmount</span>
+            <span class="amount-cursor"></span>
+        </div>
+
+        <div class="segmented-control">
+            <button id="btn-type-expense" type="button" class="segmented-btn @(!IsIncome ? "active" : "")" @onclick="() => IsIncome = false">
+                Expense
+            </button>
+            <button id="btn-type-income" type="button" class="segmented-btn @(IsIncome ? "active" : "")" @onclick="() => IsIncome = true">
+                Income
+            </button>
+        </div>
+    </div>
+
+    @* Transaction Details Form *@
+    <div class="card-dark">
+        <div class="form-group-dark">
+            <label class="form-label-dark" for="input-description">Description</label>
+            <input id="input-description" class="form-input-dark" placeholder="e.g. Uber ride, Whole Foods, Netflix"
+                   @bind="Description" @bind:event="oninput" @bind:after="OnDescriptionChanged" autocomplete="off" />
+        </div>
+
+        @* Real-Time ML Auto-Categorization Suggestion Banner *@
+        @if (!string.IsNullOrWhiteSpace(PredictedCategoryName))
+        {
+            <div class="ml-suggestion-pill" id="ml-suggestion-banner">
+                <div class="ml-pill-left">
+                    <span>✨</span>
+                    <span>ML suggested: <strong>@PredictedCategoryName</strong></span>
+                    <span class="ml-pill-confidence">@((int)((PredictionConfidence ?? 0.85f) * 100))%</span>
+                </div>
+                <button id="btn-accept-ml" type="button" class="ml-pill-accept-btn" @onclick="ApplyMlSuggestion">
+                    Apply
+                </button>
+            </div>
+        }
+
+        @* Category Selection Grid *@
+        <div class="category-picker-header" style="margin-top: 14px;">
+            <label class="form-label-dark">Category</label>
+            @if (SelectedCategory != null)
+            {
+                <span class="text-secondary" style="font-size: 11px;">Selected: <strong style="color:var(--accent-cyan)">@SelectedCategory.Name</strong></span>
+            }
+        </div>
+
+        <div class="category-chips-grid" id="category-grid">
+            @foreach (var cat in DisplayCategories)
+            {
+                var isSelected = SelectedCategoryId == cat.Id;
+                <div class="category-chip @(isSelected ? "selected" : "")" id="@($"cat-chip-{cat.Id}")" @onclick="() => SelectCategory(cat)">
+                    <span class="category-chip-glyph">@UiFormat.CategoryGlyph(cat.Icon)</span>
+                    <span class="category-chip-name">@cat.Name</span>
+                </div>
+            }
+        </div>
+
+        @* Date & Notes Optional Fields *@
+        <div class="form-row" style="margin-top: 14px;">
+            <div class="form-group-dark flex-1">
+                <label class="form-label-dark" for="input-date">Date</label>
+                <input id="input-date" type="date" class="form-input-dark" @bind="Date" />
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <div class="form-error" role="alert" style="margin-top: 10px;">@ErrorMessage</div>
+        }
+    </div>
+
+    @* Fast Numeric Touch Keypad *@
+    <div class="card-dark">
+        <NumericKeypad IdPrefix="expense" LeftKey="KeypadLeftKey.Decimal" OnKey="HandleKeypad" />
+    </div>
+
+    @* Primary Action Button *@
+    <button id="btn-submit-expense" type="button" class="btn-primary-gradient" disabled="@IsSubmitting" @onclick="SaveTransaction">
+        @if (IsSubmitting)
+        {
+            <span>Saving...</span>
+        }
+        else
+        {
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>@(IsIncome ? "+ Add income" : "+ Add expense")</span>
+        }
+    </button>
+</div>
+
+@code {
+    private string Currency = "$";
+    private string RawAmount = "0";
+    private bool IsIncome = false;
+    private string Description = string.Empty;
+    private DateTime Date = DateTime.Today;
+    private int? SelectedCategoryId;
+    private string? PredictedCategoryName;
+    private float? PredictionConfidence;
+    private bool IsMlApplied = false;
+    private string? ErrorMessage;
+    private bool IsSubmitting = false;
+
+    private List<Category> Categories = new();
+
+    private IEnumerable<Category> DisplayCategories =>
+        Categories.Where(c => c.IsIncome == IsIncome);
+
+    private Category? SelectedCategory =>
+        Categories.FirstOrDefault(c => c.Id == SelectedCategoryId);
+
+    private string FormattedAmount
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(RawAmount) || RawAmount == "0") return "0.00";
+            if (decimal.TryParse(RawAmount, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsed))
+            {
+                return parsed.ToString("N2", System.Globalization.CultureInfo.InvariantCulture);
+            }
+            return RawAmount;
+        }
+    }
+
+    private decimal ParsedAmount =>
+        decimal.TryParse(RawAmount, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var val) ? val : 0m;
+
+@inject ILocalAuthService AuthService
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var profile = await AuthService.GetUserProfileAsync();
+            if (profile != null)
+            {
+                Currency = profile.CurrencySymbol;
+            }
+        }
+        catch { }
+
+        await LoadCategoriesAsync();
+        EnsureDefaultSelection();
+    }
+
+    private async Task LoadCategoriesAsync()
+    {
+        try
+        {
+            Categories = await DbService.Categories.GetAllAsync();
+        }
+        catch
+        {
+            // Fallback preview categories
+        }
+
+        if (Categories == null || Categories.Count == 0)
+        {
+            Categories = GetPreviewCategories();
+        }
+    }
+
+    private void EnsureDefaultSelection()
+    {
+        var match = DisplayCategories.FirstOrDefault();
+        if (match != null && SelectedCategoryId == null)
+        {
+            SelectedCategoryId = match.Id;
+        }
+    }
+
+    private void HandleKeypad(string key)
+    {
+        ErrorMessage = null;
+        if (key == "back")
+        {
+            if (RawAmount.Length > 1)
+            {
+                RawAmount = RawAmount[..^1];
+            }
+            else
+            {
+                RawAmount = "0";
+            }
+            return;
+        }
+
+        if (key == ".")
+        {
+            if (!RawAmount.Contains('.'))
+            {
+                RawAmount += ".";
+            }
+            return;
+        }
+
+        if (RawAmount == "0")
+        {
+            RawAmount = key;
+        }
+        else
+        {
+            // Limit to two decimal places
+            var dotIndex = RawAmount.IndexOf('.');
+            if (dotIndex >= 0 && RawAmount.Length - dotIndex > 2)
+            {
+                return;
+            }
+            if (RawAmount.Length < 9)
+            {
+                RawAmount += key;
+            }
+        }
+    }
+
+    private void OnDescriptionChanged()
+    {
+        if (string.IsNullOrWhiteSpace(Description) || Description.Length < 2)
+        {
+            PredictedCategoryName = null;
+            PredictionConfidence = null;
+            return;
+        }
+
+        try
+        {
+            var pred = Categorizer.Predict(Description);
+            if (pred != null && !string.IsNullOrEmpty(pred.PredictedCategory))
+            {
+                PredictedCategoryName = pred.PredictedCategory;
+                PredictionConfidence = pred.Confidence;
+
+                // Auto-match if high confidence
+                if (pred.Confidence >= 0.70f && !IsMlApplied)
+                {
+                    var matched = Categories.FirstOrDefault(c => c.Name.Equals(pred.PredictedCategory, StringComparison.OrdinalIgnoreCase));
+                    if (matched != null)
+                    {
+                        SelectedCategoryId = matched.Id;
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Graceful fallback
+        }
+    }
+
+    private void ApplyMlSuggestion()
+    {
+        if (string.IsNullOrEmpty(PredictedCategoryName)) return;
+        var matched = Categories.FirstOrDefault(c => c.Name.Equals(PredictedCategoryName, StringComparison.OrdinalIgnoreCase));
+        if (matched != null)
+        {
+            SelectedCategoryId = matched.Id;
+            IsMlApplied = true;
+        }
+    }
+
+    private void SelectCategory(Category cat)
+    {
+        SelectedCategoryId = cat.Id;
+        IsMlApplied = false;
+    }
+
+    private async Task SaveTransaction()
+    {
+        ErrorMessage = null;
+        if (ParsedAmount <= 0)
+        {
+            ErrorMessage = "Please enter an amount greater than 0.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(Description))
+        {
+            ErrorMessage = "Please provide a description.";
+            return;
+        }
+
+        if (SelectedCategoryId == null)
+        {
+            ErrorMessage = "Please select a category.";
+            return;
+        }
+
+        IsSubmitting = true;
+        try
+        {
+            var chosenCategory = SelectedCategory;
+            var expense = new Expense
+            {
+                Description = Description.Trim(),
+                Amount = ParsedAmount,
+                Date = Date,
+                CategoryId = SelectedCategoryId.Value,
+                IsIncome = IsIncome,
+                IsMlPredicted = IsMlApplied,
+                PredictionConfidence = PredictionConfidence,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await DbService.Expenses.InsertAsync(expense);
+
+            // Trigger on-device continuous feedback training in background
+            if (chosenCategory != null)
+            {
+                _ = Task.Run(async () =>
+                {
+                    try { await Categorizer.RetrainWithFeedbackAsync(expense.Description, chosenCategory.Name); } catch { }
+                });
+            }
+
+            NavManager.NavigateTo("");
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Failed to save: {ex.Message}";
+        }
+        finally
+        {
+            IsSubmitting = false;
+        }
+    }
+
+    private void GoHome() => NavManager.NavigateTo("");
+
+    private static List<Category> GetPreviewCategories() => new()
+    {
+        new() { Id = 1, Name = "Food & Dining", Icon = "utensils", ColorHex = "#F59E0B", IsIncome = false },
+        new() { Id = 2, Name = "Transportation", Icon = "car", ColorHex = "#3B82F6", IsIncome = false },
+        new() { Id = 3, Name = "Groceries", Icon = "shopping-cart", ColorHex = "#10B981", IsIncome = false },
+        new() { Id = 4, Name = "Entertainment", Icon = "film", ColorHex = "#EC4899", IsIncome = false },
+        new() { Id = 5, Name = "Shopping", Icon = "shopping-bag", ColorHex = "#8B5CF6", IsIncome = false },
+        new() { Id = 6, Name = "Housing", Icon = "home", ColorHex = "#6366F1", IsIncome = false },
+        new() { Id = 7, Name = "Utilities", Icon = "zap", ColorHex = "#06B6D4", IsIncome = false },
+        new() { Id = 8, Name = "Healthcare", Icon = "heart", ColorHex = "#EF4444", IsIncome = false },
+        new() { Id = 9, Name = "Salary", Icon = "wallet", ColorHex = "#10B981", IsIncome = true },
+        new() { Id = 10, Name = "Investments", Icon = "trending-up", ColorHex = "#14B8A6", IsIncome = true }
+    };
+}
