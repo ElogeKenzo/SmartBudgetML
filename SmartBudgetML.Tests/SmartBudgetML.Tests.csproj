@@ -29,6 +29,7 @@
   <ItemGroup>
     <Compile Include="..\SmartBudgetML\Models\**\*.cs" LinkBase="Models" />
     <Compile Include="..\SmartBudgetML\Services\**\*.cs" Exclude="..\SmartBudgetML\Services\Auth\BiometricService.cs" LinkBase="Services" />
+    <Compile Include="..\SmartBudgetML\Components\Shared\UiFormat.cs" LinkBase="Components\Shared" />
   </ItemGroup>
 
 </Project>

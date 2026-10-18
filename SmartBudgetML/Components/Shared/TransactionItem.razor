@@ -1,0 +1,26 @@
+<div class="transaction-card" id="@($"txn-{Item.Id}")">
+    <div class="transaction-left">
+        <div class="transaction-category-icon" style="background:@UiFormat.TileBackground(Item.CategoryColor)">
+            @UiFormat.CategoryGlyph(Item.CategoryIcon)
+        </div>
+        <div class="transaction-meta">
+            <span class="transaction-desc">@Item.Description</span>
+            <span class="transaction-cat-name">
+                @(Item.CategoryName ?? "Uncategorized")
+                @if (Item.IsMlPredicted)
+                {
+                    <span class="ml-auto-badge" title="Categorized on-device by ML.NET">AI</span>
+                }
+                <span class="transaction-date">· @Item.Date.ToString("MMM d", System.Globalization.CultureInfo.InvariantCulture)</span>
+            </span>
+        </div>
+    </div>
+    <span class="transaction-amount @(Item.IsIncome ? "income" : "expense")">
+        @(Item.IsIncome ? "+" : "-")@UiFormat.Money(Item.Amount, CurrencySymbol)
+    </span>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Expense Item { get; set; } = default!;
+    [Parameter] public string CurrencySymbol { get; set; } = "$";
+}
