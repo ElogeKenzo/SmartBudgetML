@@ -1,5 +1,5 @@
 # ============================================================
-# SmartBudgetML — Android CI/CD Pipeline
+# SmartBudgetML — Android CI/CD Pipeline (.NET 10 LTS)
 # Triggers on PRs to develop and main
 # Builds the .NET MAUI Android project and uploads APK artifact
 # ============================================================
@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
 
 env:
-  DOTNET_VERSION: '8.0.x'
+  DOTNET_VERSION: '10.0.x'
   PROJECT_PATH: 'SmartBudgetML/SmartBudgetML.csproj'
   TEST_PROJECT_PATH: 'SmartBudgetML.Tests/SmartBudgetML.Tests.csproj'
 
@@ -75,7 +75,7 @@ jobs:
         run: >
           dotnet publish ${{ env.PROJECT_PATH }}
           -c Release
-          -f net8.0-android
+          -f net10.0-android
           -p:AndroidPackageFormat=apk
           -o ./artifacts/android
 
