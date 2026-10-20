@@ -1,9 +1,11 @@
 @inherits LayoutComponentBase
 @implements IDisposable
+@using Microsoft.Extensions.Logging
 @inject NavigationManager NavManager
 @inject IDatabaseService DbService
 @inject ILocalAuthService AuthService
 @inject IExpenseCategorizerService Categorizer
+@inject ILogger<MainLayout> Logger
 
 <div class="app-container">
     @if (_isInitializing)
@@ -77,22 +79,26 @@
 
         try
         {
-            // 1. Initialize SQLite Database & tables
             await DbService.InitializeAsync();
             await DbService.SeedDefaultDataAsync();
 
-            // 2. Ensure ML categorizer is trained on-device in background
             _ = Task.Run(async () =>
             {
-                try { await Categorizer.EnsureTrainedAsync(); } catch { }
+                try
+                {
+                    await Categorizer.EnsureTrainedAsync();
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning(ex, "Background ML categorizer initialization failed.");
+                }
             });
 
-            // 3. Check registration & lock state
             await CheckAuthRouteAsync();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[MainLayout] Init error: {ex.Message}");
+            Logger.LogError(ex, "Error initializing MainLayout.");
         }
         finally
         {

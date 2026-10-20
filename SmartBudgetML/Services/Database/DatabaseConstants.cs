@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using SQLite;
 
 namespace SmartBudgetML.Services.Database;
@@ -32,8 +33,9 @@ public static class DatabaseConstants
                 }
                 return Path.Combine(basePath, DatabaseFilename);
             }
-            catch
+            catch (Exception ex)
             {
+                Trace.TraceWarning($"[DatabaseConstants] Fallback to BaseDirectory: {ex.Message}");
                 var basePath = AppDomain.CurrentDomain.BaseDirectory;
                 return Path.Combine(basePath, DatabaseFilename);
             }

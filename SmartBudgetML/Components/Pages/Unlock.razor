@@ -1,10 +1,12 @@
 @page "/unlock"
+@using Microsoft.Extensions.Logging
 @inject NavigationManager NavManager
 @inject ILocalAuthService AuthService
+@inject ILogger<Unlock> Logger
 
 <PageTitle>Unlock · SmartBudget ML</PageTitle>
 
-<LockScreen Subtitle="Enter your 4-digit PIN to access your vault"
+<LockScreen Subtitle="Enter your PIN to access your vault"
             ErrorMessage="@ErrorMessage"
             ShowBiometric="true"
             OnPinComplete="HandlePinComplete"
@@ -29,18 +31,10 @@
                 ErrorMessage = "Incorrect PIN. Please try again.";
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // For initial preview fallback if no PIN was registered
-            if (pin == "1234")
-            {
-                AuthService.MarkAppUnlocked();
-                NavManager.NavigateTo("");
-            }
-            else
-            {
-                ErrorMessage = "Incorrect PIN.";
-            }
+            Logger.LogError(ex, "Error verifying PIN during unlock.");
+            ErrorMessage = "Unable to verify PIN. Please try again.";
         }
     }
 
@@ -59,9 +53,10 @@
                 ErrorMessage = "Biometric authentication failed.";
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Handled
+            Logger.LogWarning(ex, "Biometric unlock failed with exception.");
+            ErrorMessage = "Biometric authentication is currently unavailable.";
         }
     }
 }

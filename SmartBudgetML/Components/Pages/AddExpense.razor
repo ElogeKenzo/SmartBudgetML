@@ -1,7 +1,11 @@
 @page "/add-expense"
+@using Microsoft.Extensions.Logging
 @inject NavigationManager NavManager
 @inject IDatabaseService DbService
+@inject IAppSettingsProvider SettingsProvider
+@inject ILocalAuthService AuthService
 @inject IExpenseCategorizerService Categorizer
+@inject ILogger<AddExpense> Logger
 
 <PageTitle>Add Expense · SmartBudget ML</PageTitle>
 
@@ -44,7 +48,7 @@
         <div class="form-group-dark">
             <label class="form-label-dark" for="input-description">Description</label>
             <input id="input-description" class="form-input-dark" placeholder="e.g. Uber ride, Whole Foods, Netflix"
-                   @bind="Description" @bind:event="oninput" @bind:after="OnDescriptionChanged" autocomplete="off" />
+                   @bind="Description" @bind:event="oninput" @bind:after="OnDescriptionChangedAsync" autocomplete="off" />
         </div>
 
         @* Real-Time ML Auto-Categorization Suggestion Banner *@
@@ -54,7 +58,7 @@
                 <div class="ml-pill-left">
                     <span>✨</span>
                     <span>ML suggested: <strong>@PredictedCategoryName</strong></span>
-                    <span class="ml-pill-confidence">@((int)((PredictionConfidence ?? 0.85f) * 100))%</span>
+                    <span class="ml-pill-confidence">@((int)((PredictionConfidence ?? 0.0f) * 100))%</span>
                 </div>
                 <button id="btn-accept-ml" type="button" class="ml-pill-accept-btn" @onclick="ApplyMlSuggestion">
                     Apply
@@ -155,8 +159,6 @@
     private decimal ParsedAmount =>
         decimal.TryParse(RawAmount, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var val) ? val : 0m;
 
-@inject ILocalAuthService AuthService
-
     protected override async Task OnInitializedAsync()
     {
         try
@@ -167,7 +169,10 @@
                 Currency = profile.CurrencySymbol;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Could not load user profile currency in AddExpense.");
+        }
 
         await LoadCategoriesAsync();
         EnsureDefaultSelection();
@@ -179,9 +184,9 @@
         {
             Categories = await DbService.Categories.GetAllAsync();
         }
-        catch
+        catch (Exception ex)
         {
-            // Fallback preview categories
+            Logger.LogWarning(ex, "Failed to load categories from SQLite; falling back to default preview categories.");
         }
 
         if (Categories == null || Categories.Count == 0)
@@ -230,7 +235,6 @@
         }
         else
         {
-            // Limit to two decimal places
             var dotIndex = RawAmount.IndexOf('.');
             if (dotIndex >= 0 && RawAmount.Length - dotIndex > 2)
             {
@@ -243,7 +247,7 @@
         }
     }
 
-    private void OnDescriptionChanged()
+    private async Task OnDescriptionChangedAsync()
     {
         if (string.IsNullOrWhiteSpace(Description) || Description.Length < 2)
         {
@@ -260,8 +264,8 @@
                 PredictedCategoryName = pred.PredictedCategory;
                 PredictionConfidence = pred.Confidence;
 
-                // Auto-match if high confidence
-                if (pred.Confidence >= 0.70f && !IsMlApplied)
+                var shouldAutoSelect = await SettingsProvider.ShouldAutoSelectCategoryAsync(pred.Confidence);
+                if (shouldAutoSelect && !IsMlApplied)
                 {
                     var matched = Categories.FirstOrDefault(c => c.Name.Equals(pred.PredictedCategory, StringComparison.OrdinalIgnoreCase));
                     if (matched != null)
@@ -271,9 +275,9 @@
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Graceful fallback
+            Logger.LogWarning(ex, "ML prediction failed for description input.");
         }
     }
 
@@ -333,12 +337,18 @@
 
             await DbService.Expenses.InsertAsync(expense);
 
-            // Trigger on-device continuous feedback training in background
             if (chosenCategory != null)
             {
                 _ = Task.Run(async () =>
                 {
-                    try { await Categorizer.RetrainWithFeedbackAsync(expense.Description, chosenCategory.Name); } catch { }
+                    try
+                    {
+                        await Categorizer.RetrainWithFeedbackAsync(expense.Description, chosenCategory.Name);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogWarning(ex, "Background feedback retraining failed.");
+                    }
                 });
             }
 
@@ -346,6 +356,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Failed to save expense transaction.");
             ErrorMessage = $"Failed to save: {ex.Message}";
         }
         finally

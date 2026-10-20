@@ -9,6 +9,7 @@ namespace SmartBudgetML.Services.ML;
 public interface IExpenseCategorizerService
 {
     bool IsTrained { get; }
+    int LastTrainingSampleCount { get; }
     Task EnsureTrainedAsync();
     Task TrainAsync(IEnumerable<ExpenseTransactionData>? additionalData = null);
     CategoryPrediction Predict(string description);
