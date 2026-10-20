@@ -1,7 +1,14 @@
 @page "/settings"
+@using Microsoft.Extensions.Logging
+@using SmartBudgetML.Services.Data
 @inject NavigationManager NavManager
 @inject IDatabaseService DbService
+@inject IAppSettingsProvider SettingsProvider
+@inject ILocalAuthService AuthService
 @inject IExpenseCategorizerService Categorizer
+@inject IModelEvaluator ModelEvaluator
+@inject ICsvExpenseExporter CsvExporter
+@inject ILogger<Settings> Logger
 
 <PageTitle>Settings · SmartBudget ML</PageTitle>
 
@@ -20,6 +27,13 @@
         </button>
     </div>
 
+    @if (!string.IsNullOrWhiteSpace(FeedbackMessage))
+    {
+        <div class="card-dark" role="status" style="margin-bottom: 12px; border-left: 3px solid var(--accent-cyan);">
+            <span>@FeedbackMessage</span>
+        </div>
+    }
+
     @* Section 1: AI & ML Model Settings *@
     <div class="settings-section-card" id="section-ai-settings">
         <div class="settings-section-header">
@@ -34,16 +48,16 @@
                 <span class="switch-title">Auto-categorize transactions</span>
                 <span class="switch-desc">Categorize expense descriptions using SDCA NLP</span>
             </div>
-            <ToggleSwitch Id="toggle-auto-categorize" @bind-Value="AutoCategorizeEnabled" />
+            <ToggleSwitch Id="toggle-auto-categorize" Value="AutoCategorizeEnabled" ValueChanged="OnAutoCategorizeChanged" />
         </div>
 
         <div class="slider-container bordered-top">
             <div class="slider-label-row">
                 <span>ML Model Sensitivity / Threshold</span>
-                <span class="slider-value">@MlConfidenceThreshold%</span>
+                <span class="slider-value">@MlConfidenceThresholdPercent%</span>
             </div>
             <input id="slider-ml-threshold" type="range" min="50" max="95" step="5" class="range-slider-dark"
-                   @bind="MlConfidenceThreshold" @bind:event="oninput" />
+                   @bind="MlConfidenceThresholdPercent" @bind:event="oninput" @bind:after="SaveSettingsAsync" />
             <span class="card-footnote">Only predict when model confidence exceeds this threshold.</span>
         </div>
 
@@ -51,7 +65,7 @@
             <button id="btn-retrain-model" type="button" class="retrain-action-btn" disabled="@IsRetraining" @onclick="RetrainModel">
                 @if (IsRetraining)
                 {
-                    <span>Retraining on-device SDCA model...</span>
+                    <span>Evaluating & retraining on-device SDCA model...</span>
                 }
                 else
                 {
@@ -60,15 +74,18 @@
                         <polyline points="1 20 1 14 7 14"></polyline>
                         <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
                     </svg>
-                    <span>Retrain Model with My Data</span>
+                    <span>Retrain & Evaluate Model with My Data</span>
                 }
             </button>
             <div class="model-metric-track">
-                <div class="model-metric-fill" style="width: @ModelAccuracy%"></div>
+                <div class="model-metric-fill" style="width: @(UiFormat.Num(EvaluationMetrics.MicroAccuracy * 100.0))%"></div>
             </div>
             <div class="slider-label-row" style="margin-top: 4px;">
-                <span class="card-footnote">Accuracy score: <strong style="color:var(--accent-cyan)">@ModelAccuracy%</strong></span>
-                <span class="card-footnote">@SampleCount samples</span>
+                <span class="card-footnote">
+                    Validation score:
+                    <strong style="color:var(--accent-cyan)">@EvaluationMetrics.StatusDisplay</strong>
+                </span>
+                <span class="card-footnote">@EvaluationMetrics.TrainingSampleCount training samples</span>
             </div>
         </div>
     </div>
@@ -80,8 +97,9 @@
         </span>
 
         <div class="form-group-dark">
-            <label class="form-label-dark" for="input-monthly-budget">Monthly Budget Limit ($)</label>
-            <input id="input-monthly-budget" type="number" min="0" step="50" class="form-input-dark" @bind="MonthlyBudget" />
+            <label class="form-label-dark" for="input-monthly-budget">Monthly Budget Limit</label>
+            <input id="input-monthly-budget" type="number" min="0" step="50" class="form-input-dark"
+                   @bind="MonthlyBudget" @bind:after="SaveBudgetAsync" />
         </div>
 
         <div class="switch-container bordered-top">
@@ -89,7 +107,7 @@
                 <span class="switch-title">Over-budget alerts</span>
                 <span class="switch-desc">Notify when spending trajectory exceeds monthly cap</span>
             </div>
-            <ToggleSwitch Id="toggle-overbudget-alerts" @bind-Value="OverBudgetAlertsEnabled" />
+            <ToggleSwitch Id="toggle-overbudget-alerts" Value="OverBudgetAlertsEnabled" ValueChanged="OnOverBudgetAlertsChanged" />
         </div>
 
         <div class="switch-container bordered-top">
@@ -97,7 +115,7 @@
                 <span class="switch-title">Daily expense reminders</span>
                 <span class="switch-desc">Gentle reminder to log your daily receipts</span>
             </div>
-            <ToggleSwitch Id="toggle-daily-reminders" @bind-Value="DailyRemindersEnabled" />
+            <ToggleSwitch Id="toggle-daily-reminders" Value="DailyRemindersEnabled" ValueChanged="OnDailyRemindersChanged" />
         </div>
     </div>
 
@@ -114,7 +132,7 @@
                     <polyline points="7 10 12 15 17 10"></polyline>
                     <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
-                <span>Export Expense Data (CSV / JSON)</span>
+                <span>Export Expense Data (CSV)</span>
             </div>
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="9 18 15 12 9 6"></polyline>
@@ -149,29 +167,33 @@
 
     @* App Version Footnote *@
     <p class="card-footnote" style="text-align: center; margin: 12px 0 24px 0;">
-        SmartBudget ML v1.0.0 · 100% On-Device · Zero Cloud · Local-First
+        SmartBudget ML · 100% On-Device · Zero Cloud · Local-First
     </p>
 </div>
 
-@inject IJSRuntime JS
-
 @code {
+    private AppSettings? CurrentSettings;
     private bool AutoCategorizeEnabled = true;
-    private int MlConfidenceThreshold = 70;
+    private int MlConfidenceThresholdPercent = 70;
     private bool IsRetraining = false;
-    private double ModelAccuracy = 95.8;
-    private int SampleCount = 120;
+    private ModelEvaluationMetrics EvaluationMetrics = ModelEvaluationMetrics.Unevaluated();
     private string? FeedbackMessage;
 
     private decimal MonthlyBudget = 3000m;
     private bool OverBudgetAlertsEnabled = true;
     private bool DailyRemindersEnabled = false;
-    private string DbSize = "240 KB";
+    private string DbSize = "0 B";
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            CurrentSettings = await SettingsProvider.GetOrCreateSettingsAsync();
+            AutoCategorizeEnabled = CurrentSettings.AutoCategorizeEnabled;
+            MlConfidenceThresholdPercent = (int)Math.Round(CurrentSettings.MlConfidenceThreshold * 100f);
+            OverBudgetAlertsEnabled = CurrentSettings.OverBudgetAlertsEnabled;
+            DailyRemindersEnabled = CurrentSettings.DailyRemindersEnabled;
+
             var profile = await AuthService.GetUserProfileAsync();
             if (profile != null)
             {
@@ -180,11 +202,69 @@
                     : 3000m;
             }
 
-            var expenseCount = await DbService.Expenses.CountAsync();
-            SampleCount = 120 + expenseCount;
-            DbSize = $"{Math.Max(180, 180 + expenseCount * 2)} KB";
+            EvaluationMetrics = ModelEvaluator.GetCurrentMetrics();
+            DbSize = await DbService.GetFormattedDatabaseSizeAsync();
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error initializing Settings page.");
+            FeedbackMessage = $"Failed to load settings: {ex.Message}";
+        }
+    }
+
+    private async Task OnAutoCategorizeChanged(bool enabled)
+    {
+        AutoCategorizeEnabled = enabled;
+        await SaveSettingsAsync();
+    }
+
+    private async Task OnOverBudgetAlertsChanged(bool enabled)
+    {
+        OverBudgetAlertsEnabled = enabled;
+        await SaveSettingsAsync();
+    }
+
+    private async Task OnDailyRemindersChanged(bool enabled)
+    {
+        DailyRemindersEnabled = enabled;
+        await SaveSettingsAsync();
+    }
+
+    private async Task SaveSettingsAsync()
+    {
+        try
+        {
+            var settings = CurrentSettings ?? await SettingsProvider.GetOrCreateSettingsAsync();
+            settings.AutoCategorizeEnabled = AutoCategorizeEnabled;
+            settings.MlConfidenceThreshold = Math.Clamp(MlConfidenceThresholdPercent / 100f, 0.05f, 0.99f);
+            settings.OverBudgetAlertsEnabled = OverBudgetAlertsEnabled;
+            settings.DailyRemindersEnabled = DailyRemindersEnabled;
+            await SettingsProvider.SaveSettingsAsync(settings);
+            CurrentSettings = settings;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error saving AppSettings.");
+            FeedbackMessage = $"Could not save setting: {ex.Message}";
+        }
+    }
+
+    private async Task SaveBudgetAsync()
+    {
+        try
+        {
+            var profile = await AuthService.GetUserProfileAsync();
+            if (profile != null && MonthlyBudget > 0)
+            {
+                profile.MonthlySavingsGoal = Math.Max(0m, profile.MonthlyIncome - MonthlyBudget);
+                await AuthService.UpdateUserProfileAsync(profile);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error updating monthly budget.");
+            FeedbackMessage = $"Could not save budget: {ex.Message}";
+        }
     }
 
     private async Task RetrainModel()
@@ -197,7 +277,7 @@
             var allCategories = await DbService.Categories.GetAllAsync();
             var catDict = allCategories.ToDictionary(c => c.Id, c => c.Name);
 
-            var trainingSet = allExpenses
+            var userSamples = allExpenses
                 .Where(e => !string.IsNullOrWhiteSpace(e.Description) && catDict.ContainsKey(e.CategoryId))
                 .Select(e => new ExpenseTransactionData
                 {
@@ -206,14 +286,17 @@
                 })
                 .ToList();
 
-            await Categorizer.TrainAsync(trainingSet);
+            await Categorizer.TrainAsync(userSamples);
 
-            ModelAccuracy = Math.Min(99.0, 95.8 + (trainingSet.Count * 0.15));
-            SampleCount = 120 + trainingSet.Count;
-            FeedbackMessage = "SDCA NLP model successfully retrained on-device!";
+            var fullTrainSet = SeedTrainingData.GetDefaultDataset();
+            fullTrainSet.AddRange(userSamples);
+            EvaluationMetrics = await ModelEvaluator.EvaluateAsync(fullTrainSet);
+
+            FeedbackMessage = $"Model retrained & evaluated: {EvaluationMetrics.StatusDisplay} on {EvaluationMetrics.ValidationSampleCount} validation samples.";
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Retraining failed.");
             FeedbackMessage = $"Retraining failed: {ex.Message}";
         }
         finally
@@ -227,20 +310,33 @@
         try
         {
             var expenses = await DbService.Expenses.GetAllAsync();
-            var csv = "Id,Date,Description,Amount,IsIncome\n" +
-                string.Join("\n", expenses.Select(e => $"{e.Id},{e.Date:yyyy-MM-dd},\"{e.Description.Replace("\"", "\"\"")}\",{e.Amount},{e.IsIncome}"));
+            var categories = await DbService.Categories.GetAllAsync();
+            var filePath = await CsvExporter.ExportToFileAsync(expenses, categories);
 
-            FeedbackMessage = $"Exported {expenses.Count} transactions to local cache.";
+            FeedbackMessage = $"Exported {expenses.Count} transactions to {Path.GetFileName(filePath)}.";
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "CSV export failed.");
             FeedbackMessage = $"Export failed: {ex.Message}";
         }
     }
 
-    private void BackupDatabase()
+    private async Task BackupDatabase()
     {
-        FeedbackMessage = "Database backed up to local sandbox storage.";
+        try
+        {
+            var backupDir = Path.GetDirectoryName(DbService.DatabasePath) ?? AppDomain.CurrentDomain.BaseDirectory;
+            var backupFile = Path.Combine(backupDir, $"smartbudget_backup_{DateTime.UtcNow:yyyyMMdd_HHmmss}.db3");
+            var savedPath = await DbService.BackupDatabaseAsync(backupFile);
+            DbSize = await DbService.GetFormattedDatabaseSizeAsync();
+            FeedbackMessage = $"Database backed up to {Path.GetFileName(savedPath)} ({DbSize}).";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Database backup failed.");
+            FeedbackMessage = $"Backup failed: {ex.Message}";
+        }
     }
 
     private async Task ConfirmClearDatabase()
@@ -250,13 +346,14 @@
             var expenses = await DbService.Expenses.GetAllAsync();
             foreach (var e in expenses)
             {
-                await DbService.Expenses.DeleteAsync(e.Id);
+                await DbService.Expenses.DeleteAsync(e);
             }
-            FeedbackMessage = "Local database cleared.";
-            DbSize = "180 KB";
+            DbSize = await DbService.GetFormattedDatabaseSizeAsync();
+            FeedbackMessage = "Local transactions cleared.";
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Clear database failed.");
             FeedbackMessage = $"Failed to clear: {ex.Message}";
         }
     }

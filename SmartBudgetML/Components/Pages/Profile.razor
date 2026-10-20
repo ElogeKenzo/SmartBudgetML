@@ -1,7 +1,9 @@
 @page "/profile"
+@using Microsoft.Extensions.Logging
 @inject NavigationManager NavManager
 @inject ILocalAuthService AuthService
 @inject IDatabaseService DbService
+@inject ILogger<Profile> Logger
 
 <PageTitle>Your Profile · SmartBudget ML</PageTitle>
 
@@ -19,6 +21,13 @@
             </svg>
         </button>
     </div>
+
+    @if (!string.IsNullOrWhiteSpace(StatusMessage))
+    {
+        <div class="card-dark" role="status" style="margin-bottom: 12px; border-left: 3px solid var(--accent-cyan);">
+            <span>@StatusMessage</span>
+        </div>
+    }
 
     @* Hero User Profile Card *@
     <div class="profile-hero-card" id="card-profile-header">
@@ -66,7 +75,7 @@
             </button>
         </div>
         <p class="card-footnote">
-            🔒 Local PIN is cryptographically hashed with PBKDF2 (10,000 iterations + SHA256 salt) on-device. Zero data is shared externally.
+            🔒 Local PIN is cryptographically hashed with PBKDF2 + SHA256 salt on-device. Zero data is shared externally.
         </p>
     </div>
 
@@ -122,20 +131,21 @@
 </div>
 
 @code {
-    private static readonly string[] AvailableCurrencies = { "$", "€", "£", "FCFA", "MAD" };
+    private static readonly string[] AvailableCurrencies = { "FCFA", "€", "$", "£", "MAD" };
 
     private UserProfile User = new()
     {
-        Id = 20412,
-        FullName = "Lissom Abel",
-        Email = "lissom@gmail.com",
-        CurrencySymbol = "$",
-        MonthlyIncome = 3500m,
-        MonthlySavingsGoal = 500m,
+        Id = 1,
+        FullName = "Local User",
+        Email = string.Empty,
+        CurrencySymbol = "FCFA",
+        MonthlyIncome = 0m,
+        MonthlySavingsGoal = 0m,
         IsOnboardingCompleted = true
     };
 
-    private bool BiometricsEnabled = true;
+    private bool BiometricsEnabled = false;
+    private string? StatusMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -148,9 +158,10 @@
             }
             BiometricsEnabled = await AuthService.IsBiometricEnabledAsync();
         }
-        catch
+        catch (Exception ex)
         {
-            // Keep default preview
+            Logger.LogError(ex, "Error loading user profile in Profile page.");
+            StatusMessage = $"Could not load profile: {ex.Message}";
         }
     }
 
@@ -160,8 +171,13 @@
         try
         {
             await AuthService.UpdateUserProfileAsync(User);
+            StatusMessage = $"Currency updated to {symbol}.";
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to update user currency.");
+            StatusMessage = $"Failed to save currency: {ex.Message}";
+        }
     }
 
     private async Task OnToggleBiometrics(bool enabled)
@@ -171,7 +187,11 @@
         {
             await AuthService.SetBiometricEnabledAsync(enabled);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to update biometric preference.");
+            StatusMessage = $"Failed to update biometric setting: {ex.Message}";
+        }
     }
 
     private void PromptResetPin() => NavManager.NavigateTo("onboarding");
@@ -180,11 +200,13 @@
     {
         try
         {
-            await AuthService.AuthenticateWithBiometricsAsync("Authenticate to verify your biometrics");
+            var ok = await AuthService.AuthenticateWithBiometricsAsync("Authenticate to verify your biometrics");
+            StatusMessage = ok ? "Biometric authentication succeeded." : "Biometric authentication was not verified.";
         }
-        catch
+        catch (Exception ex)
         {
-            // Handled
+            Logger.LogWarning(ex, "Biometric test threw an exception.");
+            StatusMessage = $"Biometric check unavailable: {ex.Message}";
         }
     }
 

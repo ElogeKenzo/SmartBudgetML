@@ -1,4 +1,6 @@
 using Microsoft.ML;
+using SmartBudgetML.Models;
+using SmartBudgetML.Services.Database;
 using SmartBudgetML.Services.ML.Models;
 
 namespace SmartBudgetML.Services.ML;
@@ -6,11 +8,12 @@ namespace SmartBudgetML.Services.ML;
 /// <summary>
 /// Implements on-device ML expense categorization using ML.NET
 /// and the SDCA Maximum Entropy (Stochastic Dual Coordinate Ascent) algorithm.
-/// 100% Local-First Edge Computing.
+/// Persists user category feedback in SQLite across app restarts.
 /// </summary>
 public class ExpenseCategorizerService : IExpenseCategorizerService
 {
     private readonly MLContext _mlContext;
+    private readonly IDatabaseService? _databaseService;
     private ITransformer? _model;
     private PredictionEngine<ExpenseTransactionData, CategoryPrediction>? _predictionEngine;
     private readonly List<ExpenseTransactionData> _userTrainingBuffer = new();
@@ -18,9 +21,16 @@ public class ExpenseCategorizerService : IExpenseCategorizerService
     private readonly SemaphoreSlim _trainLock = new(1, 1);
 
     public bool IsTrained { get; private set; } = false;
+    public int LastTrainingSampleCount { get; private set; } = 0;
 
     public ExpenseCategorizerService(int seed = 42)
+        : this(null, seed)
     {
+    }
+
+    public ExpenseCategorizerService(IDatabaseService? databaseService, int seed = 42)
+    {
+        _databaseService = databaseService;
         _mlContext = new MLContext(seed: seed);
     }
 
@@ -35,12 +45,31 @@ public class ExpenseCategorizerService : IExpenseCategorizerService
         await _trainLock.WaitAsync();
         try
         {
-            // 1. Gather baseline training samples + user feedback buffer + optional additional data
             var dataset = SeedTrainingData.GetDefaultDataset();
 
-            lock (_syncLock)
+            if (_databaseService != null)
             {
-                dataset.AddRange(_userTrainingBuffer);
+                await _databaseService.InitializeAsync();
+                var persistedFeedback = await _databaseService.CategoryFeedbacks.GetAllAsync();
+                foreach (var fb in persistedFeedback)
+                {
+                    int weight = Math.Clamp(fb.Count, 1, 20);
+                    for (int i = 0; i < weight; i++)
+                    {
+                        dataset.Add(new ExpenseTransactionData
+                        {
+                            Description = fb.RawDescription,
+                            CategoryName = fb.CategoryName
+                        });
+                    }
+                }
+            }
+            else
+            {
+                lock (_syncLock)
+                {
+                    dataset.AddRange(_userTrainingBuffer);
+                }
             }
 
             if (additionalData != null)
@@ -48,14 +77,10 @@ public class ExpenseCategorizerService : IExpenseCategorizerService
                 dataset.AddRange(additionalData);
             }
 
-            // 2. Load into IDataView
+            LastTrainingSampleCount = dataset.Count;
+
             var trainingDataView = _mlContext.Data.LoadFromEnumerable(dataset);
 
-            // 3. Define ML.NET NLP Pipeline
-            // - Map string CategoryName to uint key "Label"
-            // - Featurize raw Description text into numeric n-gram features
-            // - Apply SDCA Maximum Entropy multiclass classification trainer
-            // - Map predicted key back to string CategoryName
             var dataProcessPipeline = _mlContext.Transforms.Conversion.MapValueToKey(
                     inputColumnName: nameof(ExpenseTransactionData.CategoryName),
                     outputColumnName: "Label")
@@ -74,7 +99,6 @@ public class ExpenseCategorizerService : IExpenseCategorizerService
                     inputColumnName: "PredictedLabel",
                     outputColumnName: nameof(CategoryPrediction.PredictedCategory)));
 
-            // 4. Train the model asynchronously
             await Task.Run(() =>
             {
                 _model = trainingPipeline.Fit(trainingDataView);
@@ -101,7 +125,6 @@ public class ExpenseCategorizerService : IExpenseCategorizerService
 
         if (!IsTrained || _predictionEngine == null)
         {
-            // Auto-train on demand if called before explicit initialization
             TrainAsync().GetAwaiter().GetResult();
         }
 
@@ -119,17 +142,47 @@ public class ExpenseCategorizerService : IExpenseCategorizerService
             return;
         }
 
-        lock (_syncLock)
+        var rawDesc = description.Trim();
+        var normDesc = rawDesc.ToLowerInvariant();
+        var catName = confirmedCategory.Trim();
+
+        if (_databaseService != null)
         {
-            // Add user feedback sample to local buffer
-            _userTrainingBuffer.Add(new ExpenseTransactionData
+            await _databaseService.InitializeAsync();
+            var existing = await _databaseService.CategoryFeedbacks.FirstOrDefaultAsync(
+                f => f.NormalizedDescription == normDesc && f.CategoryName == catName);
+
+            if (existing != null)
             {
-                Description = description.Trim(),
-                CategoryName = confirmedCategory.Trim()
-            });
+                existing.Count += 1;
+                existing.RawDescription = rawDesc;
+                existing.UpdatedAt = DateTime.UtcNow;
+                await _databaseService.CategoryFeedbacks.UpdateAsync(existing);
+            }
+            else
+            {
+                await _databaseService.CategoryFeedbacks.InsertAsync(new CategoryFeedback
+                {
+                    NormalizedDescription = normDesc,
+                    RawDescription = rawDesc,
+                    CategoryName = catName,
+                    Count = 1,
+                    UpdatedAt = DateTime.UtcNow
+                });
+            }
+        }
+        else
+        {
+            lock (_syncLock)
+            {
+                _userTrainingBuffer.Add(new ExpenseTransactionData
+                {
+                    Description = rawDesc,
+                    CategoryName = catName
+                });
+            }
         }
 
-        // Trigger incremental retrain
         await TrainAsync();
     }
 }

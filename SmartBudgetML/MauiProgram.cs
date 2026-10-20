@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
 using SmartBudgetML.Services.Auth;
+using SmartBudgetML.Services.Data;
 using SmartBudgetML.Services.Database;
+using SmartBudgetML.Services.Formatting;
 using SmartBudgetML.Services.ML;
 
 namespace SmartBudgetML;
@@ -24,8 +26,12 @@ public static class MauiProgram
         builder.Logging.AddDebug();
 #endif
 
-        // Data & Infrastructure
+        // Data, Export & Formatting Infrastructure
         builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
+        builder.Services.AddSingleton<IAppSettingsProvider, AppSettingsProvider>();
+        builder.Services.AddSingleton<IFileExportService, LocalFileExportService>();
+        builder.Services.AddSingleton<ICsvExpenseExporter, CsvExpenseExporter>();
+        builder.Services.AddSingleton<ICurrencyFormatter, CurrencyFormatter>();
 
         // Security & Authentication
         builder.Services.AddSingleton<IBiometricService, BiometricService>();
@@ -33,6 +39,7 @@ public static class MauiProgram
 
         // On-Device Machine Learning (ML.NET)
         builder.Services.AddSingleton<IExpenseCategorizerService, ExpenseCategorizerService>();
+        builder.Services.AddSingleton<IModelEvaluator, ModelEvaluator>();
         builder.Services.AddSingleton<IBudgetForecastingService, BudgetForecastingService>();
 
         return builder.Build();

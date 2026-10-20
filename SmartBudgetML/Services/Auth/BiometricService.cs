@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Plugin.Fingerprint;
 using Plugin.Fingerprint.Abstractions;
 
@@ -9,6 +10,13 @@ namespace SmartBudgetML.Services.Auth;
 /// </summary>
 public class BiometricService : IBiometricService
 {
+    private readonly ILogger<BiometricService>? _logger;
+
+    public BiometricService(ILogger<BiometricService>? logger = null)
+    {
+        _logger = logger;
+    }
+
     public async Task<bool> IsAvailableAsync()
     {
         try
@@ -16,9 +24,9 @@ public class BiometricService : IBiometricService
             var status = await CrossFingerprint.Current.GetAvailabilityAsync();
             return status == FingerprintAvailability.Available;
         }
-        catch
+        catch (Exception ex)
         {
-            // Graceful fallback on non-supported platforms / emulators
+            _logger?.LogWarning(ex, "Biometric availability check failed; falling back to unavailable.");
             return false;
         }
     }
@@ -36,8 +44,9 @@ public class BiometricService : IBiometricService
             var result = await CrossFingerprint.Current.AuthenticateAsync(request);
             return result.Authenticated;
         }
-        catch
+        catch (Exception ex)
         {
+            _logger?.LogWarning(ex, "Biometric authentication failed.");
             return false;
         }
     }

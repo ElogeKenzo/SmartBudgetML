@@ -47,5 +47,25 @@ public class AppSettings : IEntity
     /// </summary>
     public int AutoLockTimeoutSeconds { get; set; } = 300;
 
+    /// <summary>
+    /// Minimum ML confidence threshold (0.0 to 1.0) required to auto-select a predicted category.
+    /// </summary>
+    public float MlConfidenceThreshold { get; set; } = 0.70f;
+
+    /// <summary>
+    /// Whether automatic ML category prediction is active when entering expenses.
+    /// </summary>
+    public bool AutoCategorizeEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Whether over-budget alerts are enabled.
+    /// </summary>
+    public bool OverBudgetAlertsEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Whether daily expense logging reminders are enabled.
+    /// </summary>
+    public bool DailyRemindersEnabled { get; set; } = false;
+
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
