@@ -4,6 +4,7 @@ using SmartBudgetML.Services.Data;
 using SmartBudgetML.Services.Database;
 using SmartBudgetML.Services.Formatting;
 using SmartBudgetML.Services.ML;
+using SmartBudgetML.Services.Security;
 
 namespace SmartBudgetML;
 
@@ -26,14 +27,21 @@ public static class MauiProgram
         builder.Logging.AddDebug();
 #endif
 
+        // Security Key Store & SQLCipher Encrypted Database
+        builder.Services.AddSingleton<ISecureKeyStore, MauiSecureKeyStore>();
+        builder.Services.AddSingleton<IDatabaseService>(sp =>
+            new DatabaseService(
+                DatabaseConstants.DatabasePath,
+                sp.GetRequiredService<ISecureKeyStore>()));
+
         // Data, Export & Formatting Infrastructure
-        builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
         builder.Services.AddSingleton<IAppSettingsProvider, AppSettingsProvider>();
         builder.Services.AddSingleton<IFileExportService, LocalFileExportService>();
         builder.Services.AddSingleton<ICsvExpenseExporter, CsvExpenseExporter>();
         builder.Services.AddSingleton<ICurrencyFormatter, CurrencyFormatter>();
 
         // Security & Authentication
+        builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
         builder.Services.AddSingleton<IBiometricService, BiometricService>();
         builder.Services.AddSingleton<ILocalAuthService, LocalAuthService>();
 

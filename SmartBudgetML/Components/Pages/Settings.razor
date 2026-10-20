@@ -17,7 +17,7 @@
     <div class="screen-header-row">
         <div>
             <h1 class="screen-title">Settings</h1>
-            <p class="screen-subtitle">Configure AI and edge storage</p>
+            <p class="screen-subtitle">Configure AI, security and edge storage</p>
         </div>
         <button id="btn-settings-back" class="header-action-btn" type="button" title="Back" @onclick="GoHome">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
@@ -90,7 +90,32 @@
         </div>
     </div>
 
-    @* Section 2: Budget & Notifications *@
+    @* Section 2: Security & Auto-Lock *@
+    <div class="settings-section-card" id="section-security-settings">
+        <span class="settings-section-title">
+            <span>🛡️</span> Security & Vault Protection
+        </span>
+
+        <div class="form-group-dark">
+            <label class="form-label-dark" for="select-autolock">Auto-lock timeout on background</label>
+            <select id="select-autolock" class="form-input-dark" @bind="AutoLockTimeoutSeconds" @bind:after="SaveSettingsAsync">
+                <option value="0">Immediately (0s)</option>
+                <option value="30">After 30 seconds</option>
+                <option value="60">After 1 minute</option>
+                <option value="300">After 5 minutes</option>
+            </select>
+        </div>
+
+        <div class="switch-container bordered-top">
+            <div class="switch-label-group">
+                <span class="switch-title">Protect screen (FLAG_SECURE)</span>
+                <span class="switch-desc">Hide app preview in task switcher and block screenshots</span>
+            </div>
+            <ToggleSwitch Id="toggle-screen-protection" Value="IsScreenProtectionEnabled" ValueChanged="OnScreenProtectionChanged" />
+        </div>
+    </div>
+
+    @* Section 3: Budget & Notifications *@
     <div class="settings-section-card" id="section-budget-settings">
         <span class="settings-section-title">
             <span>📊</span> Budget & Notifications
@@ -119,7 +144,7 @@
         </div>
     </div>
 
-    @* Section 3: Data & Storage *@
+    @* Section 4: Data & Storage *@
     <div class="settings-section-card" id="section-data-storage">
         <span class="settings-section-title">
             <span>💾</span> Data & Edge Storage
@@ -151,13 +176,13 @@
             <span style="font-size: 11px; color: var(--text-muted);">@DbSize</span>
         </div>
 
-        <div class="settings-action-row danger" id="row-clear-data" @onclick="ConfirmClearDatabase">
+        <div class="settings-action-row danger" id="row-clear-data" @onclick="HandlePurgeClick">
             <div class="action-row-left">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                 </svg>
-                <span>Clear Local Database</span>
+                <span>@(IsConfirmingPurge ? "⚠️ Tap again to permanently erase vault & key" : "Clear Local Database & Encryption Key")</span>
             </div>
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="9 18 15 12 9 6"></polyline>
@@ -167,7 +192,7 @@
 
     @* App Version Footnote *@
     <p class="card-footnote" style="text-align: center; margin: 12px 0 24px 0;">
-        SmartBudget ML · 100% On-Device · Zero Cloud · Local-First
+        SmartBudget ML · SQLCipher 256-bit · PBKDF2 600k · 100% On-Device
     </p>
 </div>
 
@@ -175,6 +200,9 @@
     private AppSettings? CurrentSettings;
     private bool AutoCategorizeEnabled = true;
     private int MlConfidenceThresholdPercent = 70;
+    private int AutoLockTimeoutSeconds = 300;
+    private bool IsScreenProtectionEnabled = true;
+    private bool IsConfirmingPurge = false;
     private bool IsRetraining = false;
     private ModelEvaluationMetrics EvaluationMetrics = ModelEvaluationMetrics.Unevaluated();
     private string? FeedbackMessage;
@@ -191,6 +219,8 @@
             CurrentSettings = await SettingsProvider.GetOrCreateSettingsAsync();
             AutoCategorizeEnabled = CurrentSettings.AutoCategorizeEnabled;
             MlConfidenceThresholdPercent = (int)Math.Round(CurrentSettings.MlConfidenceThreshold * 100f);
+            AutoLockTimeoutSeconds = CurrentSettings.AutoLockTimeoutSeconds;
+            IsScreenProtectionEnabled = CurrentSettings.IsScreenProtectionEnabled;
             OverBudgetAlertsEnabled = CurrentSettings.OverBudgetAlertsEnabled;
             DailyRemindersEnabled = CurrentSettings.DailyRemindersEnabled;
 
@@ -218,6 +248,15 @@
         await SaveSettingsAsync();
     }
 
+    private async Task OnScreenProtectionChanged(bool enabled)
+    {
+        IsScreenProtectionEnabled = enabled;
+#if ANDROID
+        MainActivity.SetScreenProtection(enabled);
+#endif
+        await SaveSettingsAsync();
+    }
+
     private async Task OnOverBudgetAlertsChanged(bool enabled)
     {
         OverBudgetAlertsEnabled = enabled;
@@ -237,6 +276,8 @@
             var settings = CurrentSettings ?? await SettingsProvider.GetOrCreateSettingsAsync();
             settings.AutoCategorizeEnabled = AutoCategorizeEnabled;
             settings.MlConfidenceThreshold = Math.Clamp(MlConfidenceThresholdPercent / 100f, 0.05f, 0.99f);
+            settings.AutoLockTimeoutSeconds = AutoLockTimeoutSeconds;
+            settings.IsScreenProtectionEnabled = IsScreenProtectionEnabled;
             settings.OverBudgetAlertsEnabled = OverBudgetAlertsEnabled;
             settings.DailyRemindersEnabled = DailyRemindersEnabled;
             await SettingsProvider.SaveSettingsAsync(settings);
@@ -263,7 +304,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error updating monthly budget.");
-            FeedbackMessage = $"Could not save budget: {ex.Message}";
+            FeedbackMessage = "Could not save budget setting.";
         }
     }
 
@@ -339,22 +380,27 @@
         }
     }
 
-    private async Task ConfirmClearDatabase()
+    private async Task HandlePurgeClick()
     {
+        if (!IsConfirmingPurge)
+        {
+            IsConfirmingPurge = true;
+            FeedbackMessage = "Confirm purge: tap the red button again to permanently delete the database file and encryption key.";
+            return;
+        }
+
         try
         {
-            var expenses = await DbService.Expenses.GetAllAsync();
-            foreach (var e in expenses)
-            {
-                await DbService.Expenses.DeleteAsync(e);
-            }
-            DbSize = await DbService.GetFormattedDatabaseSizeAsync();
-            FeedbackMessage = "Local transactions cleared.";
+            IsConfirmingPurge = false;
+            await DbService.PurgeDatabaseAndKeyAsync();
+            await DbService.InitializeAsync();
+            AuthService.LockApp();
+            NavManager.NavigateTo("onboarding");
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Clear database failed.");
-            FeedbackMessage = $"Failed to clear: {ex.Message}";
+            Logger.LogError(ex, "Secure database purge failed.");
+            FeedbackMessage = $"Failed to purge database: {ex.Message}";
         }
     }
 

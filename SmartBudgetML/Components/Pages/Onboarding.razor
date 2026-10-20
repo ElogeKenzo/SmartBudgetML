@@ -1,5 +1,6 @@
 @page "/onboarding"
 @inject NavigationManager NavManager
+@inject ILocalAuthService AuthService
 
 <PageTitle>Create your account · SmartBudget ML</PageTitle>
 
@@ -10,7 +11,7 @@
         <p class="page-subtitle">
             @(_step == 1
                 ? "Your profile never leaves this device. No cloud, no tracking."
-                : "Set a local PIN. Biometrics can replace it on supported devices.")
+                : "Set a strong 6-digit local PIN. Biometrics can replace it on supported devices.")
         </p>
 
         <div class="stepper" aria-label="Onboarding progress">
@@ -48,14 +49,14 @@
                 <div class="form-group-dark flex-1">
                     <label class="form-label-dark" for="input-income">Monthly income</label>
                     <input id="input-income" type="number" inputmode="decimal" min="0" step="50" class="form-input-dark"
-                           placeholder="3500" @bind="_model.MonthlyIncome" />
+                           placeholder="150000" @bind="_model.MonthlyIncome" />
                 </div>
             </div>
 
             <div class="form-group-dark">
                 <label class="form-label-dark" for="input-savings">Monthly savings goal</label>
                 <input id="input-savings" type="number" inputmode="decimal" min="0" step="50" class="form-input-dark"
-                       placeholder="500" @bind="_model.MonthlySavingsGoal" />
+                       placeholder="25000" @bind="_model.MonthlySavingsGoal" />
             </div>
 
             @if (_error is not null)
@@ -73,15 +74,15 @@
     {
         <div class="card-dark form-card">
             <div class="form-group-dark">
-                <label class="form-label-dark" for="input-pin">4-digit PIN</label>
-                <input id="input-pin" type="password" inputmode="numeric" maxlength="4" class="form-input-dark pin-input"
-                       placeholder="••••" @bind="_model.Pin" @bind:event="oninput" autocomplete="new-password" />
+                <label class="form-label-dark" for="input-pin">6-digit PIN (avoid 000000, 123456)</label>
+                <input id="input-pin" type="password" inputmode="numeric" maxlength="6" class="form-input-dark pin-input"
+                       placeholder="••••••" @bind="_model.Pin" @bind:event="oninput" autocomplete="new-password" />
             </div>
 
             <div class="form-group-dark">
                 <label class="form-label-dark" for="input-pin-confirm">Confirm PIN</label>
-                <input id="input-pin-confirm" type="password" inputmode="numeric" maxlength="4" class="form-input-dark pin-input"
-                       placeholder="••••" @bind="_model.PinConfirm" @bind:event="oninput" autocomplete="new-password" />
+                <input id="input-pin-confirm" type="password" inputmode="numeric" maxlength="6" class="form-input-dark pin-input"
+                       placeholder="••••••" @bind="_model.PinConfirm" @bind:event="oninput" autocomplete="new-password" />
             </div>
 
             <div class="switch-container bordered-top">
@@ -107,14 +108,12 @@
     }
 
     <p class="privacy-footnote">
-        🔒 Data encrypted at rest with a PBKDF2-hashed PIN · ML runs 100% on-device
+        🔒 SQLCipher encrypted vault · PBKDF2-SHA256 (600,000 iterations) · 100% on-device
     </p>
 </section>
 
-@inject ILocalAuthService AuthService
-
 @code {
-    private static readonly string[] Currencies = { "$", "€", "£", "FCFA", "MAD", "¥" };
+    private static readonly string[] Currencies = { "FCFA", "€", "$", "£", "MAD" };
 
     private int _step = 1;
     private bool _busy;
@@ -140,9 +139,9 @@
     private async Task Register()
     {
         _error = null;
-        if (_model.Pin.Length != 4 || !_model.Pin.All(char.IsDigit))
+        if (!AuthService.ValidatePinComplexity(_model.Pin, out var complexityError))
         {
-            _error = "PIN must be exactly 4 digits.";
+            _error = complexityError;
             return;
         }
         if (_model.Pin != _model.PinConfirm)
@@ -162,6 +161,7 @@
                 _model.EnableBiometrics,
                 _model.MonthlySavingsGoal);
 
+            await AuthService.SetPinAsync(_model.Pin, enforceComplexity: true);
             AuthService.MarkAppUnlocked();
             NavManager.NavigateTo("");
         }
@@ -180,7 +180,7 @@
     {
         public string FullName { get; set; } = string.Empty;
         public string? Email { get; set; }
-        public string CurrencySymbol { get; set; } = "$";
+        public string CurrencySymbol { get; set; } = "FCFA";
         public decimal MonthlyIncome { get; set; }
         public decimal MonthlySavingsGoal { get; set; }
         public string Pin { get; set; } = string.Empty;

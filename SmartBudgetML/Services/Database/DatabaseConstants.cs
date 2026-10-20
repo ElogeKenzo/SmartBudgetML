@@ -4,8 +4,9 @@ using SQLite;
 namespace SmartBudgetML.Services.Database;
 
 /// <summary>
-/// Centralized database configuration and flags for local SQLite.
-/// Works cross-platform on Android, iOS, Windows, Mac, and in unit test environments.
+/// Centralized database configuration and flags for local SQLite / SQLCipher.
+/// Works cross-platform on Android, Windows, and in unit test environments.
+/// Does not use SharedCache so SQLCipher key verification is enforced per connection.
 /// </summary>
 public static class DatabaseConstants
 {
@@ -14,7 +15,7 @@ public static class DatabaseConstants
     public const SQLiteOpenFlags Flags =
         SQLiteOpenFlags.ReadWrite |
         SQLiteOpenFlags.Create |
-        SQLiteOpenFlags.SharedCache;
+        SQLiteOpenFlags.FullMutex;
 
     /// <summary>
     /// Gets the platform-appropriate local application data path.
