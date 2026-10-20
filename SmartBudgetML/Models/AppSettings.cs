@@ -35,6 +35,36 @@ public class AppSettings : IEntity
     public string? PinSalt { get; set; }
 
     /// <summary>
+    /// PBKDF2 hash version: 1 = legacy (10,000 iterations), 2 = OWASP (600,000 iterations).
+    /// </summary>
+    public int PinHashVersion { get; set; } = 1;
+
+    /// <summary>
+    /// Number of consecutive failed PIN attempts (persisted across restarts).
+    /// </summary>
+    public int FailedPinAttempts { get; set; } = 0;
+
+    /// <summary>
+    /// UTC timestamp until which PIN verification is locked out.
+    /// </summary>
+    public DateTime? LockoutUntilUtc { get; set; }
+
+    /// <summary>
+    /// UTC timestamp of the last failed PIN attempt (used to detect clock rollback).
+    /// </summary>
+    public DateTime? LastFailedAttemptUtc { get; set; }
+
+    /// <summary>
+    /// Configured PIN length (4 or 6 digits; defaults to 6 for new accounts).
+    /// </summary>
+    public int PinLength { get; set; } = 6;
+
+    /// <summary>
+    /// Whether Android FLAG_SECURE screen protection is enabled.
+    /// </summary>
+    public bool IsScreenProtectionEnabled { get; set; } = true;
+
+    /// <summary>
     /// UI Theme preference (Dark theme default: Deep Indigo / Cyan).
     /// </summary>
     public bool DarkMode { get; set; } = true;

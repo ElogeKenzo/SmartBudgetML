@@ -5,7 +5,7 @@ namespace SmartBudgetML.Services.Database;
 
 /// <summary>
 /// Interface for database lifecycle, table provisioning, entity repositories,
-/// real file size inspection, and atomic SQLite backup/restore.
+/// real file size inspection, atomic SQLite backup/restore, and SQLCipher encryption/purge.
 /// </summary>
 public interface IDatabaseService
 {
@@ -19,8 +19,10 @@ public interface IDatabaseService
     Task SeedDefaultDataAsync();
 
     string DatabasePath { get; }
+    bool IsEncrypted { get; }
     Task<long> GetDatabaseSizeBytesAsync();
     Task<string> GetFormattedDatabaseSizeAsync();
     Task<string> BackupDatabaseAsync(string destinationPath);
     Task RestoreDatabaseAsync(string backupFilePath);
+    Task PurgeDatabaseAndKeyAsync();
 }

@@ -6,7 +6,9 @@
 
 <PageTitle>Unlock · SmartBudget ML</PageTitle>
 
-<LockScreen Subtitle="Enter your PIN to access your vault"
+<LockScreen Subtitle="@($"Enter your {PinLength}-digit PIN to access your vault")"
+            PinLength="@PinLength"
+            IsLockedOut="@IsLockedOut"
             ErrorMessage="@ErrorMessage"
             ShowBiometric="true"
             OnPinComplete="HandlePinComplete"
@@ -14,21 +16,45 @@
 
 @code {
     private string? ErrorMessage;
+    private int PinLength = 6;
+    private bool IsLockedOut = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var settings = await AuthService.GetSettingsAsync();
+            PinLength = settings.PinLength == 4 ? 4 : 6;
+
+            var remaining = await AuthService.GetRemainingLockoutTimeAsync();
+            if (remaining.HasValue && remaining.Value > TimeSpan.Zero)
+            {
+                IsLockedOut = true;
+                ErrorMessage = $"Locked due to failed attempts. Retry in {Math.Ceiling(remaining.Value.TotalSeconds):0}s.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error initializing Unlock screen.");
+        }
+    }
 
     private async Task HandlePinComplete(string pin)
     {
         ErrorMessage = null;
         try
         {
-            var isValid = await AuthService.VerifyPinAsync(pin);
-            if (isValid)
+            var result = await AuthService.VerifyPinWithStatusAsync(pin);
+            if (result.IsValid)
             {
+                IsLockedOut = false;
                 AuthService.MarkAppUnlocked();
                 NavManager.NavigateTo("");
             }
             else
             {
-                ErrorMessage = "Incorrect PIN. Please try again.";
+                IsLockedOut = result.IsLockedOut;
+                ErrorMessage = result.ErrorMessage ?? "Incorrect PIN. Please try again.";
             }
         }
         catch (Exception ex)
