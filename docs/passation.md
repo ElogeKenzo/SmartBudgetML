@@ -7,8 +7,15 @@ Phase 8 : corriger les écarts relevés par l'audit du code `develop` (voir `doc
 - **Lot 8A terminé** (`feature/phase8-a-verite` fusionné dans `develop`) : build MAUI Android/Windows réparé, vraies métriques ML exportées (`175/176` soit `99,43 %`), script `./tools/verify.ps1` et `docs/generated/STATUS.md` en place, documents (`README.md`, `RAPPORT_PROJET.md`, `ML_EVALUATION.md`, `PHASE-6.md`, `PHASE-7.md`) et registre (`docs/AUDIT_REGISTER.md`) réalignés, identifiants SMS anonymisés (`N12`), `.gitignore` durci (`N15`).
 
 ## 2. Problématique en cours
-Aucune. Prochain lot : **8B** (`docs/phase8/8B-ci-reelle.md`).  
-En attente de l'autorisation de l'utilisateur pour pousser `develop` et la branche du lot afin que la CI GitHub Actions s'exécute réellement en 8B.
+**Lot 8B en cours** sur `feature/phase8-b-ci`. Push de `develop` et `feature/phase8-b-ci` autorisé par l'utilisateur, uniquement quand `./tools/verify.ps1` est vert en local (annoncer « je pousse maintenant » avant).
+
+Ordre de travail demandé (un commit par étape) :
+1. [x] **XA0141 / 16 Ko** : la cause était `sqlite-net-sqlcipher 1.9.172`, qui tire `SQLitePCLRaw.lib.e_sqlcipher 2.1.2` : ses `libe_sqlcipher.so` ont `p_align = 4096`. `SQLitePCLRaw.bundle_e_sqlcipher 2.1.11` (existe sur nuget.org, dernière version stable au 22/10/2026) est référencé directement dans les deux `.csproj` : ses `.so` ont `p_align = 16384`. Preuves de cette session : rebuild `--no-incremental` Android Release = 2 avertissements (2 × CS1570), plus aucun XA0141 ; `python tools/check_elf_alignment.py <apk>` = 24/24 alignées ; `zipalign -c -P 16 -v 4` = « Verification successful » ; tests 139/139. Exigence Google : https://developer.android.com/guide/practices/page-sizes (apps ciblant Android 15+, 64 bits ; mises à jour bloquées à partir du 1er février 2027).
+2. [ ] Test instable `SqliteRepositoryTests` (point B) + suite complète 3 fois de suite.
+3. [ ] Seuil de fiabilité de la prévision dans la passation (point C) + suppression de `PHASE8_FICHIER_UNIQUE.md` (point D).
+4. [ ] `SelfTestRunner` (`#if SB_SELFTEST`) + preuve que le build Release normal n'en contient aucune trace + script d'émulateur + workflow CI.
+
+Changements encore non commités laissés par la session précédente (à reprendre à l'étape 4) : `EnableSelfTest` → `SB_SELFTEST` dans `SmartBudgetML.csproj` (+ correction d'indentation), `SB_SELFTEST` et `coverlet.collector` dans `SmartBudgetML.Tests.csproj` (accepté par l'utilisateur). Fins de ligne : garder celles de chaque fichier (les `.csproj` sont en LF), pas de `.gitattributes`.
 
 ## 3. Fichiers importants
 - `docs/phase8/00-INDEX.md` et `docs/phase8/8B-ci-reelle.md`
