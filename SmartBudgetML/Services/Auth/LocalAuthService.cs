@@ -356,7 +356,7 @@ public class LocalAuthService : ILocalAuthService
         var profile = existingProfile ?? new UserProfile();
 
         profile.FullName = fullName.Trim();
-        profile.CurrencySymbol = string.IsNullOrWhiteSpace(currencySymbol) ? "$" : currencySymbol.Trim();
+        profile.CurrencySymbol = string.IsNullOrWhiteSpace(currencySymbol) ? "FCFA" : currencySymbol.Trim();
         profile.MonthlyIncome = monthlyIncome;
         profile.MonthlySavingsGoal = monthlySavingsGoal;
         profile.IsOnboardingCompleted = true;
@@ -412,7 +412,8 @@ public class LocalAuthService : ILocalAuthService
                 IsBiometricEnabled = false,
                 IsPinAuthEnabled = false,
                 DarkMode = true,
-                CurrencyCode = "USD",
+                CurrencyCode = "XAF",
+                Language = "fr",
                 PinHashVersion = CurrentHashVersion,
                 PinLength = 6,
                 IsScreenProtectionEnabled = true

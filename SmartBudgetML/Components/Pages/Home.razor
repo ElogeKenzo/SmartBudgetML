@@ -1,28 +1,33 @@
 @page "/"
+@inject IDatabaseService DbService
+@inject ILocalAuthService AuthService
+@inject IBudgetForecastingService Forecaster
+@inject IStringLocalizer<AppStrings> L
+@inject NavigationManager NavManager
 
-<PageTitle>Dashboard · SmartBudget ML</PageTitle>
-<h1 class="visually-hidden">Dashboard</h1>
+<PageTitle>@L["Home_PageTitle"]</PageTitle>
+<h1 class="visually-hidden">@L["Nav_Home"]</h1>
 
 @* ---------- Hero: remaining budget ---------- *@
 <section class="card-hero-gradient" id="card-remaining-budget">
     <div class="hero-top-row">
-        <span class="hero-label">Remaining this month</span>
+        <span class="hero-label">@L["Home_RemainingThisMonth"]</span>
         <span class="hero-change-pill @(Forecast.ProjectedSurplusOrDeficit >= 0 ? "positive" : "negative")">
-            @(Forecast.ProjectedSurplusOrDeficit >= 0 ? "▲ On track" : "▼ Over pace")
+            @(Forecast.ProjectedSurplusOrDeficit >= 0 ? L["Home_OnTrack"] : L["Home_OverPace"])
         </span>
     </div>
     <div class="hero-amount">@UiFormat.Money(Remaining, Currency)</div>
     <div class="hero-meta-row">
-        <span>Spent <strong>@UiFormat.Money(Forecast.CurrentTotalSpend, Currency)</strong></span>
-        <span>of @UiFormat.Money(Forecast.MonthlyBudget, Currency, 0)</span>
+        <span>@L["Home_Spent"] <strong>@UiFormat.Money(Forecast.CurrentTotalSpend, Currency)</strong></span>
+        <span>@L["Home_Of"] @UiFormat.Money(Forecast.MonthlyBudget, Currency, 0)</span>
     </div>
 
     <div class="budget-progress-track" role="progressbar" aria-valuenow="@((int)SpentPercent)" aria-valuemin="0" aria-valuemax="100">
         <div class="budget-progress-fill @ProgressClass" style="width:@UiFormat.Num(Math.Min(SpentPercent, 100))%"></div>
     </div>
     <div class="hero-meta-row muted">
-        <span>@Forecast.DaysRemaining days left</span>
-        <span>Safe daily limit <strong class="cyan">@UiFormat.Money(Forecast.RecommendedDailyLimit, Currency)</strong></span>
+        <span>@L["Home_DaysLeft", Forecast.DaysRemaining]</span>
+        <span>@L["Home_SafeDailyLimit"] <strong class="cyan">@UiFormat.Money(Forecast.RecommendedDailyLimit, Currency)</strong></span>
     </div>
 </section>
 
@@ -32,36 +37,35 @@
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3l1.9 5.8L20 10l-6.1 1.2L12 17l-1.9-5.8L4 10l6.1-1.2z"></path></svg>
     </div>
     <div class="ml-insight-text">
-        <strong>ML forecast:</strong> you'll spend about
-        <strong>@UiFormat.Money(Forecast.ProjectedEndMonthSpend, Currency, 0)</strong> by month-end
-        (@UiFormat.Percent(Forecast.ProjectedBudgetUtilizationPercentage) of budget).
+        <strong>@L["Home_MlForecastLabel"]</strong>
+        @L["Home_MlForecastBody", UiFormat.Money(Forecast.ProjectedEndMonthSpend, Currency, 0), UiFormat.Percent(Forecast.ProjectedBudgetUtilizationPercentage)]
     </div>
 </section>
 
 @* ---------- Quick stats ---------- *@
 <section class="stat-grid">
     <div class="stat-tile" id="stat-daily-average">
-        <span class="stat-label">Daily average</span>
+        <span class="stat-label">@L["Home_DailyAverage"]</span>
         <span class="stat-value">@UiFormat.Money(Forecast.AverageDailySpend, Currency)</span>
     </div>
     <div class="stat-tile" id="stat-burn-rate">
-        <span class="stat-label">Burn-rate trend</span>
-        <span class="stat-value">@UiFormat.Money(Forecast.DailyBurnRateSlope, Currency)<small>/day</small></span>
+        <span class="stat-label">@L["Home_BurnRateTrend"]</span>
+        <span class="stat-value">@UiFormat.Money(Forecast.DailyBurnRateSlope, Currency)<small>@L["Home_PerDay"]</small></span>
     </div>
 </section>
 
 @* ---------- Recent transactions ---------- *@
 <section>
     <div class="section-header">
-        <h2 class="section-title">Recent transactions</h2>
-        <a class="section-link" href="analytics" id="link-see-all">See all</a>
+        <h2 class="section-title">@L["Home_RecentTransactions"]</h2>
+        <a class="section-link" href="analytics" id="link-see-all">@L["Home_SeeAll"]</a>
     </div>
 
     @if (RecentTransactions.Count == 0)
     {
         <div class="empty-state">
             <span class="empty-emoji">🧾</span>
-            <p>No expenses yet. Tap <strong>+</strong> to add your first one.</p>
+            <p>@L["Home_NoExpensesYet"]</p>
         </div>
     }
     else
@@ -75,13 +79,8 @@
     }
 </section>
 
-@inject IDatabaseService DbService
-@inject ILocalAuthService AuthService
-@inject IBudgetForecastingService Forecaster
-@inject NavigationManager NavManager
-
 @code {
-    private string Currency = "$";
+    private string Currency = "FCFA";
     private BudgetForecastResult Forecast = new();
     private List<Expense> RecentTransactions = new();
 
@@ -108,14 +107,14 @@
         try
         {
             var profile = await AuthService.GetUserProfileAsync();
-            if (profile != null)
+            if (profile != null && !string.IsNullOrWhiteSpace(profile.CurrencySymbol))
             {
                 Currency = profile.CurrencySymbol;
             }
 
             decimal monthlyBudget = (profile != null && profile.MonthlyIncome > 0)
                 ? Math.Max(100m, profile.MonthlyIncome - profile.MonthlySavingsGoal)
-                : 3000m;
+                : 150_000m;
 
             var allExpenses = await DbService.Expenses.GetAllAsync();
             var allCategories = await DbService.Categories.GetAllAsync();
@@ -125,7 +124,7 @@
             {
                 if (catDict.TryGetValue(exp.CategoryId, out var cat))
                 {
-                    exp.CategoryName = cat.Name;
+                    exp.CategoryName = CategoryCatalog.GetDisplayName(cat, L.CurrentLanguage);
                     exp.CategoryColor = cat.ColorHex;
                     exp.CategoryIcon = cat.Icon;
                 }
@@ -136,10 +135,8 @@
                 .Where(e => e.Date.Month == today.Month && e.Date.Year == today.Year)
                 .ToList();
 
-            // Run on-device Linear Regression forecasting
-            Forecast = Forecaster.ForecastMonthEnd(monthExpenses, monthlyBudget, today);
+            Forecast = Forecaster.ForecastMonthEnd(monthExpenses, monthlyBudget, today, Currency);
 
-            // Latest 5 transactions
             RecentTransactions = allExpenses
                 .OrderByDescending(e => e.Date)
                 .ThenByDescending(e => e.Id)

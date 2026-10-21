@@ -5,6 +5,7 @@
 @inject IDatabaseService DbService
 @inject ILocalAuthService AuthService
 @inject IExpenseCategorizerService Categorizer
+@inject IStringLocalizer<AppStrings> L
 @inject ILogger<MainLayout> Logger
 
 <div class="app-container">
@@ -13,7 +14,7 @@
         <div class="app-loading-screen">
             <div class="spinner-glow"></div>
             <div class="loading-title">SmartBudget <span>ML</span></div>
-            <div class="loading-subtitle">Initializing Local Vault</div>
+            <div class="loading-subtitle">@L["Layout_InitializingVault"]</div>
         </div>
     }
     else
@@ -28,7 +29,7 @@
                     <div class="brand-subtitle">@GreetingText</div>
                 </div>
 
-                <button id="btn-notifications" class="header-action-btn" type="button" title="Lock App" @onclick="LockApp">
+                <button id="btn-notifications" class="header-action-btn" type="button" title="@L["Layout_LockApp"]" @onclick="LockApp">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
@@ -57,7 +58,7 @@
         get
         {
             var hour = DateTime.Now.Hour;
-            var salutation = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+            var salutation = hour < 12 ? L["Layout_GoodMorning"].Value : hour < 18 ? L["Layout_GoodAfternoon"].Value : L["Layout_GoodEvening"].Value;
             return string.IsNullOrWhiteSpace(UserDisplayName) ? salutation : $"{salutation}, {UserDisplayName}";
         }
     }
@@ -76,11 +77,18 @@
     protected override async Task OnInitializedAsync()
     {
         NavManager.LocationChanged += OnLocationChanged;
+        L.OnLanguageChanged += OnLanguageChanged;
 
         try
         {
             await DbService.InitializeAsync();
             await DbService.SeedDefaultDataAsync();
+
+            var settings = await AuthService.GetSettingsAsync();
+            if (!string.IsNullOrWhiteSpace(settings.Language))
+            {
+                L.SetLanguage(settings.Language);
+            }
 
             _ = Task.Run(async () =>
             {
@@ -145,8 +153,12 @@
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
         => InvokeAsync(StateHasChanged);
 
+    private void OnLanguageChanged()
+        => InvokeAsync(StateHasChanged);
+
     public void Dispose()
     {
         NavManager.LocationChanged -= OnLocationChanged;
+        L.OnLanguageChanged -= OnLanguageChanged;
     }
 }

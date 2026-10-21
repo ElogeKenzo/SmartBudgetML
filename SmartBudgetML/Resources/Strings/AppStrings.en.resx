@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <!-- Navigation & Layout -->
+  <data name="Nav_Home" xml:space="preserve"><value>Dashboard</value></data>
+  <data name="Nav_Analytics" xml:space="preserve"><value>Analytics</value></data>
+  <data name="Nav_AddExpense" xml:space="preserve"><value>Add expense</value></data>
+  <data name="Nav_Profile" xml:space="preserve"><value>Profile</value></data>
+  <data name="Nav_Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="Layout_InitializingVault" xml:space="preserve"><value>Initializing Local Vault</value></data>
+  <data name="Layout_GoodMorning" xml:space="preserve"><value>Good morning</value></data>
+  <data name="Layout_GoodAfternoon" xml:space="preserve"><value>Good afternoon</value></data>
+  <data name="Layout_GoodEvening" xml:space="preserve"><value>Good evening</value></data>
+  <data name="Layout_LockApp" xml:space="preserve"><value>Lock App</value></data>
+
+  <!-- Home / Dashboard -->
+  <data name="Home_PageTitle" xml:space="preserve"><value>Dashboard · SmartBudget ML</value></data>
+  <data name="Home_RemainingThisMonth" xml:space="preserve"><value>Remaining this month</value></data>
+  <data name="Home_OnTrack" xml:space="preserve"><value>▲ On track</value></data>
+  <data name="Home_OverPace" xml:space="preserve"><value>▼ Over pace</value></data>
+  <data name="Home_Spent" xml:space="preserve"><value>Spent</value></data>
+  <data name="Home_Of" xml:space="preserve"><value>of</value></data>
+  <data name="Home_DaysLeft" xml:space="preserve"><value>{0} days left</value></data>
+  <data name="Home_SafeDailyLimit" xml:space="preserve"><value>Safe daily limit</value></data>
+  <data name="Home_MlForecastLabel" xml:space="preserve"><value>ML forecast:</value></data>
+  <data name="Home_MlForecastBody" xml:space="preserve"><value>you'll spend about {0} by month-end ({1} of budget).</value></data>
+  <data name="Home_DailyAverage" xml:space="preserve"><value>Daily average</value></data>
+  <data name="Home_BurnRateTrend" xml:space="preserve"><value>Burn-rate trend</value></data>
+  <data name="Home_PerDay" xml:space="preserve"><value>/day</value></data>
+  <data name="Home_RecentTransactions" xml:space="preserve"><value>Recent transactions</value></data>
+  <data name="Home_SeeAll" xml:space="preserve"><value>See all</value></data>
+  <data name="Home_NoExpensesYet" xml:space="preserve"><value>No expenses yet. Tap + to add your first one.</value></data>
+
+  <!-- Analytics -->
+  <data name="Analytics_PageTitle" xml:space="preserve"><value>Analytics · SmartBudget ML</value></data>
+  <data name="Analytics_Title" xml:space="preserve"><value>Analytics</value></data>
+  <data name="Analytics_Subtitle" xml:space="preserve"><value>View and focus your spend</value></data>
+  <data name="Analytics_SpentSoFar" xml:space="preserve"><value>Spent so far</value></data>
+  <data name="Analytics_DaysRecorded" xml:space="preserve"><value>{0} days recorded</value></data>
+  <data name="Analytics_ForecastMonthEnd" xml:space="preserve"><value>Forecast month end</value></data>
+  <data name="Analytics_Surplus" xml:space="preserve"><value>surplus</value></data>
+  <data name="Analytics_Over" xml:space="preserve"><value>over</value></data>
+  <data name="Analytics_SpendingOutlook" xml:space="preserve"><value>Spending outlook</value></data>
+  <data name="Analytics_PastDays" xml:space="preserve"><value>Past days</value></data>
+  <data name="Analytics_MlForecast" xml:space="preserve"><value>ML forecast</value></data>
+  <data name="Analytics_Limit" xml:space="preserve"><value>Limit: {0}</value></data>
+  <data name="Analytics_DayN" xml:space="preserve"><value>Day {0}</value></data>
+  <data name="Analytics_ByCategory" xml:space="preserve"><value>By category</value></data>
+  <data name="Analytics_CategoriesCount" xml:space="preserve"><value>{0} categories</value></data>
+  <data name="Analytics_Total" xml:space="preserve"><value>Total</value></data>
+  <data name="Analytics_NoExpensesThisMonth" xml:space="preserve"><value>No expenses recorded for this month yet.</value></data>
+  <data name="Analytics_MlInsightLabel" xml:space="preserve"><value>ML Insight:</value></data>
+  <data name="Analytics_KeepDailySpendUnder" xml:space="preserve"><value>Keep daily spend under</value></data>
+
+  <!-- AddExpense -->
+  <data name="AddExpense_PageTitle" xml:space="preserve"><value>Add Expense · SmartBudget ML</value></data>
+  <data name="AddExpense_Title" xml:space="preserve"><value>Add transaction</value></data>
+  <data name="AddExpense_Subtitle" xml:space="preserve"><value>Track your spending with offline AI categorization</value></data>
+  <data name="AddExpense_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="AddExpense_AmountLabel" xml:space="preserve"><value>Amount ({0})</value></data>
+  <data name="AddExpense_Expense" xml:space="preserve"><value>Expense</value></data>
+  <data name="AddExpense_Income" xml:space="preserve"><value>Income</value></data>
+  <data name="AddExpense_Description" xml:space="preserve"><value>Description</value></data>
+  <data name="AddExpense_DescriptionPlaceholder" xml:space="preserve"><value>e.g. Moto bendskin, Facture ENEO, Marché Mokolo</value></data>
+  <data name="AddExpense_SuggestionLabel" xml:space="preserve"><value>Suggestion:</value></data>
+  <data name="AddExpense_Apply" xml:space="preserve"><value>Apply</value></data>
+  <data name="AddExpense_Category" xml:space="preserve"><value>Category</value></data>
+  <data name="AddExpense_Selected" xml:space="preserve"><value>Selected:</value></data>
+  <data name="AddExpense_Date" xml:space="preserve"><value>Date</value></data>
+  <data name="AddExpense_FixedExpenseCheck" xml:space="preserve"><value>Fixed / calendar expense (rent, tuition, monthly bill)</value></data>
+  <data name="AddExpense_Saving" xml:space="preserve"><value>Saving...</value></data>
+  <data name="AddExpense_SubmitIncome" xml:space="preserve"><value>+ Add income</value></data>
+  <data name="AddExpense_SubmitExpense" xml:space="preserve"><value>+ Add expense</value></data>
+  <data name="AddExpense_ErrAmount" xml:space="preserve"><value>Please enter an amount greater than 0.</value></data>
+  <data name="AddExpense_ErrDescription" xml:space="preserve"><value>Please provide a description.</value></data>
+  <data name="AddExpense_ErrCategory" xml:space="preserve"><value>Please select a category.</value></data>
+
+  <!-- Profile -->
+  <data name="Profile_PageTitle" xml:space="preserve"><value>Your Profile · SmartBudget ML</value></data>
+  <data name="Profile_Title" xml:space="preserve"><value>Your profile</value></data>
+  <data name="Profile_Subtitle" xml:space="preserve"><value>Your account, 100% local and private</value></data>
+  <data name="Profile_LocalAccount" xml:space="preserve"><value>Local account</value></data>
+  <data name="Profile_LocalVault" xml:space="preserve"><value>🔒 Local Vault #{0}</value></data>
+  <data name="Profile_MonthlyIncome" xml:space="preserve"><value>Monthly income</value></data>
+  <data name="Profile_BaseBudgetInput" xml:space="preserve"><value>Base budget input</value></data>
+  <data name="Profile_SavingsGoal" xml:space="preserve"><value>Savings goal</value></data>
+  <data name="Profile_TargetSavingsMo" xml:space="preserve"><value>Target savings/mo</value></data>
+  <data name="Profile_SecurityCredentials" xml:space="preserve"><value>Security &amp; Credentials</value></data>
+  <data name="Profile_ResetPin" xml:space="preserve"><value>Change PIN</value></data>
+  <data name="Profile_TestBiometrics" xml:space="preserve"><value>Test Biometrics</value></data>
+  <data name="Profile_SecurityFootnote" xml:space="preserve"><value>🔒 Your PIN is hashed locally via PBKDF2-SHA256 (600,000 iterations) and the database is encrypted with 256-bit SQLCipher. Zero data leaves this device.</value></data>
+  <data name="Profile_Preferences" xml:space="preserve"><value>Preferences</value></data>
+  <data name="Profile_Currency" xml:space="preserve"><value>Currency</value></data>
+  <data name="Profile_Language" xml:space="preserve"><value>Language</value></data>
+  <data name="Profile_BiometricUnlock" xml:space="preserve"><value>Biometric unlock</value></data>
+  <data name="Profile_BiometricDesc" xml:space="preserve"><value>Allow fingerprint unlock to open the app</value></data>
+  <data name="Profile_SettingsLink" xml:space="preserve"><value>Settings &amp; ML configuration</value></data>
+
+  <!-- Settings -->
+  <data name="Settings_PageTitle" xml:space="preserve"><value>Settings · SmartBudget ML</value></data>
+  <data name="Settings_Title" xml:space="preserve"><value>Settings</value></data>
+  <data name="Settings_Subtitle" xml:space="preserve"><value>Configure AI, security, and local storage</value></data>
+  <data name="Settings_Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Settings_AiSectionTitle" xml:space="preserve"><value>AI &amp; Hybrid Model</value></data>
+  <data name="Settings_OnDeviceMlBadge" xml:space="preserve"><value>● On-Device ML</value></data>
+  <data name="Settings_AutoCategorize" xml:space="preserve"><value>Auto-categorize transactions</value></data>
+  <data name="Settings_AutoCategorizeDesc" xml:space="preserve"><value>Predict category via memory, local rules, and ML.NET</value></data>
+  <data name="Settings_ThresholdLabel" xml:space="preserve"><value>ML Confidence Threshold</value></data>
+  <data name="Settings_ThresholdFootnote" xml:space="preserve"><value>Only auto-select when confidence exceeds this threshold.</value></data>
+  <data name="Settings_RetrainingInProgress" xml:space="preserve"><value>Retraining and evaluating model...</value></data>
+  <data name="Settings_RetrainBtn" xml:space="preserve"><value>Retrain &amp; Evaluate Model with My Data</value></data>
+  <data name="Settings_ValidationScore" xml:space="preserve"><value>Validation score:</value></data>
+  <data name="Settings_TrainingSamplesCount" xml:space="preserve"><value>{0} training samples</value></data>
+  <data name="Settings_BudgetSectionTitle" xml:space="preserve"><value>Budget &amp; Alerts</value></data>
+  <data name="Settings_MonthlyBudgetLimit" xml:space="preserve"><value>Monthly Budget Limit</value></data>
+  <data name="Settings_OverBudgetAlerts" xml:space="preserve"><value>Over-budget alerts</value></data>
+  <data name="Settings_OverBudgetAlertsDesc" xml:space="preserve"><value>Notify when spending trajectory exceeds monthly cap</value></data>
+  <data name="Settings_DailyReminders" xml:space="preserve"><value>Daily expense reminders</value></data>
+  <data name="Settings_DailyRemindersDesc" xml:space="preserve"><value>Gentle reminder to log your daily receipts</value></data>
+  <data name="Settings_DataSectionTitle" xml:space="preserve"><value>Data &amp; Encrypted Storage</value></data>
+  <data name="Settings_ExportCsv" xml:space="preserve"><value>Export Expense Data (CSV)</value></data>
+  <data name="Settings_BackupDb" xml:space="preserve"><value>Backup Local Database</value></data>
+  <data name="Settings_ClearDb" xml:space="preserve"><value>Clear Local Database &amp; Key</value></data>
+  <data name="Settings_ConfirmPurge" xml:space="preserve"><value>⚠️ Tap again to permanently erase vault &amp; key</value></data>
+  <data name="Settings_FooterNote" xml:space="preserve"><value>SmartBudget ML · 256-bit SQLCipher · PBKDF2 600k · 100% Offline</value></data>
+
+  <!-- Unlock & Onboarding -->
+  <data name="Unlock_PageTitle" xml:space="preserve"><value>Unlock · SmartBudget ML</value></data>
+  <data name="Unlock_Subtitle" xml:space="preserve"><value>Enter your {0}-digit PIN to access your vault</value></data>
+  <data name="Unlock_IncorrectPin" xml:space="preserve"><value>Incorrect PIN. Please try again.</value></data>
+  <data name="Unlock_LockedRetryIn" xml:space="preserve"><value>Locked due to failed attempts. Retry in {0}s.</value></data>
+  <data name="Unlock_BiometricFailed" xml:space="preserve"><value>Biometric authentication failed.</value></data>
+  <data name="Onboarding_PageTitle" xml:space="preserve"><value>Create your account · SmartBudget ML</value></data>
+  <data name="Onboarding_TitleStep1" xml:space="preserve"><value>Create your profile</value></data>
+  <data name="Onboarding_TitleStep2" xml:space="preserve"><value>Secure your data</value></data>
+  <data name="Onboarding_SubtitleStep1" xml:space="preserve"><value>Your profile never leaves this device. No cloud, no tracking.</value></data>
+  <data name="Onboarding_SubtitleStep2" xml:space="preserve"><value>Set a local 6-digit PIN. Fingerprint unlock can also be enabled.</value></data>
+  <data name="Onboarding_FullName" xml:space="preserve"><value>Full name</value></data>
+  <data name="Onboarding_FullNamePlaceholder" xml:space="preserve"><value>e.g. Jean-Paul Mbarga</value></data>
+  <data name="Onboarding_EmailOptional" xml:space="preserve"><value>Email (optional)</value></data>
+  <data name="Onboarding_Continue" xml:space="preserve"><value>Continue</value></data>
+  <data name="Onboarding_PinLabel" xml:space="preserve"><value>6-digit PIN</value></data>
+  <data name="Onboarding_ConfirmPinLabel" xml:space="preserve"><value>Confirm PIN</value></data>
+  <data name="Onboarding_Register" xml:space="preserve"><value>Create my vault</value></data>
+  <data name="Onboarding_CreatingVault" xml:space="preserve"><value>Creating encrypted vault…</value></data>
+
+  <!-- Shared Components -->
+  <data name="Shared_Uncategorized" xml:space="preserve"><value>Uncategorized</value></data>
+  <data name="Shared_AiBadge" xml:space="preserve"><value>AI</value></data>
+  <data name="Shared_UseBiometrics" xml:space="preserve"><value>Use biometrics</value></data>
+  <data name="Shared_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Settings_SecuritySectionTitle" xml:space="preserve"><value>Security &amp; Vault Protection</value></data>
+  <data name="Settings_AutoLockLabel" xml:space="preserve"><value>Auto-lock timeout on background</value></data>
+  <data name="Settings_AutoLock0" xml:space="preserve"><value>Immediately (0s)</value></data>
+  <data name="Settings_AutoLock30" xml:space="preserve"><value>After 30 seconds</value></data>
+  <data name="Settings_AutoLock60" xml:space="preserve"><value>After 1 minute</value></data>
+  <data name="Settings_AutoLock300" xml:space="preserve"><value>After 5 minutes</value></data>
+  <data name="Settings_ScreenProtectionTitle" xml:space="preserve"><value>Protect screen (FLAG_SECURE)</value></data>
+  <data name="Settings_ScreenProtectionDesc" xml:space="preserve"><value>Hide app preview in task switcher and block screenshots</value></data>
+  <data name="Onboarding_ErrNameRequired" xml:space="preserve"><value>Please enter your name.</value></data>
+  <data name="Onboarding_ErrNegativeAmount" xml:space="preserve"><value>Amounts cannot be negative.</value></data>
+  <data name="Onboarding_ErrPinMismatch" xml:space="preserve"><value>PINs do not match.</value></data>
+</root>
