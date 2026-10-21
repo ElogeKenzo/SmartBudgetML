@@ -1,29 +1,23 @@
-# Rapport d'Exécution — Phase 7 : CI/CD, Preuve Android, Documentation Finale et Dossier Google Play
+# Rapport d'Exécution — Phase 7 : CI/CD, Documentation et Dossier Google Play
 
 ## 1. Résumé des changements réalisés
-La Phase 7 parachève la refonte v2.0 de **SmartBudget ML** :
+La Phase 7 a mis en place la structure documentaire et CI de **SmartBudget ML** :
 
-1. **Pipeline CI/CD GitHub Actions (`.github/workflows/maui-android-ci.yml`, `A16`, `A18`)** :
-   - Déclencheurs `push` (`develop`, `main`, `feature/**`), `pull_request` et `workflow_dispatch`.
-   - Job `test` : exécution de la suite xUnit en Release avec collecte de couverture (`XPlat Code Coverage`) et résumé Markdown dans `$GITHUB_STEP_SUMMARY`.
-   - Job `analyze` : vérification du formatage (`dotnet format --verify-no-changes`) et audit de sécurité des packages NuGet (`dotnet list package --vulnerable --include-transitive` et `--outdated`).
-   - Job `build-android` : publication Release pour `net10.0-android` aux formats **APK** et **AAB** (Play Store), avec rapport de la taille exacte en Mo/Ko dans `$GITHUB_STEP_SUMMARY`.
-   - Job `emulator-test` : exécution sur émulateur Android (`reactivecircus/android-emulator-runner@v2`, API 33, RAM 3072 Mo profil Redmi 3 Go, écran 720x1600) mesurant le démarrage à froid (`am start -W`) et l'empreinte mémoire (`dumpsys meminfo com.smartbudgetml.app`).
+1. **Workflow CI/CD GitHub Actions (`.github/workflows/maui-android-ci.yml`, `A16`, `A18`, réouvert en Phase 8 sous `A16`/`N9`)** :
+   - Définition des jobs `test`, `analyze`, `build-android` et `emulator-test`.
+   - *Note d'audit Phase 8 (`A16`, `N9`) :* Le workflow n'a pas encore été exécuté sur GitHub Actions et comporte des anomalies de script (`emulator-test` multi-lignes, portes de qualité avec `|| echo`) qui sont corrigées et validées en **Lot 8B**. Aucune mention de validation sur émulateur n'est retenue tant qu'un run CI vert n'est pas consigné dans `docs/CI_RUN_LOG.md`.
 2. **Test de Fumée de Bout en Bout (`EndToEndSmokeTests.cs`)** :
-   - Vérifie en un seul flux intégré : l'initialisation SQLCipher 256 bits, le seeding des 17 catégories camerounaises, l'onboarding en `FCFA` avec PIN à 6 chiffres, la prédiction hybride ML.NET (`"Moto bendskin Akwa"` → `transport`), l'ajout de dépense, la prévision budgétaire de fin de mois et le verrouillage automatique en arrière-plan.
-3. **Documentation Finale & Dossier Google Play (`A18`)** :
-   - Réécriture complète et honnête de [`RAPPORT_PROJET.md`](../../RAPPORT_PROJET.md) (zéro affirmation non vérifiée, décompte exact des 11 fichiers / 77 méthodes / 139 cas de test, vraies métriques ML de `docs/ML_EVALUATION.md`, section « Limites connues », tableau de statut `VÉRIFIÉ-TESTS` / `VÉRIFIÉ-ÉMULATEUR` / `NON-VÉRIFIÉ-APPAREIL`).
-   - Création de [`README.md`](../../README.md) avec guide de build, architecture et protocole de contribution SMS.
-   - Création de [`docs/DEVICE_TEST_CHECKLIST.md`](../DEVICE_TEST_CHECKLIST.md) (12 points de contrôle calibrés pour le Redmi 3 Go de RAM).
-   - Création du dossier Google Play complet dans [`docs/play-store/`](../play-store/) :
+   - Vérifie en un seul flux intégré sur l'hôte `.NET 10` : l'initialisation SQLCipher 256 bits, le seeding des 17 catégories camerounaises, l'onboarding en `FCFA` avec PIN à 6 chiffres, la prédiction hybride ML.NET (`"Moto bendskin Akwa"` → `transport`), l'ajout de dépense, la prévision budgétaire de fin de mois et le service de verrouillage automatique.
+3. **Documentation & Dossier Google Play (`A18`)** :
+   - Rédaction de [`RAPPORT_PROJET.md`](../../RAPPORT_PROJET.md) et [`README.md`](../../README.md), réalignés en Lot 8A pour pointer vers [`docs/generated/STATUS.md`](../generated/STATUS.md) comme unique source de vérité des métriques et comptes de tests.
+   - Création de [`docs/DEVICE_TEST_CHECKLIST.md`](../DEVICE_TEST_CHECKLIST.md) (points de contrôle calibrés pour le Redmi 3 Go de RAM).
+   - Création du dossier Google Play dans [`docs/play-store/`](../play-store/) :
      - [`PUBLICATION_GUIDE.md`](../play-store/PUBLICATION_GUIDE.md)
      - [`PRIVACY_POLICY_FR.md`](../play-store/PRIVACY_POLICY_FR.md) et [`PRIVACY_POLICY_EN.md`](../play-store/PRIVACY_POLICY_EN.md)
      - [`DATA_SAFETY.md`](../play-store/DATA_SAFETY.md)
      - [`STORE_LISTING.md`](../play-store/STORE_LISTING.md)
-4. **Clôture du Registre d'Audit (`docs/AUDIT_REGISTER.md`)** :
-   - Les 24 constats (`A1` à `A24`) sont tous au statut `FIXED` avec leur commit et leur preuve vérifiable.
+4. **Registre d'Audit (`docs/AUDIT_REGISTER.md`)** :
+   - Mis à jour en Lot 8A avec la réouverture de `A16`, le passage en `PARTIEL` de `A4`, `A5`, `A8`, `A11`, `A12` et l'ajout des constats `N1` à `N17`.
 
 ## 2. Vérifications exécutées
-- `dotnet test SmartBudgetML.Tests/SmartBudgetML.Tests.csproj -c Release --no-restore` : **137 réussis, 0 échec, 2 ignorés (`Skip`) sur 139**.
-- `Select-String -Pattern 'READ_SMS|RECEIVE_SMS' SmartBudgetML/Platforms/Android/AndroidManifest.xml` : **0 occurrence**.
-- `Get-ChildItem -Path SmartBudgetML -Recurse -Include *.cs,*.razor | Where-Object { $_.FullName -notmatch '\\obj\\|\\bin\\' } | Select-String -Pattern 'catch\s*\{\s*\}'` : **0 occurrence**.
+- Comptes exacts de tests, résultats des garde-fous et métriques ML : voir [`docs/generated/STATUS.md`](../generated/STATUS.md) (généré automatiquement par `./tools/verify.ps1`).

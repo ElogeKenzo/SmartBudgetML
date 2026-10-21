@@ -174,7 +174,7 @@ public class OrangeMoneyCameroonParser : IMobileMoneySmsParser
 
     private static DateTime? TryExtractDateFromOrangeTxId(string txId)
     {
-        // Format: PP261019.2025.B10926 -> YYMMDD.HHmm (e.g. 26-10-19 20:25)
+        // Format: PP261019.2025.B00101 -> YYMMDD.HHmm (e.g. 26-10-19 20:25)
         var m = Regex.Match(txId, @"^[A-Z]{2}(\d{2})(\d{2})(\d{2})\.(\d{2})(\d{2})\.");
         if (m.Success &&
             int.TryParse(m.Groups[1].Value, out int yy) &&

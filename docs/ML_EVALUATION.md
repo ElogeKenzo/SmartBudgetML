@@ -1,46 +1,37 @@
 # Évaluation Réelle du Pipeline ML Hybride — SmartBudget ML v2.0
 
-**Date :** 21 octobre 2026  
-**Branche :** `feature/ml-hybrid` (Phase 4)  
-**Exécution :** Hôte Windows x64 (.NET 10.0, `MLContext(seed: 42)`, `SdcaMaximumEntropy` déterministe `NumberOfThreads = 1`)
+**Exécution :** Hôte Windows x64 (`.NET 10.0`, `MLContext(seed: 42)`, `SdcaMaximumEntropy` déterministe `NumberOfThreads = 1`)  
+**Source de vérité générée :** Voir [`docs/generated/STATUS.md`](generated/STATUS.md) (généré par `./tools/verify.ps1` à partir de `artifacts/ml-eval.json` et `artifacts/ml-eval-output.txt`).
 
 ---
 
-## 1. Jeux de données synthétiques camerounais (`A11`)
+## 1. Jeux de données synthétiques camerounais (`A11` — état courant avant Lot 8G `N7`)
 
-Conformément aux exigences de confidentialité et d'ancrage local (§4.3 et §4.4), toutes les données sont **100 % synthétiques** (marquées `# SYNTHÉTIQUE`), sans aucun numéro de téléphone réel ni donnée personnelle :
+Toutes les phrases d'entraînement et de validation sont **100 % synthétiques** (`# SYNTHÉTIQUE`), sans numéro de téléphone réel ni donnée personnelle :
 
 | Jeu de données | Fichier | Nombre d'exemples | Catégories couvertes | Rôle |
 |---|---|---|---|---|
-| **Entraînement (`train`)** | `SmartBudgetML/Resources/Raw/seed_fr.csv` | **314** | 10 catégories (~25–35 exemples/catégorie) | Entraînement initial à froid du classifieur SDCA |
-| **Validation (`holdout`)** | `SmartBudgetML/Resources/Raw/holdout_fr.csv` | **176** | 10 catégories (16–20 exemples/catégorie) | Évaluation hors-échantillon (jamais vu à l'entraînement) |
+| **Entraînement (`train`)** | `SmartBudgetML/Resources/Raw/seed_fr.csv` | **314** | 11 catégories historiques (`Entertainment`, `Food & Dining`, `Groceries`, `Healthcare`, `Housing & Rent`, `Investments`, `Other`, `Salary / Income`, `Shopping`, `Transportation`, `Utilities`) | Entraînement initial à froid du classifieur SDCA |
+| **Validation (`holdout`)** | `SmartBudgetML/Resources/Raw/holdout_fr.csv` | **176** | 11 catégories historiques (16 exemples/catégorie) | Évaluation hors-échantillon (jamais vu à l'entraînement) |
+
+> **Note d'honnêteté (`N7`) :** Les fichiers `seed_fr.csv` et `holdout_fr.csv` actuels utilisent encore les 11 noms de catégories historiques en anglais (mappés vers 8 des 17 clés camerounaises de `CategoryCatalog`). L'alignement complet sur les 17 catégories camerounaises (`Category.Key`) en FR et EN fait l'objet du **Lot 8G**.
 
 ### Contrôle anti-fuite (`train ∩ holdout == ∅`)
-Le test unitaire `Phase4MlHybridTests.CameroonianDatasets_TrainAndHoldout_ShouldMeetSizeRequirements_AndHaveZeroLeakage` vérifie automatiquement à chaque exécution CI qu'aucune phrase de `holdout_fr.csv` (après normalisation en minuscules) n'apparaît dans `seed_fr.csv`.
-- **Chevauchement mesuré :** `0 / 176` (`0,00 %`).
+Le test unitaire `Phase4MlHybridTests.CameroonianDatasets_TrainAndHoldout_ShouldMeetSizeRequirements_AndHaveZeroLeakage` vérifie à chaque exécution qu'aucune phrase de `holdout_fr.csv` (après normalisation en minuscules) n'apparaît dans `seed_fr.csv` (`0 / 176`).
 
 ---
 
 ## 2. Comparaison quantitative sur le jeu Holdout (`176` transactions inédites)
 
-Les métriques ci-dessous sont calculées par `ModelEvaluator.CompareApproachesAsync` et vérifiées par le test `Phase4MlHybridTests.HoldoutEvaluation_CompareRulesMlAndHybrid_ShouldMeetNonRegressionThresholds` :
+Les métriques exactes sont produites par `ModelEvaluator.CompareApproachesAsync` lors du test `Phase4MlHybridTests.HoldoutEvaluation_CompareRulesMlAndHybrid_ShouldMeetNonRegressionThresholds` et exportées dans `artifacts/ml-eval-output.txt` et `artifacts/ml-eval.json` (reportées automatiquement dans [`docs/generated/STATUS.md`](generated/STATUS.md)) :
 
-| Approche évaluée | Micro-Accuracy | Macro-Accuracy | Macro-F1 | Seuil de non-régression CI |
-|---|---|---|---|---|
-| **(a) Règles seules** (`KeywordRuleCategorizer` — Étage 2) | **81,25 %** (143 / 176) | **81,25 %** | **82,49 %** | `>= 65,0 %` |
-| **(b) ML.NET seul** (`SdcaMaximumEntropy` TF-IDF — Étage 3) | **91,48 %** (161 / 176) | **91,48 %** | **91,15 %** | `>= 75,0 %` |
-| **(c) Pipeline Hybride 3 étages** (Mémoire + Règles + ML.NET) | **98,86 %** (174 / 176) | **98,86 %** | **98,86 %** | `>= 85,0 %` |
+| Approche évaluée | Réussites / Total | Micro-Accuracy | Macro-Accuracy | Macro-F1 | Seuil de non-régression |
+|---|---|---|---|---|---|
+| **(a) Règles seules** (`KeywordRuleCategorizer` — Étage 2) | **143 / 176** | **81,25 %** (`0,812500`) | **81,25 %** (`0,812500`) | **82,49 %** (`0,824912`) | `>= 65,0 %` |
+| **(b) ML.NET seul** (`SdcaMaximumEntropy` TF-IDF — Étage 3) | **161 / 176** | **91,48 %** (`0,914773`) | **91,48 %** (`0,914773`) | **91,15 %** (`0,911526`) | `>= 75,0 %` |
+| **(c) Pipeline Hybride 3 étages** (Mémoire + Règles + ML.NET) | **175 / 176** | **99,43 %** (`0,994318`) | **99,43 %** (`0,994318`) | **99,43 %** (`0,994313`) | `>= 85,0 %` |
 
-### Analyse de la valeur ajoutée du pipeline hybride
-1. **Règles seules (81,25 %) :** Très haute précision (> 95 %) lorsqu'un marqueur camerounais explicite est présent (`eneo`, `camwater`, `bendskin`, `yango`, `njangi`, `coartem`, `canalolympia`, `marche mokolo`), mais replie sur `Other` dès que la formulation est descriptive sans mot-clé dur (ex. *« Remplacement vitre fenêtre cassée »*, *« Seme beach excursion »*, *« Achat vitrine réfrigérée pour commerce »*).
-2. **ML.NET seul (91,48 %) :** Généralise efficacement sur le vocabulaire contextuel (n-grammes de mots et de caractères), mais hésite parfois sur des abréviations courtes ou expressions locales polysémiques (ex. *« Tour de bouffe tontine »* qui contient `tontine` mais désigne un revenu encaissé, ou *« Transfert OM maman »*).
-3. **Pipeline Hybride (98,86 %, +17,61 points vs Règles seules, +7,38 points vs ML seul) :**
-   - **Étage 1 (`UserMemory`) :** Garantit `100 %` de fidélité sur toute dépense déjà corrigée ou validée par l'utilisateur (`Confidence = 1.0`).
-   - **Étage 2 (`Rules`) :** Verrouille instantanément les services camerounais non ambigus et les expressions idiomatiques (*bouffe tontine*, *om maman*, *bendskin*, *eneo*, *camwater*).
-   - **Étage 3 (`ML.NET SDCA`) :** Classifie avec succès plus de 90 % des descriptions libres restantes qui n'ont pas de règle stricte, sous réserve que la confiance dépasse `MlConfidenceThreshold`.
-   - **Décision architecturale :** Le gain mesuré de **+17,61 points d'Accuracy** (et **+16,37 points de Macro-F1**) par rapport aux règles seules justifie pleinement le maintien de ML.NET en Étage 3.
-
-### Matrice de confusion du Pipeline Hybride sur le Holdout (176 exemples)
+### Matrice de confusion réelle du Pipeline Hybride sur le Holdout (176 exemples, issue de `artifacts/ml-eval-output.txt`)
 
 | Catégorie réelle \ prédite | Ent. | Food | Groc. | Health | Hous. | Inv. | Other | Sal. | Shop. | Trans. | Util. | Rappel |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -49,55 +40,31 @@ Les métriques ci-dessous sont calculées par `ModelEvaluator.CompareApproachesA
 | **Groceries** (16) | 0 | 0 | **16** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 100,0 % |
 | **Healthcare** (16) | 0 | 0 | 0 | **16** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 100,0 % |
 | **Housing & Rent** (16) | 0 | 0 | 0 | 0 | **16** | 0 | 0 | 0 | 0 | 0 | 0 | 100,0 % |
-| **Investments** (16) | 0 | 0 | 0 | 0 | 0 | **15** | 0 | 1 | 0 | 0 | 0 | 93,8 % |
+| **Investments** (16) | 0 | 0 | 0 | 0 | 0 | **16** | 0 | 0 | 0 | 0 | 0 | 100,0 % |
 | **Other** (16) | 0 | 0 | 0 | 0 | 0 | 0 | **16** | 0 | 0 | 0 | 0 | 100,0 % |
-| **Salary / Income** (16) | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **16** | 0 | 0 | 0 | 100,0 % |
-| **Shopping** (16) | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | **15** | 0 | 0 | 93,8 % |
+| **Salary / Income** (16) | 0 | 0 | 1 | 0 | 0 | 0 | 0 | **15** | 0 | 0 | 0 | 93,8 % |
+| **Shopping** (16) | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **16** | 0 | 0 | 100,0 % |
 | **Transportation** (16) | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **16** | 0 | 100,0 % |
 | **Utilities** (16) | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **16** | 100,0 % |
 
 ---
 
-## 3. Performances mesurées sur l'hôte & projection Android (Redmi 3 Go)
+## 3. Performances et taille du modèle
 
-Mesures effectuées en configuration `Release` (`net10.0`) via `Phase4MlHybridTests.PerformanceBenchmark_1000Inferences_ShouldRunUnderLatencyBudget` et `FileModelStore_SaveAndReload_ShouldProduceIdenticalPredictions` :
-
-| Indicateur | Valeur mesurée (Hôte x64) | Estimation prudente Redmi 3 Go (Cortex-A53, ×4–×6) | Budget cible (`CLAUDE.md` §1.7) | Statut |
-|---|---|---|---|---|
-| **Inférence moyenne (sur 1 000 appels)** | **0,049 ms** (~49 µs) | **~0,25 – 0,35 ms** | `< 100 ms` | Conforme |
-| **Inférence p95 (sur 1 000 appels)** | **0,145 ms** (~145 µs) | **~0,70 – 0,90 ms** | `< 100 ms` | Conforme |
-| **Inférence à froid sans modèle (`Predict` non entraîné)** | **< 1 ms** (Règles/Mémoire) | **< 3 ms** | `0 blocage UI` | Conforme |
-| **Temps d'entraînement complet (`314` lignes)** | **~241 ms** | **~1,0 – 1,5 s** (en tâche de fond `Task.Run`) | `< 3 000 ms` en tâche de fond | Conforme |
-| **Chargement depuis `FileModelStore` (`.zip`)** | **~18 ms** | **~80 – 120 ms** | Pas de réentraînement au démarrage | Conforme |
-| **Taille du fichier modèle sérialisé (`model_v2.zip`)** | **~98 Ko** | **~98 Ko** | `< 5 Mo` | Conforme |
+Les mesures de latence d'inférence (moyenne et p95 sur 1 000 appels), le temps d'entraînement et la taille exacte du modèle sérialisé (`111 197 octets`, soit `108,6 Ko`) sont enregistrés à chaque exécution dans `artifacts/ml-eval.json` et consultables dans [`docs/generated/STATUS.md`](generated/STATUS.md).
 
 ### Garanties d'architecture non-bloquante (`A10`)
-- Suppression totale de `TrainAsync().GetAwaiter().GetResult()` dans `Predict()`.
-- Si `Predict()` est appelé avant la fin de l'initialisation en arrière-plan, il exécute immédiatement l'Étage 1 (`UserMemory`) et l'Étage 2 (`KeywordRuleCategorizer`) en moins d'une milliseconde.
-- Le réentraînement complet n'est plus déclenché à chaque dépense ajoutée : `RecordFeedbackAsync` met à jour `UserMemory` et SQLite immédiatement, et ne lance `TrainAsync` qu'après `RetrainBatchThreshold = 15` retours accumulés.
-- Saisie utilisateur temporisée par un **debounce de 300 ms** dans `AddExpense.razor`.
+- Aucun appel `TrainAsync().GetAwaiter().GetResult()` dans `Predict()`.
+- Si `Predict()` est appelé avant la fin de l'initialisation en arrière-plan, il exécute immédiatement l'Étage 1 (`UserMemory`) et l'Étage 2 (`KeywordRuleCategorizer`).
+- Le réentraînement complet est regroupé par lots (`RetrainBatchThreshold = 15`).
+- Saisie utilisateur temporisée par un debounce de 300 ms dans `AddExpense.razor`.
 
 ---
 
-## 4. Tests de robustesse, concurrence et sérialisation
+## 4. Prévision budgétaire (`BudgetForecastingService` — `A13`, `A19`)
 
-1. **Entrées extrêmes (`Predict_RobustnessInputs_ShouldNeverThrow_AndReturnValidPrediction` & `Predict_10000CharacterString_ShouldNeverThrow_AndCompleteQuickly`) :**
-   - `null`, `""`, espaces seuls, chiffres seuls (`"1234567890"`), montants seuls (`"99999 FCFA"`), emojis uniquement (`"🔥🎉💰🚀🛒"`), écritures non latines (japonais, arabe) et chaînes de **10 000 caractères** sont traités sans exception et en < 5 ms (troncature défensive à 1 000 caractères pour ML.NET).
-2. **Concurrence (`Predict_ConcurrentCallsFromMultipleThreads_ShouldBeThreadSafe`) :**
-   - 200 prédictions simultanées réparties sur le pool de threads s'exécutent sans corruption d'état grâce à la synchronisation autour de `PredictionEngine` et à l'échange atomique du modèle lors des réentraînements.
-3. **Sérialisation (`FileModelStore_SaveAndReload_ShouldProduceIdenticalPredictions`) :**
-   - Un modèle sauvegardé via `FileModelStore.Save` puis rechargé via `FileModelStore.TryLoad` produit des catégories et des scores de confiance strictement identiques (à $10^{-4}$ près). Une version de schéma incompatible (`SchemaVersion != CurrentSchemaVersion`) invalide proprement le cache et déclenche un réentraînement transparent.
-
----
-
-## 5. Prévision budgétaire (`BudgetForecastingService` — `A13`, `A19`)
-
-- **Séparation Dépenses Fixes vs. Dépenses Variables :** Les charges fixes calendaires (`IsFixedOrRecurring = true`, comme le loyer mensuel, la pension scolaire ou une facture prévue) sont comptabilisées à leur montant réel sur la période au lieu d'être extrapolées linéairement jour après jour. Seules les dépenses variables quotidiennes font l'objet de la régression linéaire OLS pondérée avec le run-rate moyen.
-- **Modes de période pour revenus irréguliers (`BudgetPeriodMode`) :**
-  - `Monthly` (mois calendaire, gérant les mois de 28, 29, 30 et 31 jours, y compris le 29 février des années bissextiles).
-  - `Weekly` (semaine ISO du lundi au dimanche sur 7 jours, adapté aux revenus hebdomadaires du secteur informel / débrouille).
-  - `Envelope` (suivi par enveloppe budgétaire dédiée).
+- **Séparation Dépenses Fixes vs. Dépenses Variables :** Les charges fixes calendaires (`IsFixedOrRecurring = true`) sont comptabilisées à leur montant réel sur la période au lieu d'être extrapolées linéairement jour après jour.
+- **Modes de période (`BudgetPeriodMode`) :** `Monthly`, `Weekly` (semaine ISO de 7 jours), `Envelope`.
 - **Indice de fiabilité (`ForecastReliability`) :**
-  - `Low` lorsque `DaysElapsed < 7` (ou `< 3` en mode hebdomadaire) avec message d'avertissement explicite : *« Peu de données (< 7 jours) : projection linéaire peu fiable en début de période. »*
-  - `Medium` entre 7 et 13 jours écoulés.
-  - `High` à partir de 14 jours écoulés.
+  - En mode mensuel/enveloppe : `Low` lorsque `DaysElapsed < 7`, `Medium` entre 7 et 13 jours écoulés, `High` à partir de 14 jours écoulés.
+  - En mode hebdomadaire : `Low` lorsque `DaysElapsed < 3`, `High` à partir de 3 jours écoulés.

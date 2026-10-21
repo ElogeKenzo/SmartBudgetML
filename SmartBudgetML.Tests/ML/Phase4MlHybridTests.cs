@@ -1,4 +1,7 @@
 using System.Diagnostics;
+using System.Globalization;
+using System.Text;
+using System.Text.Json;
 using Microsoft.ML;
 using SmartBudgetML.Models;
 using SmartBudgetML.Services.Database;
@@ -260,10 +263,133 @@ public class Phase4MlHybridTests
 
         var report = await evaluator.CompareApproachesAsync(train, holdout);
 
-        _output.WriteLine($"Train count: {report.TrainingSampleCount}, Holdout count: {report.HoldoutSampleCount}");
-        _output.WriteLine($"[Rules Only] MicroAcc={report.RulesOnly.MicroAccuracy:P2}, MacroAcc={report.RulesOnly.MacroAccuracy:P2}, MacroF1={report.RulesOnly.MacroF1:P2}");
-        _output.WriteLine($"[ML Only]    MicroAcc={report.MlOnly.MicroAccuracy:P2}, MacroAcc={report.MlOnly.MacroAccuracy:P2}, MacroF1={report.MlOnly.MacroF1:P2}");
-        _output.WriteLine($"[Hybrid]     MicroAcc={report.Hybrid.MicroAccuracy:P2}, MacroAcc={report.Hybrid.MacroAccuracy:P2}, MacroF1={report.Hybrid.MacroF1:P2}");
+        // Measure model size and inference latency (1,000 inferences)
+        var tempModelDir = Path.Combine(Path.GetTempPath(), $"sb_eval_model_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempModelDir);
+        var modelPath = Path.Combine(tempModelDir, "model_v2.zip");
+        long modelSizeBytes = 0;
+        long trainTimeMs = 0;
+        double avgLatencyMs = 0;
+        double p95LatencyMs = 0;
+
+        try
+        {
+            var store = new FileModelStore(modelPath, schemaVersion: 2);
+            var categorizer = new ExpenseCategorizerService(null, new KeywordRuleCategorizer(), store, seed: 42);
+            var trainSw = Stopwatch.StartNew();
+            await categorizer.TrainOnExactDatasetAsync(train);
+            trainSw.Stop();
+            trainTimeMs = trainSw.ElapsedMilliseconds;
+            modelSizeBytes = store.GetModelFileSizeBytes();
+
+            var latencies = new double[1000];
+            for (int i = 0; i < 1000; i++)
+            {
+                var sample = holdout[i % holdout.Count].Description;
+                var sw = Stopwatch.StartNew();
+                _ = categorizer.Predict(sample);
+                sw.Stop();
+                latencies[i] = sw.Elapsed.TotalMilliseconds;
+            }
+            Array.Sort(latencies);
+            avgLatencyMs = latencies.Average();
+            p95LatencyMs = latencies[(int)(latencies.Length * 0.95)];
+        }
+        finally
+        {
+            if (Directory.Exists(tempModelDir))
+                Directory.Delete(tempModelDir, recursive: true);
+        }
+
+        int CountCorrect(ApproachEvaluationResult res)
+        {
+            int c = 0;
+            for (int i = 0; i < res.Categories.Count; i++)
+                c += res.ConfusionMatrix[i, i];
+            return c;
+        }
+
+        int rulesCorrect = CountCorrect(report.RulesOnly);
+        int mlCorrect = CountCorrect(report.MlOnly);
+        int hybridCorrect = CountCorrect(report.Hybrid);
+
+        var sb = new StringBuilder();
+        sb.AppendLine(string.Create(CultureInfo.InvariantCulture, $"Train count: {report.TrainingSampleCount}, Holdout count: {report.HoldoutSampleCount}, Categories: {report.Hybrid.Categories.Count}"));
+        sb.AppendLine(string.Create(CultureInfo.InvariantCulture, $"[Rules Only] Correct={rulesCorrect}/{report.HoldoutSampleCount}, MicroAcc={report.RulesOnly.MicroAccuracy:P2} ({report.RulesOnly.MicroAccuracy:F6}), MacroAcc={report.RulesOnly.MacroAccuracy:P2} ({report.RulesOnly.MacroAccuracy:F6}), MacroF1={report.RulesOnly.MacroF1:P2} ({report.RulesOnly.MacroF1:F6})"));
+        sb.AppendLine(string.Create(CultureInfo.InvariantCulture, $"[ML Only]    Correct={mlCorrect}/{report.HoldoutSampleCount}, MicroAcc={report.MlOnly.MicroAccuracy:P2} ({report.MlOnly.MicroAccuracy:F6}), MacroAcc={report.MlOnly.MacroAccuracy:P2} ({report.MlOnly.MacroAccuracy:F6}), MacroF1={report.MlOnly.MacroF1:P2} ({report.MlOnly.MacroF1:F6})"));
+        sb.AppendLine(string.Create(CultureInfo.InvariantCulture, $"[Hybrid]     Correct={hybridCorrect}/{report.HoldoutSampleCount}, MicroAcc={report.Hybrid.MicroAccuracy:P2} ({report.Hybrid.MicroAccuracy:F6}), MacroAcc={report.Hybrid.MacroAccuracy:P2} ({report.Hybrid.MacroAccuracy:F6}), MacroF1={report.Hybrid.MacroF1:P2} ({report.Hybrid.MacroF1:F6})"));
+        sb.AppendLine(string.Create(CultureInfo.InvariantCulture, $"[Benchmark]  TrainTimeMs={trainTimeMs}ms, AvgInferenceMs={avgLatencyMs:F4}ms, P95InferenceMs={p95LatencyMs:F4}ms, ModelSizeBytes={modelSizeBytes} ({modelSizeBytes / 1024.0:F1} KB)"));
+        sb.AppendLine();
+        sb.AppendLine("Hybrid Confusion Matrix:");
+        var cats = report.Hybrid.Categories;
+        sb.AppendLine("Category | " + string.Join(" | ", cats) + " | Recall");
+        for (int i = 0; i < cats.Count; i++)
+        {
+            int rowSum = 0;
+            var rowCells = new List<string>();
+            for (int j = 0; j < cats.Count; j++)
+            {
+                int val = report.Hybrid.ConfusionMatrix[i, j];
+                rowSum += val;
+                rowCells.Add(val.ToString(CultureInfo.InvariantCulture));
+            }
+            double recall = rowSum > 0 ? (double)report.Hybrid.ConfusionMatrix[i, i] / rowSum : 0.0;
+            sb.AppendLine(string.Create(CultureInfo.InvariantCulture, $"{cats[i]} ({rowSum}) | {string.Join(" | ", rowCells)} | {recall:P1}"));
+        }
+
+        _output.WriteLine(sb.ToString());
+
+        var repoRoot = LocateRepoRoot();
+        if (repoRoot != null)
+        {
+            var artifactsDir = Path.Combine(repoRoot, "artifacts");
+            Directory.CreateDirectory(artifactsDir);
+            File.WriteAllText(Path.Combine(artifactsDir, "ml-eval-output.txt"), sb.ToString(), Encoding.UTF8);
+
+            var jsonPayload = new
+            {
+                evaluatedAtUtc = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture),
+                trainingSampleCount = report.TrainingSampleCount,
+                holdoutSampleCount = report.HoldoutSampleCount,
+                categoryCount = cats.Count,
+                categories = cats,
+                rulesOnly = new
+                {
+                    correctCount = rulesCorrect,
+                    totalCount = report.HoldoutSampleCount,
+                    microAccuracy = Math.Round(report.RulesOnly.MicroAccuracy, 6),
+                    macroAccuracy = Math.Round(report.RulesOnly.MacroAccuracy, 6),
+                    macroF1 = Math.Round(report.RulesOnly.MacroF1, 6)
+                },
+                mlOnly = new
+                {
+                    correctCount = mlCorrect,
+                    totalCount = report.HoldoutSampleCount,
+                    microAccuracy = Math.Round(report.MlOnly.MicroAccuracy, 6),
+                    macroAccuracy = Math.Round(report.MlOnly.MacroAccuracy, 6),
+                    macroF1 = Math.Round(report.MlOnly.MacroF1, 6)
+                },
+                hybrid = new
+                {
+                    correctCount = hybridCorrect,
+                    totalCount = report.HoldoutSampleCount,
+                    microAccuracy = Math.Round(report.Hybrid.MicroAccuracy, 6),
+                    macroAccuracy = Math.Round(report.Hybrid.MacroAccuracy, 6),
+                    macroF1 = Math.Round(report.Hybrid.MacroF1, 6)
+                },
+                benchmark = new
+                {
+                    trainTimeMs,
+                    avgInferenceMs = Math.Round(avgLatencyMs, 4),
+                    p95InferenceMs = Math.Round(p95LatencyMs, 4),
+                    modelSizeBytes,
+                    modelSizeKb = Math.Round(modelSizeBytes / 1024.0, 1)
+                }
+            };
+
+            var json = JsonSerializer.Serialize(jsonPayload, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(Path.Combine(artifactsDir, "ml-eval.json"), json, Encoding.UTF8);
+        }
 
         Assert.True(report.RulesOnly.MicroAccuracy >= 0.65, $"Rules accuracy too low: {report.RulesOnly.MicroAccuracy:P2}");
         Assert.True(report.MlOnly.MicroAccuracy >= 0.75, $"ML accuracy too low: {report.MlOnly.MicroAccuracy:P2}");
@@ -277,6 +403,21 @@ public class Phase4MlHybridTests
         Assert.True(
             report.Hybrid.MicroAccuracy >= report.MlOnly.MicroAccuracy,
             $"Hybrid ({report.Hybrid.MicroAccuracy:P2}) should beat or equal MlOnly ({report.MlOnly.MicroAccuracy:P2})");
+    }
+
+    private static string? LocateRepoRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null)
+        {
+            if (File.Exists(Path.Combine(dir.FullName, "SmartBudgetML.sln")) ||
+                Directory.Exists(Path.Combine(dir.FullName, "SmartBudgetML")))
+            {
+                return dir.FullName;
+            }
+            dir = dir.Parent;
+        }
+        return null;
     }
 
     [Fact]
