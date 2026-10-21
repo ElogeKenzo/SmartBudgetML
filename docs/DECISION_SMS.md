@@ -35,6 +35,6 @@ Le mécanisme de collage en lot (`ISmsParserRegistry.ParseBatch`) permet à l'ut
 ---
 
 ## 4. État des Parseurs Opérateurs (Orange Money & MTN MoMo)
-Conformément à la règle d'honnêteté technique (`CLAUDE.md` §6.1), **aucun format de SMS opérateur n'est inventé** :
-- `OrangeMoneyCameroonParser` : **NON IMPLÉMENTÉ** (en attente d'échantillons réels anonymisés fournis par l'utilisateur).
-- `MtnMomoCameroonParser` : **NON IMPLÉMENTÉ** (en attente d'échantillons réels anonymisés fournis par l'utilisateur).
+Les parseurs ont été implémentés à partir de **20 vrais SMS camerounais anonymisés** fournis par l'utilisateur (9 échantillons Orange Money FR/EN et 11 échantillons MTN MoMo incluant les bannières promotionnelles) :
+- [`OrangeMoneyCameroonParser`](../SmartBudgetML/Services/Sms/OrangeMoneyCameroonParser.cs) : **IMPLÉMENTÉ & VÉRIFIÉ-TESTS** (Transferts `PP...` FR/EN, Dépôts `CI...`, Paiements marchands et forfaits `MP...` avec extraction de la date depuis l'ID de transaction, des frais décimaux et du nouveau solde).
+- [`MtnMomoCameroonParser`](../SmartBudgetML/Services/Sms/MtnMomoCameroonParser.cs) : **IMPLÉMENTÉ & VÉRIFIÉ-TESTS** (Réceptions `Vous avez recu ... XAF`, Forfaits `MTNC BUNDLES_FORFAITS`, Paiements marchands `Votre paiement de ... a ete finalise`, Retraits `Vous avez effectue avec succes le retrait de ...`, avec filtrage des bannières promotionnelles `1Go Njoh!` / `Emprunte jusqu'à 100 000 FCFA` / `C'est la Rentrée...`).

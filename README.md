@@ -5,7 +5,7 @@
 [![Framework](https://img.shields.io/badge/.NET%20MAUI-10.0%20LTS-512BD4)](#)
 [![Security](https://img.shields.io/badge/Database-SQLCipher%20256--bit-10B981)](#)
 [![Auth](https://img.shields.io/badge/PIN-PBKDF2%20600k%20%2B%20BiometricPrompt-06B6D4)](#)
-[![Tests](https://img.shields.io/badge/Tests%20xUnit-137%20Passed%20%2F%200%20Failed-success)](#)
+[![Tests](https://img.shields.io/badge/Tests%20xUnit-139%20Passed%20%2F%200%20Failed-success)](#)
 
 ---
 

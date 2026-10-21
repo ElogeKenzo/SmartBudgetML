@@ -80,16 +80,133 @@ public class Phase6LocalValueTests
         Assert.True(registry.IsDuplicate(duplicateByWindow, batchResult));
     }
 
-    [Fact(Skip = "En attente d'échantillons réels")]
-    public void OrangeMoneyCameroonParser_RealSmsSamples_PendingUserInput()
+    [Fact]
+    public void OrangeMoneyCameroonParser_ShouldParseAllRealUserSmsFormats()
     {
-        // Conformément à CLAUDE.md §6.1 : ne jamais inventer les formats SMS opérateurs.
+        var parser = new OrangeMoneyCameroonParser();
+
+        // Bloc 1: Transfert reçu (avec Details: et Frais: 0 FCFA)
+        var bloc1 = "Transfert de 6XXXXXXXX NOM_EXP vers 6XXXXXXXX NOM_DEST reussi. Details: ID transaction: PP261019.2025.B10926, Montant Transaction: 400FCFA, Frais: 0 FCFA, Commission: 0 FCFA, Montant Net: 400 FCFA, Nouveau Solde: 407.42 FCFA.";
+        Assert.True(parser.TryParse(bloc1, out var tx1));
+        Assert.Equal("Orange Money", tx1!.Operator);
+        Assert.Equal(MobileMoneyTransactionType.TransferReceived, tx1.Type);
+        Assert.True(tx1.IsIncome);
+        Assert.Equal(400m, tx1.Amount);
+        Assert.Equal(0m, tx1.Fee);
+        Assert.Equal(407.42m, tx1.BalanceAfter);
+        Assert.Equal("PP261019.2025.B10926", tx1.Reference);
+        Assert.Equal(new DateTime(2026, 10, 19, 20, 25, 0, DateTimeKind.Utc), tx1.Date);
+
+        // Bloc 2: Dépôt effectué
+        var bloc2 = "Depot effectue par 6XXXXXXXX AGENT_OM  to 6XXXXXXXX NOM_DEST. Informations detaillees: Montant de transaction : 5000 FCFA, ID transaction : CI261012.1905.C01502, Frais : 0 FCFA, Commission : 0 FCFA, Montant Net du Credit : 5000 FCFA, Nouveau Solde : 20077.42 FCFA.";
+        Assert.True(parser.TryParse(bloc2, out var tx2));
+        Assert.Equal(MobileMoneyTransactionType.Deposit, tx2!.Type);
+        Assert.True(tx2.IsIncome);
+        Assert.Equal(5000m, tx2.Amount);
+        Assert.Equal("CI261012.1905.C01502", tx2.Reference);
+        Assert.Equal(20077.42m, tx2.BalanceAfter);
+
+        // Bloc 3: Paiement marchand (My Way5)
+        var bloc3 = "Paiement de My Way5 reussi par 6XXXXXXXX NOM_CLIENT. ID transaction:MP2612.1706.C34410, Montant:300 FCFA. Solde: 15077.42 FCFA.";
+        Assert.True(parser.TryParse(bloc3, out var tx3));
+        Assert.Equal(MobileMoneyTransactionType.MerchantPayment, tx3!.Type);
+        Assert.False(tx3.IsIncome);
+        Assert.Equal(300m, tx3.Amount);
+        Assert.Equal("My Way5", tx3.Counterparty);
+        Assert.Equal("MP2612.1706.C34410", tx3.Reference);
+
+        // Bloc 4 & 9: Transfert envoyé avec frais (5 FCFA)
+        var bloc4 = "Transfert de 6XXXXXXXX NOM_EXP vers 6XXXXXXXX NOM_DEST reussi. ID transaction: PP261012.0927.A90863, Montant Transaction: 500 FCFA, Frais: 5 FCFA, Commission: 0 FCFA, Montant Net: 505 FCFA, Nouveau Solde: 15777.42 FCFA.";
+        Assert.True(parser.TryParse(bloc4, out var tx4));
+        Assert.Equal(MobileMoneyTransactionType.TransferSent, tx4!.Type);
+        Assert.False(tx4.IsIncome);
+        Assert.Equal(500m, tx4.Amount);
+        Assert.Equal(5m, tx4.Fee);
+        Assert.Equal("PP261012.0927.A90863", tx4.Reference);
+
+        // Bloc 5: Achat forfait Maxit 2.0 (AirtimeData)
+        var bloc5 = "Paiement de Achat forfait Maxit 2.0 reussi par 6XXXXXXXX NOM_CLIENT. ID transaction:MP261011.2136.B91088, Montant:500 FCFA. Solde: 16782.42 FCFA.";
+        Assert.True(parser.TryParse(bloc5, out var tx5));
+        Assert.Equal(MobileMoneyTransactionType.AirtimeData, tx5!.Type);
+        Assert.Equal(500m, tx5.Amount);
+        Assert.Equal("MP261011.2136.B91088", tx5.Reference);
+
+        // Bloc 6: Format anglais WelcomePack (sans unité FCFA)
+        var bloc6 = "Successful Payment of WelcomePack from 6XXXXXXXX NOM_CLIENT. Transaction ID: MP261011.1605.D39727, Amount: 100, New balance: 32.96.";
+        Assert.True(parser.TryParse(bloc6, out var tx6));
+        Assert.Equal(MobileMoneyTransactionType.AirtimeData, tx6!.Type);
+        Assert.Equal(100m, tx6.Amount);
+        Assert.Equal(32.96m, tx6.BalanceAfter);
+        Assert.Equal("MP261011.1605.D39727", tx6.Reference);
+
+        // Bloc 7: Transfert envoyé avec frais décimaux (4.2 FCFA)
+        var bloc7 = "Transfert de 6XXXXXXXX NOM_EXP vers 6XXXXXXXX NOM_DEST  reussi. ID transaction: PP261011.1603.B09049, Montant Transaction: 100 FCFA, Frais: 4.2 FCFA, Commission: 0 FCFA, Montant Net: 104.2 FCFA, Nouveau Solde: 17282.42 FCFA.";
+        Assert.True(parser.TryParse(bloc7, out var tx7));
+        Assert.Equal(MobileMoneyTransactionType.TransferSent, tx7!.Type);
+        Assert.Equal(100m, tx7.Amount);
+        Assert.Equal(4.2m, tx7.Fee);
+
+        // Bloc 8: Format anglais Successful transfer
+        var bloc8 = "Successful transfer from 6XXXXXXXX NOM_EXP to 6XXXXXXXX NOM_DEST. Details: Transaction ID: PP261011.1603.B09049, Transaction amount: 100 FCFA, Charges: 0 FCFA, Commission: 0 FCFA, Net amount :100 FCFA, New balance: 132.96 FCFA.";
+        Assert.True(parser.TryParse(bloc8, out var tx8));
+        Assert.Equal(MobileMoneyTransactionType.TransferReceived, tx8!.Type);
+        Assert.Equal(100m, tx8.Amount);
+        Assert.Equal(0m, tx8.Fee);
+        Assert.Equal(132.96m, tx8.BalanceAfter);
     }
 
-    [Fact(Skip = "En attente d'échantillons réels")]
-    public void MtnMomoCameroonParser_RealSmsSamples_PendingUserInput()
+    [Fact]
+    public void MtnMomoCameroonParser_ShouldParseAllRealUserSmsFormats()
     {
-        // Conformément à CLAUDE.md §6.1 : ne jamais inventer les formats SMS opérateurs.
+        var parser = new MtnMomoCameroonParser();
+
+        // Bloc 1, 3, 5: Achat forfait MTNC BUNDLES_FORFAITS avec texte promo en fin de SMS
+        var bloc1 = "Une transaction de 499 XAF effectuee par MTNC BUNDLES_FORFAITS   (MTN_Bundles) sur votre compte d'argent mobile s'est terminee avec succes a 2026-10-15 08:33:55. Le montant faisait l'objet d'une remise de 0 et de bons de reduction d'une valeur de 0. Message du destinataire du debit : . Votre nouveau solde : 5720 XAF. Les frais s'elevaient a 0 XAF, les frais de fidelite a 0 et la recompense de fidelite a 0. Identifiant de transaction financiere : 19240427975. ID de transaction externe : 6004394991641868752. Emprunte jusqu'à 100 000 FCFA d'avance en quelques secondes pour tes transactions. Tape *126*6# ou télécharge la nouvelle MoMo App ici  link.mtn.cm/NewMoMoAppRef.";
+        Assert.True(parser.TryParse(bloc1, out var mtn1));
+        Assert.Equal("MTN MoMo", mtn1!.Operator);
+        Assert.Equal(MobileMoneyTransactionType.AirtimeData, mtn1.Type);
+        Assert.False(mtn1.IsIncome);
+        Assert.Equal(499m, mtn1.Amount);
+        Assert.Equal(0m, mtn1.Fee);
+        Assert.Equal(5720m, mtn1.BalanceAfter);
+        Assert.Equal("19240427975", mtn1.Reference);
+        Assert.Equal(new DateTime(2026, 10, 15, 8, 33, 55, DateTimeKind.Utc), mtn1.Date);
+
+        // Bloc 2, 6, 7, 11: Réception d'argent (avec motif 'tontine' et FRAIS: FCFA 0)
+        var bloc6 = "Vous avez recu 101500 XAF de NOM_EXPEDITEUR (2376XXXXXXXX) sur votre compte mobile money à 2026-10-05 19:18:10. Message de l'expéditeur: tontine. Votre nouveau solde: 101647 XAF. FRAIS: FCFA 0. Financial Transaction Id: 19095118226.";
+        Assert.True(parser.TryParse(bloc6, out var mtn6));
+        Assert.Equal(MobileMoneyTransactionType.TransferReceived, mtn6!.Type);
+        Assert.True(mtn6.IsIncome);
+        Assert.Equal(101500m, mtn6.Amount);
+        Assert.Equal(0m, mtn6.Fee);
+        Assert.Equal(101647m, mtn6.BalanceAfter);
+        Assert.Equal("19095118226", mtn6.Reference);
+
+        // Bloc 4 & 9: Réception d'argent précédée d'une bannière promo ("1Go Njoh!...") et "Votre nouveau solde est de 493 FCFA"
+        var bloc4 = "1Go Njoh! si tu te connectes sur l'appli New MoMoApp. Lien: link.mtn.cm/NewMoMoAppRef. Vous avez recu 450 XAF de NOM_EXPEDITEUR (2376XXXXXXXX ) sur votre compte Mobile Money 2026-10-12 12:43:33. Message de l'expediteur: . Votre nouveau solde est de 493 FCFA. Frais: 0 XAF. Transaction ID: 19197073957.";
+        Assert.True(parser.TryParse(bloc4, out var mtn4));
+        Assert.Equal(MobileMoneyTransactionType.TransferReceived, mtn4!.Type);
+        Assert.Equal(450m, mtn4.Amount);
+        Assert.Equal(493m, mtn4.BalanceAfter);
+        Assert.Equal("19197073957", mtn4.Reference);
+
+        // Bloc 8: Paiement marchand finalisé avec promo contenant d'autres montants ("5 237 F", "50 000 F")
+        var bloc8 = "Votre paiement de 2000 XAF a MARCHAND SARL (2376XXXXXXXX) a ete finalise a 2026-09-06 11:01:24. Message : . Votre nouveau solde : 645 XAF. Les frais s'elevaient a 0 XAF. Le montant faisait l'objet d'une reduction de 0 XAF et de coupons d'une valeur de . Identifiant de transaction financiere : 18665100746. ID de transaction externe : -. }. C'est la Rentrée...MoMo Te Gère ! Pour toute transactions d'au moins 5 237 F , tente de gagner chaque jour:  Un Laptop + 50 000 F + une Home Box.";
+        Assert.True(parser.TryParse(bloc8, out var mtn8));
+        Assert.Equal(MobileMoneyTransactionType.MerchantPayment, mtn8!.Type);
+        Assert.False(mtn8.IsIncome);
+        Assert.Equal(2000m, mtn8.Amount);
+        Assert.Equal(645m, mtn8.BalanceAfter);
+        Assert.Equal("18665100746", mtn8.Reference);
+
+        // Bloc 10: Retrait d'espèces ("Vous avez effectue avec succes le retrait de 1000 FCFA...")
+        var bloc10 = "Vous avez effectue avec succes le retrait de 1000 FCFA de votre compte mobile money  chez AGENT_MOMO le 2026-08-14 12:56:55. Votre nouveau solde est de:6 FCFA. Transaction Id: 18345981868.  Emprunte jusqu'à 100 000 FCFA d'avance en quelques secondes pour tes transactions.";
+        Assert.True(parser.TryParse(bloc10, out var mtn10));
+        Assert.Equal(MobileMoneyTransactionType.Withdrawal, mtn10!.Type);
+        Assert.False(mtn10.IsIncome);
+        Assert.Equal(1000m, mtn10.Amount);
+        Assert.Equal(6m, mtn10.BalanceAfter);
+        Assert.Equal("18345981868", mtn10.Reference);
     }
 
     // =========================================================================

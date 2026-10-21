@@ -43,6 +43,12 @@ public class SmsParserRegistry : ISmsParserRegistry
 {
     private readonly List<IMobileMoneySmsParser> _parsers = new();
 
+    public SmsParserRegistry()
+    {
+        RegisterParser(new OrangeMoneyCameroonParser());
+        RegisterParser(new MtnMomoCameroonParser());
+    }
+
     public void RegisterParser(IMobileMoneySmsParser parser)
     {
         if (parser == null) throw new ArgumentNullException(nameof(parser));
