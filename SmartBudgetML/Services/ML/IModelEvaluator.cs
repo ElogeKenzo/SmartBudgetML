@@ -23,6 +23,21 @@ public record ModelEvaluationMetrics(
         StatusDisplay: "Non évalué");
 }
 
+public record ApproachEvaluationResult(
+    string ApproachName,
+    double MicroAccuracy,
+    double MacroAccuracy,
+    double MacroF1,
+    IReadOnlyList<string> Categories,
+    int[,] ConfusionMatrix);
+
+public record HybridComparisonReport(
+    int TrainingSampleCount,
+    int HoldoutSampleCount,
+    ApproachEvaluationResult RulesOnly,
+    ApproachEvaluationResult MlOnly,
+    ApproachEvaluationResult Hybrid);
+
 public interface IModelEvaluator
 {
     ModelEvaluationMetrics GetCurrentMetrics();
@@ -30,4 +45,8 @@ public interface IModelEvaluator
     Task<ModelEvaluationMetrics> EvaluateAsync(
         IEnumerable<ExpenseTransactionData>? trainingSamples = null,
         IEnumerable<ExpenseTransactionData>? validationSamples = null);
+
+    Task<HybridComparisonReport> CompareApproachesAsync(
+        IEnumerable<ExpenseTransactionData>? trainingSamples = null,
+        IEnumerable<ExpenseTransactionData>? holdoutSamples = null);
 }

@@ -35,6 +35,12 @@ public class Expense : IEntity
 
     public bool IsIncome { get; set; } = false;
 
+    /// <summary>
+    /// Indicates whether this expense is a known fixed/calendar expense (e.g., monthly rent, school tuition)
+    /// that should be accounted for at its actual amount rather than linearly extrapolated daily.
+    /// </summary>
+    public bool IsFixedOrRecurring { get; set; } = false;
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     // Non-persisted UI helpers

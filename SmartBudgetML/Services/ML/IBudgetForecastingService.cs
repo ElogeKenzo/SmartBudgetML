@@ -4,8 +4,8 @@ using SmartBudgetML.Services.ML.Models;
 namespace SmartBudgetML.Services.ML;
 
 /// <summary>
-/// Service contract for predicting end-of-month financial spending using
-/// Linear Regression on daily cumulative expenditure trends.
+/// Service contract for predicting end-of-period financial spending using
+/// Linear Regression on daily variable expenditure trends plus known fixed/calendar expenses.
 /// </summary>
 public interface IBudgetForecastingService
 {
@@ -14,4 +14,12 @@ public interface IBudgetForecastingService
         decimal monthlyBudget,
         DateTime? asOfDate = null,
         string currencyCode = "XAF");
+
+    BudgetForecastResult ForecastPeriod(
+        IEnumerable<Expense> expenses,
+        decimal periodBudget,
+        BudgetPeriodMode periodMode = BudgetPeriodMode.Monthly,
+        DateTime? asOfDate = null,
+        string currencyCode = "XAF",
+        IEnumerable<Expense>? upcomingFixedExpenses = null);
 }

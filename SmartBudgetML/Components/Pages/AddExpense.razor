@@ -1,5 +1,7 @@
 @page "/add-expense"
+@implements IDisposable
 @using Microsoft.Extensions.Logging
+@using SmartBudgetML.Services.ML.Models
 @inject NavigationManager NavManager
 @inject IDatabaseService DbService
 @inject IAppSettingsProvider SettingsProvider
@@ -47,17 +49,17 @@
     <div class="card-dark">
         <div class="form-group-dark">
             <label class="form-label-dark" for="input-description">Description</label>
-            <input id="input-description" class="form-input-dark" placeholder="e.g. Uber ride, Whole Foods, Netflix"
+            <input id="input-description" class="form-input-dark" placeholder="e.g. Moto bendskin, Facture ENEO, Marché Mokolo"
                    @bind="Description" @bind:event="oninput" @bind:after="OnDescriptionChangedAsync" autocomplete="off" />
         </div>
 
-        @* Real-Time ML Auto-Categorization Suggestion Banner *@
+        @* Real-Time Hybrid Auto-Categorization Suggestion Banner *@
         @if (!string.IsNullOrWhiteSpace(PredictedCategoryName))
         {
             <div class="ml-suggestion-pill" id="ml-suggestion-banner">
                 <div class="ml-pill-left">
                     <span>✨</span>
-                    <span>ML suggested: <strong>@PredictedCategoryName</strong></span>
+                    <span>Suggestion : <strong>@PredictedCategoryName</strong> @PredictionSourceBadge</span>
                     <span class="ml-pill-confidence">@((int)((PredictionConfidence ?? 0.0f) * 100))%</span>
                 </div>
                 <button id="btn-accept-ml" type="button" class="ml-pill-accept-btn" @onclick="ApplyMlSuggestion">
@@ -86,13 +88,23 @@
             }
         </div>
 
-        @* Date & Notes Optional Fields *@
+        @* Date & Fixed Expense Option *@
         <div class="form-row" style="margin-top: 14px;">
             <div class="form-group-dark flex-1">
                 <label class="form-label-dark" for="input-date">Date</label>
                 <input id="input-date" type="date" class="form-input-dark" @bind="Date" />
             </div>
         </div>
+
+        @if (!IsIncome)
+        {
+            <div class="form-row" style="margin-top: 10px; align-items: center;">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); cursor: pointer;">
+                    <input id="chk-fixed-expense" type="checkbox" @bind="IsFixedOrRecurring" />
+                    <span>Fixed / calendar expense (rent, tuition, monthly bill)</span>
+                </label>
+            </div>
+        }
 
         @if (!string.IsNullOrEmpty(ErrorMessage))
         {
@@ -123,14 +135,20 @@
 </div>
 
 @code {
-    private string Currency = "$";
+    private const int DebounceDelayMs = 300;
+    private CancellationTokenSource? _debounceCts;
+
+    private string Currency = "FCFA";
     private string RawAmount = "0";
     private bool IsIncome = false;
+    private bool IsFixedOrRecurring = false;
     private string Description = string.Empty;
     private DateTime Date = DateTime.Today;
     private int? SelectedCategoryId;
     private string? PredictedCategoryName;
     private float? PredictionConfidence;
+    private PredictionSource LastPredictionSource = PredictionSource.None;
+    private string? MatchedRuleKeyword;
     private bool IsMlApplied = false;
     private string? ErrorMessage;
     private bool IsSubmitting = false;
@@ -143,14 +161,25 @@
     private Category? SelectedCategory =>
         Categories.FirstOrDefault(c => c.Id == SelectedCategoryId);
 
+    private string PredictionSourceBadge => LastPredictionSource switch
+    {
+        PredictionSource.UserMemory => "(mémoire)",
+        PredictionSource.Rules when !string.IsNullOrWhiteSpace(MatchedRuleKeyword) => $"(règle : « {MatchedRuleKeyword} »)",
+        PredictionSource.Rules => "(règle)",
+        PredictionSource.Model => "(ML)",
+        _ => string.Empty
+    };
+
     private string FormattedAmount
     {
         get
         {
-            if (string.IsNullOrEmpty(RawAmount) || RawAmount == "0") return "0.00";
+            if (string.IsNullOrEmpty(RawAmount) || RawAmount == "0") return "0";
             if (decimal.TryParse(RawAmount, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsed))
             {
-                return parsed.ToString("N2", System.Globalization.CultureInfo.InvariantCulture);
+                return parsed % 1 == 0
+                    ? parsed.ToString("N0", System.Globalization.CultureInfo.InvariantCulture)
+                    : parsed.ToString("N2", System.Globalization.CultureInfo.InvariantCulture);
             }
             return RawAmount;
         }
@@ -164,7 +193,7 @@
         try
         {
             var profile = await AuthService.GetUserProfileAsync();
-            if (profile != null)
+            if (profile != null && !string.IsNullOrWhiteSpace(profile.CurrencySymbol))
             {
                 Currency = profile.CurrencySymbol;
             }
@@ -249,20 +278,40 @@
 
     private async Task OnDescriptionChangedAsync()
     {
+        _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
+        _debounceCts = new CancellationTokenSource();
+        var token = _debounceCts.Token;
+
         if (string.IsNullOrWhiteSpace(Description) || Description.Length < 2)
         {
             PredictedCategoryName = null;
             PredictionConfidence = null;
+            LastPredictionSource = PredictionSource.None;
+            MatchedRuleKeyword = null;
             return;
         }
 
         try
         {
-            var pred = Categorizer.Predict(Description);
-            if (pred != null && !string.IsNullOrEmpty(pred.PredictedCategory))
+            await Task.Delay(DebounceDelayMs, token);
+            if (token.IsCancellationRequested) return;
+
+            var settings = await SettingsProvider.GetSettingsAsync();
+            if (!settings.AutoCategorizeEnabled)
+            {
+                PredictedCategoryName = null;
+                PredictionConfidence = null;
+                return;
+            }
+
+            var pred = Categorizer.Predict(Description, confidenceThreshold: settings.MlConfidenceThreshold);
+            if (pred != null && !string.IsNullOrEmpty(pred.PredictedCategory) && pred.Source != PredictionSource.Fallback)
             {
                 PredictedCategoryName = pred.PredictedCategory;
                 PredictionConfidence = pred.Confidence;
+                LastPredictionSource = pred.Source;
+                MatchedRuleKeyword = pred.MatchedRuleKeyword;
 
                 var shouldAutoSelect = await SettingsProvider.ShouldAutoSelectCategoryAsync(pred.Confidence);
                 if (shouldAutoSelect && !IsMlApplied)
@@ -274,10 +323,21 @@
                     }
                 }
             }
+            else
+            {
+                PredictedCategoryName = null;
+                PredictionConfidence = null;
+                LastPredictionSource = PredictionSource.None;
+                MatchedRuleKeyword = null;
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            // Expected during fast user typing
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "ML prediction failed for description input.");
+            Logger.LogWarning(ex, "Hybrid categorization prediction failed for description input.");
         }
     }
 
@@ -330,6 +390,7 @@
                 Date = Date,
                 CategoryId = SelectedCategoryId.Value,
                 IsIncome = IsIncome,
+                IsFixedOrRecurring = !IsIncome && IsFixedOrRecurring,
                 IsMlPredicted = IsMlApplied,
                 PredictionConfidence = PredictionConfidence,
                 CreatedAt = DateTime.UtcNow
@@ -343,11 +404,11 @@
                 {
                     try
                     {
-                        await Categorizer.RetrainWithFeedbackAsync(expense.Description, chosenCategory.Name);
+                        await Categorizer.RecordFeedbackAsync(expense.Description, chosenCategory.Name);
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogWarning(ex, "Background feedback retraining failed.");
+                        Logger.LogWarning(ex, "Background feedback recording failed.");
                     }
                 });
             }
@@ -367,6 +428,12 @@
 
     private void GoHome() => NavManager.NavigateTo("");
 
+    public void Dispose()
+    {
+        _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
+    }
+
     private static List<Category> GetPreviewCategories() => new()
     {
         new() { Id = 1, Name = "Food & Dining", Icon = "utensils", ColorHex = "#F59E0B", IsIncome = false },
@@ -374,10 +441,10 @@
         new() { Id = 3, Name = "Groceries", Icon = "shopping-cart", ColorHex = "#10B981", IsIncome = false },
         new() { Id = 4, Name = "Entertainment", Icon = "film", ColorHex = "#EC4899", IsIncome = false },
         new() { Id = 5, Name = "Shopping", Icon = "shopping-bag", ColorHex = "#8B5CF6", IsIncome = false },
-        new() { Id = 6, Name = "Housing", Icon = "home", ColorHex = "#6366F1", IsIncome = false },
+        new() { Id = 6, Name = "Housing & Rent", Icon = "home", ColorHex = "#6366F1", IsIncome = false },
         new() { Id = 7, Name = "Utilities", Icon = "zap", ColorHex = "#06B6D4", IsIncome = false },
         new() { Id = 8, Name = "Healthcare", Icon = "heart", ColorHex = "#EF4444", IsIncome = false },
-        new() { Id = 9, Name = "Salary", Icon = "wallet", ColorHex = "#10B981", IsIncome = true },
+        new() { Id = 9, Name = "Salary / Income", Icon = "wallet", ColorHex = "#10B981", IsIncome = true },
         new() { Id = 10, Name = "Investments", Icon = "trending-up", ColorHex = "#14B8A6", IsIncome = true }
     };
 }
