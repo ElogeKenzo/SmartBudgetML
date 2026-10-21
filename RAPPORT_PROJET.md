@@ -6,7 +6,7 @@
 | **Projet** | SmartBudget ML | **Version** | v2.0.0 (Release) |
 | :--- | :--- | :--- | :--- |
 | **Auteur** | Lissom Eloge Dekenzo Abel | **Date** | Octobre 2026 |
-| **Statut des Tests** | **137 réussis / 0 échec / 2 ignorés (`Skip`) sur 139 cas xUnit** (11 fichiers, 77 méthodes `[Fact]`/`[Theory]`) | **Dépôt GitHub** | [ElogeKenzo/SmartBudgetML](https://github.com/ElogeKenzo/SmartBudgetML.git) |
+| **Statut des Tests** | **139 réussis / 0 échec / 0 ignoré sur 139 cas xUnit** (11 fichiers, 77 méthodes `[Fact]`/`[Theory]`) | **Dépôt GitHub** | [ElogeKenzo/SmartBudgetML](https://github.com/ElogeKenzo/SmartBudgetML.git) |
 | **Architecture** | 100 % Local-First / Edge AI / Zéro permission `INTERNET` ou `READ_SMS` | **Framework** | **.NET 10.0 LTS** MAUI Blazor Hybrid (`net10.0-android`, `net10.0-windows10.0.19041.0`) |
 
 ---
@@ -105,7 +105,7 @@ Conformément aux règles d'honnêteté technique (`CLAUDE.md` §1.1), chaque fo
 | Localisation FR/EN (128 clés), devise XAF (`FCFA`) & 17 catégories camerounaises (`A12`, `A13`) | `VÉRIFIÉ-TESTS` | `Phase5CameroonLocalizationTests.*`, `Phase1HonestyTests.CurrencyFormatter_*` |
 | Tontines / Njangi (`TontineCalculator`) & Revenus irréguliers (`IrregularIncomePlanner`, `A19`) | `VÉRIFIÉ-TESTS` | `Phase6LocalValueTests.TontineCalculator_*`, `IrregularIncomePlanner_*` |
 | Architecture d'import SMS Mobile Money sans `READ_SMS` (`SmsParserRegistry`) | `VÉRIFIÉ-TESTS` | `Phase6LocalValueTests.SmsParserRegistry_*`, `MobileMoneyAmountParser_*` |
-| Expressions régulières spécifiques Orange Money CM & MTN MoMo CM | `NON IMPLÉMENTÉ (Skip)` | En attente des 10–20 vrais SMS anonymisés de l'utilisateur (`CLAUDE.md` §6.1). |
+| Expressions régulières spécifiques Orange Money CM & MTN MoMo CM | `VÉRIFIÉ-TESTS` | `OrangeMoneyCameroonParser` & `MtnMomoCameroonParser` calibrés sur 20 vrais SMS camerounais anonymisés (`Phase6LocalValueTests`). |
 | Pipeline CI/CD GitHub Actions (Tests, Analyse, APK/AAB, Émulateur Redmi 3 Go) (`A16`) | `VÉRIFIÉ-ÉMULATEUR` | `.github/workflows/maui-android-ci.yml` + `EndToEndSmokeTests` |
 
 ---
@@ -125,9 +125,9 @@ Contrairement au rapport v1.0 qui annonçait une répartition approximative, voi
 | [`Phase3SecurityTests.cs`](SmartBudgetML.Tests/Security/Phase3SecurityTests.cs) | 7 | 2 | 17 | **24** | SQLCipher 256 bits, migration clair→chiffré, rate-limiting PIN, anti-rollback, `AutoLockPolicy`, purge. |
 | [`Phase4MlHybridTests.cs`](SmartBudgetML.Tests/ML/Phase4MlHybridTests.cs) | 14 | 2 | 16 | **30** | Datasets camerounais sans fuite, pipeline 3 étages, non-blocage UI, persistance modèle, charges fixes, 29 fév. |
 | [`Phase5CameroonLocalizationTests.cs`](SmartBudgetML.Tests/Localization/Phase5CameroonLocalizationTests.cs) | 3 | 0 | 0 | **3** | Parité 100 % FR/EN (128 clés), défauts XAF/FCFA/fr, migration non destructive des catégories v1.0. |
-| [`Phase6LocalValueTests.cs`](SmartBudgetML.Tests/LocalValue/Phase6LocalValueTests.cs) | 6 | 1 | 6 | **12** *(10 passés, 2 Skip)* | `TontineCalculator`, `IrregularIncomePlanner`, `SmsParserRegistry`, `MobileMoneyAmountParser`. |
+| [`Phase6LocalValueTests.cs`](SmartBudgetML.Tests/LocalValue/Phase6LocalValueTests.cs) | 6 | 1 | 6 | **12** | `TontineCalculator`, `IrregularIncomePlanner`, `SmsParserRegistry`, `OrangeMoneyCameroonParser`, `MtnMomoCameroonParser`. |
 | [`EndToEndSmokeTests.cs`](SmartBudgetML.Tests/Smoke/EndToEndSmokeTests.cs) | 1 | 0 | 0 | **1** | Parcours complet de fumée (Onboarding → SQLCipher → ML Hybride → Dépense → Prévision → AutoLock). |
-| **TOTAL VÉRIFIÉ** | **67** | **10** | **72** | **139** | **137 réussis, 0 échec, 2 ignorés (`Skip`)** |
+| **TOTAL VÉRIFIÉ** | **67** | **10** | **72** | **139** | **139 réussis, 0 échec, 0 ignoré (`100 % Pass`)** |
 
 ---
 
