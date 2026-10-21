@@ -30,6 +30,10 @@ public class DatabaseService : IDatabaseService
     public IRepository<UserProfile> UserProfiles { get; private set; } = null!;
     public IRepository<AppSettings> Settings { get; private set; } = null!;
     public IRepository<CategoryFeedback> CategoryFeedbacks { get; private set; } = null!;
+    public IRepository<Tontine> Tontines { get; private set; } = null!;
+    public IRepository<TontineMember> TontineMembers { get; private set; } = null!;
+    public IRepository<TontineRound> TontineRounds { get; private set; } = null!;
+    public IRepository<TontineContribution> TontineContributions { get; private set; } = null!;
 
     public DatabaseService(string? customDbPath = null, ISecureKeyStore? keyStore = null)
     {
@@ -101,12 +105,20 @@ public class DatabaseService : IDatabaseService
         await _connection.CreateTableAsync<UserProfile>();
         await _connection.CreateTableAsync<AppSettings>();
         await _connection.CreateTableAsync<CategoryFeedback>();
+        await _connection.CreateTableAsync<Tontine>();
+        await _connection.CreateTableAsync<TontineMember>();
+        await _connection.CreateTableAsync<TontineRound>();
+        await _connection.CreateTableAsync<TontineContribution>();
 
         Categories = new SqliteRepository<Category>(_connection);
         Expenses = new SqliteRepository<Expense>(_connection);
         UserProfiles = new SqliteRepository<UserProfile>(_connection);
         Settings = new SqliteRepository<AppSettings>(_connection);
         CategoryFeedbacks = new SqliteRepository<CategoryFeedback>(_connection);
+        Tontines = new SqliteRepository<Tontine>(_connection);
+        TontineMembers = new SqliteRepository<TontineMember>(_connection);
+        TontineRounds = new SqliteRepository<TontineRound>(_connection);
+        TontineContributions = new SqliteRepository<TontineContribution>(_connection);
     }
 
     private static bool IsPlaintextSqliteFile(string filePath)

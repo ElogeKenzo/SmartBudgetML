@@ -27,6 +27,12 @@ public class UserProfile : IEntity
 
     public double TargetSavingsRate { get; set; } = 20.0; // 20% default
 
+    public IncomeProfileType IncomeProfile { get; set; } = IncomeProfileType.Fixed;
+
+    public decimal VitalMinimumSpend { get; set; } = 0m;
+
+    public decimal MonthlySolidarityTarget { get; set; } = 0m;
+
     public bool IsOnboardingCompleted { get; set; } = false;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
