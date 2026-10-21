@@ -1,3 +1,5 @@
+@inject IStringLocalizer<AppStrings> L
+
 <div class="transaction-card" id="@($"txn-{Item.Id}")">
     <div class="transaction-left">
         <div class="transaction-category-icon" style="background:@UiFormat.TileBackground(Item.CategoryColor)">
@@ -6,12 +8,12 @@
         <div class="transaction-meta">
             <span class="transaction-desc">@Item.Description</span>
             <span class="transaction-cat-name">
-                @(Item.CategoryName ?? "Uncategorized")
+                @(Item.CategoryName ?? L["Shared_Uncategorized"].Value)
                 @if (Item.IsMlPredicted)
                 {
-                    <span class="ml-auto-badge" title="Categorized on-device by ML.NET">AI</span>
+                    <span class="ml-auto-badge" title="@L["Settings_OnDeviceMlBadge"]">@L["Shared_AiBadge"]</span>
                 }
-                <span class="transaction-date">· @Item.Date.ToString("MMM d", System.Globalization.CultureInfo.InvariantCulture)</span>
+                <span class="transaction-date">· @Item.Date.ToString("MMM d", L.CurrentLanguage.StartsWith("en", StringComparison.OrdinalIgnoreCase) ? System.Globalization.CultureInfo.GetCultureInfo("en-US") : System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</span>
             </span>
         </div>
     </div>
@@ -22,5 +24,5 @@
 
 @code {
     [Parameter, EditorRequired] public Expense Item { get; set; } = default!;
-    [Parameter] public string CurrencySymbol { get; set; } = "$";
+    [Parameter] public string CurrencySymbol { get; set; } = "FCFA";
 }

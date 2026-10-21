@@ -224,22 +224,12 @@ public class DatabaseService : IDatabaseService
         var categoryCount = await Categories.CountAsync();
         if (categoryCount == 0)
         {
-            var defaultCategories = new List<Category>
-            {
-                new() { Name = "Food & Dining", Icon = "utensils", ColorHex = "#F59E0B", BudgetLimit = 350m, IsDefault = true, IsIncome = false },
-                new() { Name = "Transportation", Icon = "car", ColorHex = "#3B82F6", BudgetLimit = 150m, IsDefault = true, IsIncome = false },
-                new() { Name = "Housing & Rent", Icon = "home", ColorHex = "#8B5CF6", BudgetLimit = 800m, IsDefault = true, IsIncome = false },
-                new() { Name = "Utilities", Icon = "zap", ColorHex = "#EAB308", BudgetLimit = 120m, IsDefault = true, IsIncome = false },
-                new() { Name = "Groceries", Icon = "shopping-cart", ColorHex = "#10B981", BudgetLimit = 400m, IsDefault = true, IsIncome = false },
-                new() { Name = "Healthcare", Icon = "heart", ColorHex = "#EF4444", BudgetLimit = 100m, IsDefault = true, IsIncome = false },
-                new() { Name = "Entertainment", Icon = "film", ColorHex = "#EC4899", BudgetLimit = 120m, IsDefault = true, IsIncome = false },
-                new() { Name = "Shopping", Icon = "shopping-bag", ColorHex = "#14B8A6", BudgetLimit = 200m, IsDefault = true, IsIncome = false },
-                new() { Name = "Salary / Income", Icon = "wallet", ColorHex = "#10B981", BudgetLimit = 0m, IsDefault = true, IsIncome = true },
-                new() { Name = "Investments", Icon = "trending-up", ColorHex = "#6366F1", BudgetLimit = 250m, IsDefault = true, IsIncome = false },
-                new() { Name = "Other", Icon = "more-horizontal", ColorHex = "#6B7280", BudgetLimit = 100m, IsDefault = true, IsIncome = false }
-            };
-
+            var defaultCategories = CategoryCatalog.GetCameroonianDefaultCategories();
             await Categories.InsertAllAsync(defaultCategories);
+        }
+        else
+        {
+            await MigrateLegacyCategoriesAsync();
         }
 
         var settingsCount = await Settings.CountAsync();
@@ -250,7 +240,8 @@ public class DatabaseService : IDatabaseService
                 IsBiometricEnabled = false,
                 IsPinAuthEnabled = false,
                 DarkMode = true,
-                CurrencyCode = "USD",
+                CurrencyCode = "XAF",
+                Language = "fr",
                 AutoLockTimeoutSeconds = 300,
                 MlConfidenceThreshold = 0.70f,
                 AutoCategorizeEnabled = true,
@@ -261,6 +252,38 @@ public class DatabaseService : IDatabaseService
                 IsScreenProtectionEnabled = true
             };
             await Settings.InsertAsync(defaultSettings);
+        }
+    }
+
+    private async Task MigrateLegacyCategoriesAsync()
+    {
+        var existingCategories = await Categories.GetAllAsync();
+        var existingKeys = new HashSet<string>(
+            existingCategories.Where(c => !string.IsNullOrWhiteSpace(c.Key)).Select(c => c.Key),
+            StringComparer.OrdinalIgnoreCase);
+
+        foreach (var cat in existingCategories)
+        {
+            if (string.IsNullOrWhiteSpace(cat.Key))
+            {
+                var resolvedKey = CategoryCatalog.ResolveCategoryKey(cat.Name);
+                if (!string.IsNullOrWhiteSpace(resolvedKey) && !existingKeys.Contains(resolvedKey))
+                {
+                    cat.Key = resolvedKey;
+                    await Categories.UpdateAsync(cat);
+                    existingKeys.Add(resolvedKey);
+                }
+            }
+        }
+
+        var cameroonianDefaults = CategoryCatalog.GetCameroonianDefaultCategories();
+        var missingCategories = cameroonianDefaults
+            .Where(d => !existingKeys.Contains(d.Key))
+            .ToList();
+
+        if (missingCategories.Count > 0)
+        {
+            await Categories.InsertAllAsync(missingCategories);
         }
     }
 

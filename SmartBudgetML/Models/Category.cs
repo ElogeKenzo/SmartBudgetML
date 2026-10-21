@@ -3,13 +3,19 @@ using SQLite;
 namespace SmartBudgetML.Models;
 
 /// <summary>
-/// Represents an expense or income category.
+/// Represents an expense or income category identified by a language-independent stable Key.
 /// </summary>
 [Table("Categories")]
 public class Category : IEntity
 {
     [PrimaryKey, AutoIncrement]
     public int Id { get; set; }
+
+    /// <summary>
+    /// Language-independent stable category identifier (e.g. "food_market", "transport", "tontine").
+    /// </summary>
+    [MaxLength(50), Indexed]
+    public string Key { get; set; } = string.Empty;
 
     [NotNull, MaxLength(100), Indexed]
     public string Name { get; set; } = string.Empty;

@@ -1557,3 +1557,37 @@ input:checked + .toggle-slider:before {
     font-size: 13px;
     font-weight: 600;
 }
+
+
+/* ==========================================================================
+   Phase 5: Low-End Android Ergonomics, >= 48px Touch Targets & Accessibility
+   ========================================================================== */
+.header-action-btn,
+.nav-item,
+.nav-fab-btn,
+.keypad-btn,
+.btn-primary-gradient,
+.btn-secondary-action,
+.btn-logout,
+.btn-ghost,
+.retrain-action-btn,
+.settings-action-row,
+.currency-pill-btn,
+.segmented-btn,
+.category-chip {
+    min-height: 48px;
+    min-width: 48px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+}

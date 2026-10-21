@@ -22,16 +22,13 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
-  <!--
-    Shared source link to platform-agnostic models and services in main project.
-    Excludes hardware-dependent MAUI implementations which are mocked/substituted in tests.
-  -->
   <ItemGroup>
     <Compile Include="..\SmartBudgetML\Models\**\*.cs" LinkBase="Models" />
-    <Compile Include="..\SmartBudgetML\Services\**\*.cs"
-             Exclude="..\SmartBudgetML\Services\Auth\BiometricService.cs;..\SmartBudgetML\Services\Security\MauiSecureKeyStore.cs"
-             LinkBase="Services" />
+    <Compile Include="..\SmartBudgetML\Services\**\*.cs" Exclude="..\SmartBudgetML\Services\Auth\BiometricService.cs;..\SmartBudgetML\Services\Security\MauiSecureKeyStore.cs" LinkBase="Services" />
+    <Compile Include="..\SmartBudgetML\Resources\Strings\AppStrings.cs" LinkBase="Resources\Strings" />
     <Compile Include="..\SmartBudgetML\Components\Shared\UiFormat.cs" LinkBase="Components\Shared" />
+    <None Include="..\SmartBudgetML\Resources\Raw\*.csv" CopyToOutputDirectory="PreserveNewest" LinkBase="Resources\Raw" />
+    <None Include="..\SmartBudgetML\Resources\Strings\*.resx" CopyToOutputDirectory="PreserveNewest" LinkBase="Resources\Strings" />
   </ItemGroup>
 
 </Project>

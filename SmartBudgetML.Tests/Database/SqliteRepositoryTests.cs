@@ -41,13 +41,15 @@ public class SqliteRepositoryTests : IDisposable
 
         // Assert
         Assert.NotEmpty(categories);
-        Assert.True(categories.Count >= 10, "Should have seeded default categories.");
-        Assert.Contains(categories, c => c.Name == "Food & Dining");
-        Assert.Contains(categories, c => c.Name == "Transportation");
-        Assert.Contains(categories, c => c.Name == "Salary / Income" && c.IsIncome);
+        Assert.True(categories.Count >= 17, "Should have seeded 17 Cameroonian default categories.");
+        Assert.Contains(categories, c => c.Key == "food_market" && c.Name == "Alimentation / Marché");
+        Assert.Contains(categories, c => c.Key == "transport" && c.Name == "Transport (Taxi / Moto / Car)");
+        Assert.Contains(categories, c => c.Key == "salary" && c.IsIncome);
 
         Assert.Single(settings);
         Assert.True(settings[0].DarkMode, "Default theme should be dark mode.");
+        Assert.Equal("XAF", settings[0].CurrencyCode);
+        Assert.Equal("fr", settings[0].Language);
     }
 
     [Fact]

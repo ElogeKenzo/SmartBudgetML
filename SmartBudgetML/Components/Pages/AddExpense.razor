@@ -7,18 +7,19 @@
 @inject IAppSettingsProvider SettingsProvider
 @inject ILocalAuthService AuthService
 @inject IExpenseCategorizerService Categorizer
+@inject IStringLocalizer<AppStrings> L
 @inject ILogger<AddExpense> Logger
 
-<PageTitle>Add Expense · SmartBudget ML</PageTitle>
+<PageTitle>@L["AddExpense_PageTitle"]</PageTitle>
 
 <div class="add-expense-container">
     @* Screen Header *@
     <div class="screen-header-row">
         <div>
-            <h1 class="screen-title">Add transaction</h1>
-            <p class="screen-subtitle">Track your spending with AI categorization</p>
+            <h1 class="screen-title">@L["AddExpense_Title"]</h1>
+            <p class="screen-subtitle">@L["AddExpense_Subtitle"]</p>
         </div>
-        <button id="btn-cancel-expense" class="header-action-btn" type="button" title="Cancel" @onclick="GoHome">
+        <button id="btn-cancel-expense" class="header-action-btn" type="button" title="@L["AddExpense_Cancel"]" @onclick="GoHome">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -28,7 +29,7 @@
 
     @* Hero Amount Display with Segmented Toggle *@
     <div class="amount-hero-box" id="box-amount-display">
-        <span class="amount-label">Amount (@Currency)</span>
+        <span class="amount-label">@L["AddExpense_AmountLabel", Currency]</span>
         <div class="amount-display-row">
             <span class="amount-symbol">@Currency</span>
             <span>@FormattedAmount</span>
@@ -37,10 +38,10 @@
 
         <div class="segmented-control">
             <button id="btn-type-expense" type="button" class="segmented-btn @(!IsIncome ? "active" : "")" @onclick="() => IsIncome = false">
-                Expense
+                @L["AddExpense_Expense"]
             </button>
             <button id="btn-type-income" type="button" class="segmented-btn @(IsIncome ? "active" : "")" @onclick="() => IsIncome = true">
-                Income
+                @L["AddExpense_Income"]
             </button>
         </div>
     </div>
@@ -48,8 +49,8 @@
     @* Transaction Details Form *@
     <div class="card-dark">
         <div class="form-group-dark">
-            <label class="form-label-dark" for="input-description">Description</label>
-            <input id="input-description" class="form-input-dark" placeholder="e.g. Moto bendskin, Facture ENEO, Marché Mokolo"
+            <label class="form-label-dark" for="input-description">@L["AddExpense_Description"]</label>
+            <input id="input-description" class="form-input-dark" placeholder="@L["AddExpense_DescriptionPlaceholder"]"
                    @bind="Description" @bind:event="oninput" @bind:after="OnDescriptionChangedAsync" autocomplete="off" />
         </div>
 
@@ -59,21 +60,21 @@
             <div class="ml-suggestion-pill" id="ml-suggestion-banner">
                 <div class="ml-pill-left">
                     <span>✨</span>
-                    <span>Suggestion : <strong>@PredictedCategoryName</strong> @PredictionSourceBadge</span>
+                    <span>@L["AddExpense_SuggestionLabel"] <strong>@PredictedCategoryDisplayName</strong> @PredictionSourceBadge</span>
                     <span class="ml-pill-confidence">@((int)((PredictionConfidence ?? 0.0f) * 100))%</span>
                 </div>
                 <button id="btn-accept-ml" type="button" class="ml-pill-accept-btn" @onclick="ApplyMlSuggestion">
-                    Apply
+                    @L["AddExpense_Apply"]
                 </button>
             </div>
         }
 
         @* Category Selection Grid *@
         <div class="category-picker-header" style="margin-top: 14px;">
-            <label class="form-label-dark">Category</label>
+            <label class="form-label-dark">@L["AddExpense_Category"]</label>
             @if (SelectedCategory != null)
             {
-                <span class="text-secondary" style="font-size: 11px;">Selected: <strong style="color:var(--accent-cyan)">@SelectedCategory.Name</strong></span>
+                <span class="text-secondary" style="font-size: 11px;">@L["AddExpense_Selected"] <strong style="color:var(--accent-cyan)">@CategoryCatalog.GetDisplayName(SelectedCategory, L.CurrentLanguage)</strong></span>
             }
         </div>
 
@@ -83,7 +84,7 @@
                 var isSelected = SelectedCategoryId == cat.Id;
                 <div class="category-chip @(isSelected ? "selected" : "")" id="@($"cat-chip-{cat.Id}")" @onclick="() => SelectCategory(cat)">
                     <span class="category-chip-glyph">@UiFormat.CategoryGlyph(cat.Icon)</span>
-                    <span class="category-chip-name">@cat.Name</span>
+                    <span class="category-chip-name">@CategoryCatalog.GetDisplayName(cat, L.CurrentLanguage)</span>
                 </div>
             }
         </div>
@@ -91,7 +92,7 @@
         @* Date & Fixed Expense Option *@
         <div class="form-row" style="margin-top: 14px;">
             <div class="form-group-dark flex-1">
-                <label class="form-label-dark" for="input-date">Date</label>
+                <label class="form-label-dark" for="input-date">@L["AddExpense_Date"]</label>
                 <input id="input-date" type="date" class="form-input-dark" @bind="Date" />
             </div>
         </div>
@@ -101,7 +102,7 @@
             <div class="form-row" style="margin-top: 10px; align-items: center;">
                 <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); cursor: pointer;">
                     <input id="chk-fixed-expense" type="checkbox" @bind="IsFixedOrRecurring" />
-                    <span>Fixed / calendar expense (rent, tuition, monthly bill)</span>
+                    <span>@L["AddExpense_FixedExpenseCheck"]</span>
                 </label>
             </div>
         }
@@ -121,7 +122,7 @@
     <button id="btn-submit-expense" type="button" class="btn-primary-gradient" disabled="@IsSubmitting" @onclick="SaveTransaction">
         @if (IsSubmitting)
         {
-            <span>Saving...</span>
+            <span>@L["AddExpense_Saving"]</span>
         }
         else
         {
@@ -129,7 +130,7 @@
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
-            <span>@(IsIncome ? "+ Add income" : "+ Add expense")</span>
+            <span>@(IsIncome ? L["AddExpense_SubmitIncome"] : L["AddExpense_SubmitExpense"])</span>
         }
     </button>
 </div>
@@ -160,6 +161,15 @@
 
     private Category? SelectedCategory =>
         Categories.FirstOrDefault(c => c.Id == SelectedCategoryId);
+
+    private string PredictedCategoryDisplayName
+    {
+        get
+        {
+            var matched = FindMatchingCategory(PredictedCategoryName);
+            return matched != null ? CategoryCatalog.GetDisplayName(matched, L.CurrentLanguage) : (PredictedCategoryName ?? string.Empty);
+        }
+    }
 
     private string PredictionSourceBadge => LastPredictionSource switch
     {
@@ -220,7 +230,11 @@
 
         if (Categories == null || Categories.Count == 0)
         {
-            Categories = GetPreviewCategories();
+            Categories = CategoryCatalog.GetCameroonianDefaultCategories();
+            for (int i = 0; i < Categories.Count; i++)
+            {
+                Categories[i].Id = i + 1;
+            }
         }
     }
 
@@ -238,14 +252,7 @@
         ErrorMessage = null;
         if (key == "back")
         {
-            if (RawAmount.Length > 1)
-            {
-                RawAmount = RawAmount[..^1];
-            }
-            else
-            {
-                RawAmount = "0";
-            }
+            RawAmount = RawAmount.Length > 1 ? RawAmount[..^1] : "0";
             return;
         }
 
@@ -274,6 +281,20 @@
                 RawAmount += key;
             }
         }
+    }
+
+    private Category? FindMatchingCategory(string? categoryNameOrKey)
+    {
+        if (string.IsNullOrWhiteSpace(categoryNameOrKey)) return null;
+
+        var resolvedKey = CategoryCatalog.ResolveCategoryKey(categoryNameOrKey);
+        if (!string.IsNullOrWhiteSpace(resolvedKey))
+        {
+            var byKey = Categories.FirstOrDefault(c => string.Equals(c.Key, resolvedKey, StringComparison.OrdinalIgnoreCase));
+            if (byKey != null) return byKey;
+        }
+
+        return Categories.FirstOrDefault(c => c.Name.Equals(categoryNameOrKey, StringComparison.OrdinalIgnoreCase));
     }
 
     private async Task OnDescriptionChangedAsync()
@@ -316,7 +337,7 @@
                 var shouldAutoSelect = await SettingsProvider.ShouldAutoSelectCategoryAsync(pred.Confidence);
                 if (shouldAutoSelect && !IsMlApplied)
                 {
-                    var matched = Categories.FirstOrDefault(c => c.Name.Equals(pred.PredictedCategory, StringComparison.OrdinalIgnoreCase));
+                    var matched = FindMatchingCategory(pred.PredictedCategory);
                     if (matched != null)
                     {
                         SelectedCategoryId = matched.Id;
@@ -344,7 +365,7 @@
     private void ApplyMlSuggestion()
     {
         if (string.IsNullOrEmpty(PredictedCategoryName)) return;
-        var matched = Categories.FirstOrDefault(c => c.Name.Equals(PredictedCategoryName, StringComparison.OrdinalIgnoreCase));
+        var matched = FindMatchingCategory(PredictedCategoryName);
         if (matched != null)
         {
             SelectedCategoryId = matched.Id;
@@ -363,19 +384,19 @@
         ErrorMessage = null;
         if (ParsedAmount <= 0)
         {
-            ErrorMessage = "Please enter an amount greater than 0.";
+            ErrorMessage = L["AddExpense_ErrAmount"].Value;
             return;
         }
 
         if (string.IsNullOrWhiteSpace(Description))
         {
-            ErrorMessage = "Please provide a description.";
+            ErrorMessage = L["AddExpense_ErrDescription"].Value;
             return;
         }
 
         if (SelectedCategoryId == null)
         {
-            ErrorMessage = "Please select a category.";
+            ErrorMessage = L["AddExpense_ErrCategory"].Value;
             return;
         }
 
@@ -433,18 +454,4 @@
         _debounceCts?.Cancel();
         _debounceCts?.Dispose();
     }
-
-    private static List<Category> GetPreviewCategories() => new()
-    {
-        new() { Id = 1, Name = "Food & Dining", Icon = "utensils", ColorHex = "#F59E0B", IsIncome = false },
-        new() { Id = 2, Name = "Transportation", Icon = "car", ColorHex = "#3B82F6", IsIncome = false },
-        new() { Id = 3, Name = "Groceries", Icon = "shopping-cart", ColorHex = "#10B981", IsIncome = false },
-        new() { Id = 4, Name = "Entertainment", Icon = "film", ColorHex = "#EC4899", IsIncome = false },
-        new() { Id = 5, Name = "Shopping", Icon = "shopping-bag", ColorHex = "#8B5CF6", IsIncome = false },
-        new() { Id = 6, Name = "Housing & Rent", Icon = "home", ColorHex = "#6366F1", IsIncome = false },
-        new() { Id = 7, Name = "Utilities", Icon = "zap", ColorHex = "#06B6D4", IsIncome = false },
-        new() { Id = 8, Name = "Healthcare", Icon = "heart", ColorHex = "#EF4444", IsIncome = false },
-        new() { Id = 9, Name = "Salary / Income", Icon = "wallet", ColorHex = "#10B981", IsIncome = true },
-        new() { Id = 10, Name = "Investments", Icon = "trending-up", ColorHex = "#14B8A6", IsIncome = true }
-    };
 }

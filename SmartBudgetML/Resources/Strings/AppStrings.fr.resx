@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <!-- Navigation & Layout -->
+  <data name="Nav_Home" xml:space="preserve"><value>Tableau de bord</value></data>
+  <data name="Nav_Analytics" xml:space="preserve"><value>Analyses</value></data>
+  <data name="Nav_AddExpense" xml:space="preserve"><value>Ajouter une dépense</value></data>
+  <data name="Nav_Profile" xml:space="preserve"><value>Profil</value></data>
+  <data name="Nav_Settings" xml:space="preserve"><value>Paramètres</value></data>
+  <data name="Layout_InitializingVault" xml:space="preserve"><value>Initialisation du coffre-fort local</value></data>
+  <data name="Layout_GoodMorning" xml:space="preserve"><value>Bonjour</value></data>
+  <data name="Layout_GoodAfternoon" xml:space="preserve"><value>Bon après-midi</value></data>
+  <data name="Layout_GoodEvening" xml:space="preserve"><value>Bonsoir</value></data>
+  <data name="Layout_LockApp" xml:space="preserve"><value>Verrouiller l'application</value></data>
+
+  <!-- Home / Dashboard -->
+  <data name="Home_PageTitle" xml:space="preserve"><value>Tableau de bord · SmartBudget ML</value></data>
+  <data name="Home_RemainingThisMonth" xml:space="preserve"><value>Reste ce mois-ci</value></data>
+  <data name="Home_OnTrack" xml:space="preserve"><value>▲ Dans le budget</value></data>
+  <data name="Home_OverPace" xml:space="preserve"><value>▼ Rythme élevé</value></data>
+  <data name="Home_Spent" xml:space="preserve"><value>Dépensé</value></data>
+  <data name="Home_Of" xml:space="preserve"><value>sur</value></data>
+  <data name="Home_DaysLeft" xml:space="preserve"><value>{0} jours restants</value></data>
+  <data name="Home_SafeDailyLimit" xml:space="preserve"><value>Plafond conseillé/jour</value></data>
+  <data name="Home_MlForecastLabel" xml:space="preserve"><value>Prévision ML :</value></data>
+  <data name="Home_MlForecastBody" xml:space="preserve"><value>vous dépenserez environ {0} d'ici la fin du mois ({1} du budget).</value></data>
+  <data name="Home_DailyAverage" xml:space="preserve"><value>Moyenne par jour</value></data>
+  <data name="Home_BurnRateTrend" xml:space="preserve"><value>Tendance journalière</value></data>
+  <data name="Home_PerDay" xml:space="preserve"><value>/jour</value></data>
+  <data name="Home_RecentTransactions" xml:space="preserve"><value>Transactions récentes</value></data>
+  <data name="Home_SeeAll" xml:space="preserve"><value>Tout voir</value></data>
+  <data name="Home_NoExpensesYet" xml:space="preserve"><value>Aucune dépense enregistrée. Appuyez sur + pour ajouter la première.</value></data>
+
+  <!-- Analytics -->
+  <data name="Analytics_PageTitle" xml:space="preserve"><value>Analyses · SmartBudget ML</value></data>
+  <data name="Analytics_Title" xml:space="preserve"><value>Analyses</value></data>
+  <data name="Analytics_Subtitle" xml:space="preserve"><value>Visualisez et maîtrisez vos dépenses</value></data>
+  <data name="Analytics_SpentSoFar" xml:space="preserve"><value>Dépensé jusqu'ici</value></data>
+  <data name="Analytics_DaysRecorded" xml:space="preserve"><value>{0} jours écoulés</value></data>
+  <data name="Analytics_ForecastMonthEnd" xml:space="preserve"><value>Projection fin de mois</value></data>
+  <data name="Analytics_Surplus" xml:space="preserve"><value>d'excédent</value></data>
+  <data name="Analytics_Over" xml:space="preserve"><value>de dépassement</value></data>
+  <data name="Analytics_SpendingOutlook" xml:space="preserve"><value>Trajectoire des dépenses</value></data>
+  <data name="Analytics_PastDays" xml:space="preserve"><value>Jours passés</value></data>
+  <data name="Analytics_MlForecast" xml:space="preserve"><value>Projection ML</value></data>
+  <data name="Analytics_Limit" xml:space="preserve"><value>Plafond : {0}</value></data>
+  <data name="Analytics_DayN" xml:space="preserve"><value>Jour {0}</value></data>
+  <data name="Analytics_ByCategory" xml:space="preserve"><value>Par catégorie</value></data>
+  <data name="Analytics_CategoriesCount" xml:space="preserve"><value>{0} catégories</value></data>
+  <data name="Analytics_Total" xml:space="preserve"><value>Total</value></data>
+  <data name="Analytics_NoExpensesThisMonth" xml:space="preserve"><value>Aucune dépense enregistrée pour ce mois.</value></data>
+  <data name="Analytics_MlInsightLabel" xml:space="preserve"><value>Conseil ML :</value></data>
+  <data name="Analytics_KeepDailySpendUnder" xml:space="preserve"><value>Gardez vos dépenses quotidiennes sous</value></data>
+
+  <!-- AddExpense -->
+  <data name="AddExpense_PageTitle" xml:space="preserve"><value>Nouvelle transaction · SmartBudget ML</value></data>
+  <data name="AddExpense_Title" xml:space="preserve"><value>Nouvelle transaction</value></data>
+  <data name="AddExpense_Subtitle" xml:space="preserve"><value>Catégorisation intelligente hors-ligne</value></data>
+  <data name="AddExpense_Cancel" xml:space="preserve"><value>Annuler</value></data>
+  <data name="AddExpense_AmountLabel" xml:space="preserve"><value>Montant ({0})</value></data>
+  <data name="AddExpense_Expense" xml:space="preserve"><value>Dépense</value></data>
+  <data name="AddExpense_Income" xml:space="preserve"><value>Revenu</value></data>
+  <data name="AddExpense_Description" xml:space="preserve"><value>Description</value></data>
+  <data name="AddExpense_DescriptionPlaceholder" xml:space="preserve"><value>ex. Moto bendskin, Facture ENEO, Marché Mokolo</value></data>
+  <data name="AddExpense_SuggestionLabel" xml:space="preserve"><value>Suggestion :</value></data>
+  <data name="AddExpense_Apply" xml:space="preserve"><value>Appliquer</value></data>
+  <data name="AddExpense_Category" xml:space="preserve"><value>Catégorie</value></data>
+  <data name="AddExpense_Selected" xml:space="preserve"><value>Sélection :</value></data>
+  <data name="AddExpense_Date" xml:space="preserve"><value>Date</value></data>
+  <data name="AddExpense_FixedExpenseCheck" xml:space="preserve"><value>Charge fixe / calendaire (loyer, scolarité, abonnement)</value></data>
+  <data name="AddExpense_Saving" xml:space="preserve"><value>Enregistrement...</value></data>
+  <data name="AddExpense_SubmitIncome" xml:space="preserve"><value>+ Ajouter le revenu</value></data>
+  <data name="AddExpense_SubmitExpense" xml:space="preserve"><value>+ Ajouter la dépense</value></data>
+  <data name="AddExpense_ErrAmount" xml:space="preserve"><value>Veuillez saisir un montant supérieur à 0.</value></data>
+  <data name="AddExpense_ErrDescription" xml:space="preserve"><value>Veuillez saisir une description.</value></data>
+  <data name="AddExpense_ErrCategory" xml:space="preserve"><value>Veuillez sélectionner une catégorie.</value></data>
+
+  <!-- Profile -->
+  <data name="Profile_PageTitle" xml:space="preserve"><value>Votre profil · SmartBudget ML</value></data>
+  <data name="Profile_Title" xml:space="preserve"><value>Votre profil</value></data>
+  <data name="Profile_Subtitle" xml:space="preserve"><value>Compte 100 % local et confidentiel</value></data>
+  <data name="Profile_LocalAccount" xml:space="preserve"><value>Compte local</value></data>
+  <data name="Profile_LocalVault" xml:space="preserve"><value>🔒 Coffre local #{0}</value></data>
+  <data name="Profile_MonthlyIncome" xml:space="preserve"><value>Revenu mensuel</value></data>
+  <data name="Profile_BaseBudgetInput" xml:space="preserve"><value>Base budgétaire</value></data>
+  <data name="Profile_SavingsGoal" xml:space="preserve"><value>Objectif d'épargne</value></data>
+  <data name="Profile_TargetSavingsMo" xml:space="preserve"><value>Épargne cible/mois</value></data>
+  <data name="Profile_SecurityCredentials" xml:space="preserve"><value>Sécurité et accès</value></data>
+  <data name="Profile_ResetPin" xml:space="preserve"><value>Changer le PIN</value></data>
+  <data name="Profile_TestBiometrics" xml:space="preserve"><value>Tester la biométrie</value></data>
+  <data name="Profile_SecurityFootnote" xml:space="preserve"><value>🔒 Votre code PIN est haché localement via PBKDF2-SHA256 (600 000 itérations) et la base est chiffrée par SQLCipher 256 bits. Aucune donnée ne quitte cet appareil.</value></data>
+  <data name="Profile_Preferences" xml:space="preserve"><value>Préférences</value></data>
+  <data name="Profile_Currency" xml:space="preserve"><value>Devise</value></data>
+  <data name="Profile_Language" xml:space="preserve"><value>Langue</value></data>
+  <data name="Profile_BiometricUnlock" xml:space="preserve"><value>Déverrouillage biométrique</value></data>
+  <data name="Profile_BiometricDesc" xml:space="preserve"><value>Autoriser l'empreinte digitale pour déverrouiller</value></data>
+  <data name="Profile_SettingsLink" xml:space="preserve"><value>Paramètres et configuration ML</value></data>
+
+  <!-- Settings -->
+  <data name="Settings_PageTitle" xml:space="preserve"><value>Paramètres · SmartBudget ML</value></data>
+  <data name="Settings_Title" xml:space="preserve"><value>Paramètres</value></data>
+  <data name="Settings_Subtitle" xml:space="preserve"><value>Configuration IA, sécurité et stockage local</value></data>
+  <data name="Settings_Back" xml:space="preserve"><value>Retour</value></data>
+  <data name="Settings_AiSectionTitle" xml:space="preserve"><value>IA et Modèle Hybride</value></data>
+  <data name="Settings_OnDeviceMlBadge" xml:space="preserve"><value>● ML sur appareil</value></data>
+  <data name="Settings_AutoCategorize" xml:space="preserve"><value>Catégorisation automatique</value></data>
+  <data name="Settings_AutoCategorizeDesc" xml:space="preserve"><value>Prédire la catégorie via mémoire, règles locales et ML.NET</value></data>
+  <data name="Settings_ThresholdLabel" xml:space="preserve"><value>Seuil de confiance ML</value></data>
+  <data name="Settings_ThresholdFootnote" xml:space="preserve"><value>Pré-sélectionner uniquement si la confiance dépasse ce seuil.</value></data>
+  <data name="Settings_RetrainingInProgress" xml:space="preserve"><value>Réentraînement et évaluation du modèle en cours...</value></data>
+  <data name="Settings_RetrainBtn" xml:space="preserve"><value>Réentraîner et évaluer avec mes données</value></data>
+  <data name="Settings_ValidationScore" xml:space="preserve"><value>Score de validation :</value></data>
+  <data name="Settings_TrainingSamplesCount" xml:space="preserve"><value>{0} exemples d'entraînement</value></data>
+  <data name="Settings_BudgetSectionTitle" xml:space="preserve"><value>Budget et Alertes</value></data>
+  <data name="Settings_MonthlyBudgetLimit" xml:space="preserve"><value>Plafond budgétaire mensuel</value></data>
+  <data name="Settings_OverBudgetAlerts" xml:space="preserve"><value>Alertes de dépassement</value></data>
+  <data name="Settings_OverBudgetAlertsDesc" xml:space="preserve"><value>Avertir lorsque la projection dépasse le budget</value></data>
+  <data name="Settings_DailyReminders" xml:space="preserve"><value>Rappels quotidiens</value></data>
+  <data name="Settings_DailyRemindersDesc" xml:space="preserve"><value>Rappel discret pour noter vos dépenses du jour</value></data>
+  <data name="Settings_DataSectionTitle" xml:space="preserve"><value>Données et Stockage Chiffré</value></data>
+  <data name="Settings_ExportCsv" xml:space="preserve"><value>Exporter les dépenses (CSV)</value></data>
+  <data name="Settings_BackupDb" xml:space="preserve"><value>Sauvegarder la base locale</value></data>
+  <data name="Settings_ClearDb" xml:space="preserve"><value>Effacer la base locale et la clé</value></data>
+  <data name="Settings_ConfirmPurge" xml:space="preserve"><value>⚠️ Appuyez à nouveau pour supprimer définitivement le coffre</value></data>
+  <data name="Settings_FooterNote" xml:space="preserve"><value>SmartBudget ML · SQLCipher 256 bits · PBKDF2 600k · 100 % Hors-Ligne</value></data>
+
+  <!-- Unlock & Onboarding -->
+  <data name="Unlock_PageTitle" xml:space="preserve"><value>Déverrouillage · SmartBudget ML</value></data>
+  <data name="Unlock_Subtitle" xml:space="preserve"><value>Saisissez votre code PIN à {0} chiffres pour déverrouiller</value></data>
+  <data name="Unlock_IncorrectPin" xml:space="preserve"><value>Code PIN incorrect. Veuillez réessayer.</value></data>
+  <data name="Unlock_LockedRetryIn" xml:space="preserve"><value>Application verrouillée après plusieurs échecs. Réessayez dans {0}s.</value></data>
+  <data name="Unlock_BiometricFailed" xml:space="preserve"><value>Échec de l'authentification biométrique.</value></data>
+  <data name="Onboarding_PageTitle" xml:space="preserve"><value>Créer votre profil · SmartBudget ML</value></data>
+  <data name="Onboarding_TitleStep1" xml:space="preserve"><value>Créez votre profil</value></data>
+  <data name="Onboarding_TitleStep2" xml:space="preserve"><value>Protégez vos données</value></data>
+  <data name="Onboarding_SubtitleStep1" xml:space="preserve"><value>Votre profil ne quitte jamais ce téléphone. Sans cloud, sans pistage.</value></data>
+  <data name="Onboarding_SubtitleStep2" xml:space="preserve"><value>Choisissez un code PIN local à 6 chiffres. L'empreinte digitale peut aussi être activée.</value></data>
+  <data name="Onboarding_FullName" xml:space="preserve"><value>Nom complet</value></data>
+  <data name="Onboarding_FullNamePlaceholder" xml:space="preserve"><value>Ex. Jean-Paul Mbarga</value></data>
+  <data name="Onboarding_EmailOptional" xml:space="preserve"><value>E-mail (optionnel)</value></data>
+  <data name="Onboarding_Continue" xml:space="preserve"><value>Continuer</value></data>
+  <data name="Onboarding_PinLabel" xml:space="preserve"><value>Code PIN à 6 chiffres</value></data>
+  <data name="Onboarding_ConfirmPinLabel" xml:space="preserve"><value>Confirmer le code PIN</value></data>
+  <data name="Onboarding_Register" xml:space="preserve"><value>Créer mon coffre</value></data>
+  <data name="Onboarding_CreatingVault" xml:space="preserve"><value>Création du coffre chiffré…</value></data>
+
+  <!-- Shared Components -->
+  <data name="Shared_Uncategorized" xml:space="preserve"><value>Non classé</value></data>
+  <data name="Shared_AiBadge" xml:space="preserve"><value>IA</value></data>
+  <data name="Shared_UseBiometrics" xml:space="preserve"><value>Utiliser la biométrie</value></data>
+  <data name="Shared_Delete" xml:space="preserve"><value>Effacer</value></data>
+  <data name="Settings_SecuritySectionTitle" xml:space="preserve"><value>Sécurité et Protection du Coffre</value></data>
+  <data name="Settings_AutoLockLabel" xml:space="preserve"><value>Verrouillage automatique en arrière-plan</value></data>
+  <data name="Settings_AutoLock0" xml:space="preserve"><value>Immédiatement (0s)</value></data>
+  <data name="Settings_AutoLock30" xml:space="preserve"><value>Après 30 secondes</value></data>
+  <data name="Settings_AutoLock60" xml:space="preserve"><value>Après 1 minute</value></data>
+  <data name="Settings_AutoLock300" xml:space="preserve"><value>Après 5 minutes</value></data>
+  <data name="Settings_ScreenProtectionTitle" xml:space="preserve"><value>Protéger l'écran (FLAG_SECURE)</value></data>
+  <data name="Settings_ScreenProtectionDesc" xml:space="preserve"><value>Masquer l'aperçu dans le multitâche et bloquer les captures d'écran</value></data>
+  <data name="Onboarding_ErrNameRequired" xml:space="preserve"><value>Veuillez saisir votre nom.</value></data>
+  <data name="Onboarding_ErrNegativeAmount" xml:space="preserve"><value>Les montants ne peuvent pas être négatifs.</value></data>
+  <data name="Onboarding_ErrPinMismatch" xml:space="preserve"><value>Les codes PIN ne correspondent pas.</value></data>
+</root>

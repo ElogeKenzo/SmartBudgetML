@@ -3,16 +3,17 @@
 @inject IDatabaseService DbService
 @inject IBudgetForecastingService Forecaster
 @inject ILocalAuthService AuthService
+@inject IStringLocalizer<AppStrings> L
 @inject ILogger<Analytics> Logger
 
-<PageTitle>Analytics · SmartBudget ML</PageTitle>
+<PageTitle>@L["Analytics_PageTitle"]</PageTitle>
 
 <div class="analytics-container">
     @* Screen Header *@
     <div class="screen-header-row">
         <div>
-            <h1 class="screen-title">Analytics</h1>
-            <p class="screen-subtitle">View and focus your spend</p>
+            <h1 class="screen-title">@L["Analytics_Title"]</h1>
+            <p class="screen-subtitle">@L["Analytics_Subtitle"]</p>
         </div>
         <div class="period-pill-selector" id="pill-period-selector">
             <span>📅</span>
@@ -24,17 +25,17 @@
     @* Stat Tiles: Spent vs Projected *@
     <div class="analytics-stat-grid">
         <div class="analytics-stat-tile primary" id="tile-spent-so-far">
-            <span class="analytics-stat-label">Spent so far</span>
+            <span class="analytics-stat-label">@L["Analytics_SpentSoFar"]</span>
             <span class="analytics-stat-value">@UiFormat.Money(Forecast.CurrentTotalSpend, Currency, 0)</span>
-            <span class="analytics-stat-caption">@Forecast.DaysElapsed days recorded</span>
+            <span class="analytics-stat-caption">@L["Analytics_DaysRecorded", Forecast.DaysElapsed]</span>
         </div>
         <div class="analytics-stat-tile cyan" id="tile-projected-end">
-            <span class="analytics-stat-label">Forecast month end</span>
+            <span class="analytics-stat-label">@L["Analytics_ForecastMonthEnd"]</span>
             <span class="analytics-stat-value">@UiFormat.Money(Forecast.ProjectedEndMonthSpend, Currency, 0)</span>
             <span class="analytics-stat-caption">
                 @(Forecast.ProjectedSurplusOrDeficit >= 0
-                    ? $"▲ {UiFormat.Money(Forecast.ProjectedSurplusOrDeficit, Currency, 0)} surplus"
-                    : $"▼ {UiFormat.Money(Math.Abs(Forecast.ProjectedSurplusOrDeficit), Currency, 0)} over")
+                    ? $"▲ {UiFormat.Money(Forecast.ProjectedSurplusOrDeficit, Currency, 0)} {L["Analytics_Surplus"]}"
+                    : $"▼ {UiFormat.Money(Math.Abs(Forecast.ProjectedSurplusOrDeficit), Currency, 0)} {L["Analytics_Over"]}")
             </span>
         </div>
     </div>
@@ -42,15 +43,15 @@
     @* Spending Outlook SVG Chart (Past Days vs ML Forecast) *@
     <div class="chart-card" id="card-spending-outlook">
         <div class="chart-header-row">
-            <h2 class="screen-title" style="font-size: 16px;">Spending outlook</h2>
+            <h2 class="screen-title" style="font-size: 16px;">@L["Analytics_SpendingOutlook"]</h2>
             <div class="chart-legend">
                 <div class="legend-item">
                     <span class="legend-dot past"></span>
-                    <span>Past days</span>
+                    <span>@L["Analytics_PastDays"]</span>
                 </div>
                 <div class="legend-item">
                     <span class="legend-dot projected"></span>
-                    <span>ML forecast</span>
+                    <span>@L["Analytics_MlForecast"]</span>
                 </div>
             </div>
         </div>
@@ -71,7 +72,7 @@
 
                 @* Monthly Budget Reference Line *@
                 <line x1="10" y1="18" x2="310" y2="18" stroke="rgba(239, 68, 68, 0.4)" stroke-width="1.5" stroke-dasharray="4,4" />
-                <text x="310" y="14" fill="#EF4444" font-size="8" text-anchor="end" font-weight="600">Limit: @UiFormat.Money(Forecast.MonthlyBudget, Currency, 0)</text>
+                <text x="310" y="14" fill="#EF4444" font-size="8" text-anchor="end" font-weight="600">@L["Analytics_Limit", UiFormat.Money(Forecast.MonthlyBudget, Currency, 0)]</text>
 
                 @* Dynamic Past Spend Area & Line *@
                 <path d="@($"M 10 120 L {UiFormat.Num(TodayX)} {UiFormat.Num(TodayY)} L {UiFormat.Num(TodayX)} 120 Z")" fill="url(#pastAreaGradient)" />
@@ -80,15 +81,15 @@
                 @* Today indicator pin *@
                 <line x1="@UiFormat.Num(TodayX)" y1="20" x2="@UiFormat.Num(TodayX)" y2="120" stroke="rgba(6, 182, 212, 0.4)" stroke-width="1.5" stroke-dasharray="2,2" />
                 <circle cx="@UiFormat.Num(TodayX)" cy="@UiFormat.Num(TodayY)" r="4.5" fill="#06B6D4" stroke="#0B0E17" stroke-width="2" />
-                <text x="@UiFormat.Num(TodayX)" y="132" fill="#94A3B8" font-size="9" text-anchor="middle">Day @Forecast.DaysElapsed</text>
+                <text x="@UiFormat.Num(TodayX)" y="132" fill="#94A3B8" font-size="9" text-anchor="middle">@L["Analytics_DayN", Forecast.DaysElapsed]</text>
 
                 @* ML Projected Linear Trajectory to Month-End *@
                 <path d="@($"M {UiFormat.Num(TodayX)} {UiFormat.Num(TodayY)} L 305 {UiFormat.Num(ProjectedY)}")" fill="none" stroke="#06B6D4" stroke-width="2.5" stroke-dasharray="4,4" stroke-linecap="round" />
                 <circle cx="305" cy="@UiFormat.Num(ProjectedY)" r="4" fill="#06B6D4" />
-                <text x="305" y="132" fill="#94A3B8" font-size="9" text-anchor="middle">Day @Forecast.DaysInMonth</text>
+                <text x="305" y="132" fill="#94A3B8" font-size="9" text-anchor="middle">@L["Analytics_DayN", Forecast.DaysInMonth]</text>
 
                 @* Start day label *@
-                <text x="12" y="132" fill="#64748B" font-size="9">Day 1</text>
+                <text x="12" y="132" fill="#64748B" font-size="9">@L["Analytics_DayN", 1]</text>
             </svg>
         </div>
     </div>
@@ -96,17 +97,15 @@
     @* Category Spending Breakdown with SVG Donut Chart *@
     <div class="category-breakdown-card" id="card-by-category">
         <div class="chart-header-row">
-            <h2 class="screen-title" style="font-size: 16px;">By category</h2>
-            <span style="font-size: 11px; color: var(--text-secondary);">@CategoryBreakdown.Count categories</span>
+            <h2 class="screen-title" style="font-size: 16px;">@L["Analytics_ByCategory"]</h2>
+            <span style="font-size: 11px; color: var(--text-secondary);">@L["Analytics_CategoriesCount", CategoryBreakdown.Count]</span>
         </div>
 
         <div class="donut-layout">
             <div class="donut-svg-box">
                 <svg viewBox="0 0 100 100" style="width: 100%; height: 100%; transform: rotate(-90deg);">
-                    @* Donut background ring *@
                     <circle cx="50" cy="50" r="38" fill="transparent" stroke="rgba(255,255,255,0.06)" stroke-width="12" />
 
-                    @* Donut Category Segments *@
                     @{
                         double cumulative = 0;
                         const double circumference = 2 * Math.PI * 38;
@@ -126,14 +125,14 @@
                 </svg>
                 <div class="donut-center-text">
                     <span class="donut-center-amount">@UiFormat.Money(Forecast.CurrentTotalSpend, Currency, 0)</span>
-                    <span class="donut-center-sub">Total</span>
+                    <span class="donut-center-sub">@L["Analytics_Total"]</span>
                 </div>
             </div>
 
             <div class="category-legend-list">
                 @if (CategoryBreakdown.Count == 0)
                 {
-                    <p class="card-footnote">No expenses recorded for this month yet.</p>
+                    <p class="card-footnote">@L["Analytics_NoExpensesThisMonth"]</p>
                 }
                 else
                 {
@@ -161,16 +160,19 @@
     <div class="predictive-savings-card" id="card-savings-insight">
         <span class="predictive-savings-icon">💡</span>
         <div class="predictive-savings-text">
-            <strong>ML Insight:</strong> @Forecast.StatusMessage
-            Keep daily spend under
+            <strong>@L["Analytics_MlInsightLabel"]</strong> @Forecast.StatusMessage
+            @L["Analytics_KeepDailySpendUnder"]
             <strong>@UiFormat.Money(Forecast.RecommendedDailyLimit, Currency)</strong>.
         </div>
     </div>
 </div>
 
 @code {
-    private string Currency = "$";
-    private string SelectedPeriod = DateTime.Today.ToString("MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
+    private string Currency = "FCFA";
+    private string SelectedPeriod => DateTime.Today.ToString("MMMM yyyy",
+        L.CurrentLanguage.StartsWith("en", StringComparison.OrdinalIgnoreCase)
+            ? System.Globalization.CultureInfo.GetCultureInfo("en-US")
+            : System.Globalization.CultureInfo.GetCultureInfo("fr-FR"));
     private BudgetForecastResult Forecast = new();
     private List<CategoryStatItem> CategoryBreakdown = new();
 
@@ -214,14 +216,14 @@
         try
         {
             var profile = await AuthService.GetUserProfileAsync();
-            if (profile != null)
+            if (profile != null && !string.IsNullOrWhiteSpace(profile.CurrencySymbol))
             {
                 Currency = profile.CurrencySymbol;
             }
 
             decimal monthlyBudget = (profile != null && profile.MonthlyIncome > 0)
                 ? Math.Max(100m, profile.MonthlyIncome - profile.MonthlySavingsGoal)
-                : 3000m;
+                : 150_000m;
 
             var allExpenses = await DbService.Expenses.GetAllAsync();
             var allCategories = await DbService.Categories.GetAllAsync();
@@ -241,7 +243,7 @@
                 .Select(g =>
                 {
                     var cat = allCategories.FirstOrDefault(c => c.Id == g.Key);
-                    var name = cat?.Name ?? "General";
+                    var name = cat != null ? CategoryCatalog.GetDisplayName(cat, L.CurrentLanguage) : L["Shared_Uncategorized"].Value;
                     var color = cat?.ColorHex ?? "#6366F1";
                     var amt = g.Sum(x => x.Amount);
                     var pct = totalSpent > 0 ? (double)(amt / totalSpent) * 100.0 : 0.0;

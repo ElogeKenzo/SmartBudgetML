@@ -19,7 +19,7 @@ public class UserProfile : IEntity
     public string? Email { get; set; }
 
     [MaxLength(10)]
-    public string CurrencySymbol { get; set; } = "$";
+    public string CurrencySymbol { get; set; } = "FCFA";
 
     public decimal MonthlyIncome { get; set; } = 0m;
 
