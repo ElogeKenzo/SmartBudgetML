@@ -22,11 +22,33 @@ public enum BudgetHealthStatus
 }
 
 /// <summary>
+/// Supported budgeting period modes for regular and irregular incomes.
+/// </summary>
+public enum BudgetPeriodMode
+{
+    Monthly = 0,
+    Weekly = 1,
+    Envelope = 2
+}
+
+/// <summary>
+/// Reliability level of the statistical forecast based on elapsed days and data density.
+/// </summary>
+public enum ForecastReliability
+{
+    Low = 0,
+    Medium = 1,
+    High = 2
+}
+
+/// <summary>
 /// Encapsulates the results of on-device linear regression budget forecasting.
 /// </summary>
 public class BudgetForecastResult
 {
     public decimal CurrentTotalSpend { get; set; }
+    public decimal FixedCommittedSpend { get; set; }
+    public decimal VariableSpend { get; set; }
     public int DaysElapsed { get; set; }
     public int DaysInMonth { get; set; }
     public int DaysRemaining => Math.Max(0, DaysInMonth - DaysElapsed);
@@ -35,13 +57,17 @@ public class BudgetForecastResult
     public decimal ProjectedEndMonthSpend { get; set; }
     public decimal MonthlyBudget { get; set; }
 
+    public BudgetPeriodMode PeriodMode { get; set; } = BudgetPeriodMode.Monthly;
+    public ForecastReliability Reliability { get; set; } = ForecastReliability.High;
+    public string ReliabilityMessage { get; set; } = string.Empty;
+
     /// <summary>
-    /// Projected surplus (positive) or deficit (negative) at month-end.
+    /// Projected surplus (positive) or deficit (negative) at period-end.
     /// </summary>
     public decimal ProjectedSurplusOrDeficit => MonthlyBudget - ProjectedEndMonthSpend;
 
     /// <summary>
-    /// Safe daily spending allowance for the remaining days of the month to stay within budget.
+    /// Safe daily spending allowance for the remaining days of the period to stay within budget.
     /// </summary>
     public decimal RecommendedDailyLimit
     {
@@ -54,7 +80,7 @@ public class BudgetForecastResult
     }
 
     /// <summary>
-    /// Percentage of budget projected to be consumed by month-end (e.g. 85.5%).
+    /// Percentage of budget projected to be consumed by period-end (e.g. 85.5%).
     /// </summary>
     public double ProjectedBudgetUtilizationPercentage
     {

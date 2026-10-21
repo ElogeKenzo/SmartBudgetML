@@ -1,0 +1,180 @@
+# SYNTHÉTIQUE - SmartBudget ML Cameroonian Holdout Validation Corpus (v2.0)
+# Format: Description,CategoryName
+# Strictement disjoint de seed_fr.csv (aucun chevauchement). Inclut cas simples, pidgin, abréviations et fautes de frappe.
+Description,CategoryName
+Poisson braisé sole et miondo Deido soir,Food & Dining
+Soya mouton pimenté carrefour Obili,Food & Dining
+Beignet haricot bouillie maïs Melen matin,Food & Dining
+Ndolé crevettes et plantain vapeur restaurant Akwa,Food & Dining
+Poulet braisé et frites pommes Bastos,Food & Dining
+Eru waterfufu andanda chop house Buea,Food & Dining
+Boulangerie Zepol croissant chaud et jus ananas,Food & Dining
+Koki macabo et huile rouge midi Douala,Food & Dining
+Porc braisé piment et bâton manioc Nkolndongo,Food & Dining
+Chawarma boeuf double fromage Bonamoussadi,Food & Dining
+Okok salé et tubercules manioc restaurant Mvan,Food & Dining
+Taro sauce jaune champignons dimanche midi,Food & Dining
+Bouillon chèvre et plantain bouilli marché,Food & Dining
+Spaghetti omelette café lait kiosque quartier,Food & Dining
+Mbongo poisson chat et riz parfumé restaurant,Food & Dining
+Kondre boeuf plantain mûr déjeuner Dschang,Food & Dining
+Marché Mokolo vivres frais plantain macabo samedi,Groceries
+Marché Mfoundi achat tomates oignons poivrons,Groceries
+Marché Sandaga crevettes fraîches et bar de mer,Groceries
+Supermarché Dovv Essos lait Nido sucre et riz,Groceries
+Carrefour Market Bonamoussadi ravitaillement cuisine,Groceries
+Super U Bali achat huile végétale pâtes alimentaires,Groceries
+Santa Lucia Akwa farine beurre oeufs et lait,Groceries
+Marché Central Douala sac riz parfumé 50kg,Groceries
+Marché Mboppi achat ignames manioc et arachides,Groceries
+Marché Nkololoun gombo frais pistache et légumes,Groceries
+Boucherie moderne filet de boeuf 3kg famille,Groceries
+Poissonnerie locale cartons maquereaux congelés,Groceries
+Achat savon de ménage CCC et lessive en poudre,Groceries
+Marché New-Bell bidon huile rouge et haricot blanc,Groceries
+Marché Ndokoti patates douces et régimes plantain,Groceries
+Supermarché Mahima eau Tangui pack et conserves,Groceries
+Taxi ramassage carrefour EMIA vers Poste Centrale,Transportation
+Moto bendskin rapide rond-point Deido vers Akwa,Transportation
+Taxi dépôt aéroport international Douala matin,Transportation
+Yango course berline climatisée Bali vers Bonapriso,Transportation
+Station Total Energies plein super sans plomb auto,Transportation
+Station Tradex gasoil plein véhicule familial,Transportation
+Station Ola carburant essence moto 5 litres,Transportation
+Finex Voyages billet bus VIP Douala Yaoundé,Transportation
+Touristique Express ticket car couchette Garoua,Transportation
+General Express voyage bus Bafoussam Mbouda,Transportation
+Bendskin moto sous pluie Logbaba vers Ndokoti,Transportation
+Péage routier Edéa axe lourd Douala Yaoundé,Transportation
+Lavage véhicule complet intérieur extérieur station,Transportation
+Vidange moteur et remplacement plaquettes frein garage,Transportation
+Vulcanisateur collage roue crevée pneu arrière,Transportation
+Kia taxi course rapide Biyem-Assi vers Melen,Transportation
+Loyer mensuel appartement 3 pièces virement bailleur,Housing & Rent
+Paiement loyer studio meublé Kotto Douala,Housing & Rent
+Avance 6 mois loyer maison Bastos contrat bail,Housing & Rent
+Caution location appartement neuf Logpom,Housing & Rent
+Charges gardiennage immeuble et nettoyage cour,Housing & Rent
+Plombier dépannage chauffe-eau et tuyau douche,Housing & Rent
+Électricien réparation tableau électrique maison,Housing & Rent
+Menuisier pose serrure blindée porte entrée,Housing & Rent
+Achat seau peinture blanche réfection salon,Housing & Rent
+Quincaillerie cadenas sécurité et charnières portail,Housing & Rent
+Commission agence immobilière signature bail,Housing & Rent
+Transfert Orange Money loyer mensuel propriétaire,Housing & Rent
+Vidange fosse septique camion pompe concession,Housing & Rent
+Réfection tôles toiture fuite eau chambre,Housing & Rent
+Contribution gardien barrière sécurité nuit quartier,Housing & Rent
+Maçon réparation mur clôture et crépissage,Housing & Rent
+Facture ENEO consommation électricité compteur mois,Utilities
+Recharge prépayé ENEO KPDP 10000 FCFA unités,Utilities
+Facture CAMWATER distribution eau potable trimestre,Utilities
+Recharge bouteille gaz domestique Tradex 12kg,Utilities
+Consignation bouteille gaz Total cuisine maison,Utilities
+Forfait data MTN MoMo internet 50 Go mensuel,Utilities
+Credit 1000 FCFA recharge appels Orange Cameroun,Utilities
+Abonnement fibre Camtel Blue Home haut débit,Utilities
+Pass internet Yoomee 4G routeur wifi maison,Utilities
+Règlement facture eau CAMWATER par MTN MoMo,Utilities
+Paiement reçu ENEO agence électrique quartier,Utilities
+Recharge crédit communication MTN et data semaine,Utilities
+Abonnement Canal+ bouquet Access renouvellement TV,Utilities
+Forfait data mobile Orange 20 Go mensuel,Utilities
+Remplacement bouteille gaz SCTM cuisine familiale,Utilities
+Unités compteur prépayé électricité ENEO maison,Utilities
+Pharmacie de la Paix achat antipaludéen Coartem,Healthcare
+Consultation médecin spécialiste Hôpital Laquintinie,Healthcare
+Laboratoire analyses médicales goutte épaisse typhoïde,Healthcare
+Pharmacie de nuit antibiotiques et sirop paracétamol,Healthcare
+Clinique dentaire extraction dent et détartrage,Healthcare
+Pédiatrie consultation et vaccin bébé hôpital,Healthcare
+Opticien lunettes médicales verres antireflets,Healthcare
+Radiographie pulmonaire et échographie centre médical,Healthcare
+Pharmacie Centrale achat vitamines et pansements,Healthcare
+Maternité suivi grossesse sage-femme clinique,Healthcare
+Ophtalmologie contrôle vue Hôpital Central,Healthcare
+Achat glucomètre et bandelettes contrôle diabète,Healthcare
+Ordonnance pharmacie traitement grippe et toux,Healthcare
+Séance kinésithérapie rééducation dos clinique,Healthcare
+Bilan médical complet analyses sang laboratoire,Healthcare
+Pharmacie Bastos achat moustiquaire et répulsif,Healthcare
+Cinéma CanalOlympia Yaoundé tickets film samedi,Entertainment
+Abonnement Netflix série streaming mensuel,Entertainment
+Spotify abonnement musique premium mois,Entertainment
+Billet concert artiste live CanalOlympia Douala,Entertainment
+Tickets match football stade Japoma tribune,Entertainment
+Week-end détente plage Kribi hôtel bord de mer,Entertainment
+Location stade synthétique match foot amis,Entertainment
+Soirée billard et grillades week-end collègues,Entertainment
+Sortie manège parc loisirs enfants dimanche,Entertainment
+Achat jeu PlayStation store en ligne,Entertainment
+Abonnement salle de sport gym fitness mois,Entertainment
+Piscine détente dimanche après-midi hôtel,Entertainment
+Excursion touristique jardin botanique Limbé,Entertainment
+Soirée karaoké détente samedi soir amis,Entertainment
+Librairie achat roman et bande dessinée,Entertainment
+Spectacle stand-up comédie billet entrée,Entertainment
+Achat pagne Wax hollandais et frais couturier,Shopping
+Chaussures cuir mocassins boutique centre-ville,Shopping
+Smartphone Android Tecno neuf et étui protection,Shopping
+Écouteurs sans fil Bluetooth et câble chargeur USB,Shopping
+Costume veste et chemise blanche cérémonie,Shopping
+Sac à main cuir et chaussures dame boutique,Shopping
+Fer à repasser vapeur et bouilloire cuisine,Shopping
+Ventilateur colonne et rallonge multiprise salon,Shopping
+Parfum coffret beauté et crème hydratante,Shopping
+Salon coiffure tresses africaines et shampoing,Shopping
+Barbier coupe cheveux et taille barbe quartier,Shopping
+Parure draps de lit coton et taies oreiller,Shopping
+Montre homme bracelet cuir et lunettes soleil,Shopping
+Mixeur cuisine électrique et marmites aluminium,Shopping
+Valise cabine voyage et sac à dos ordinateur,Shopping
+Baskets sport chaussures course à pied,Shopping
+Virement salaire mensuel employeur compte bancaire,Salary / Income
+Salaire mensuel fonction publique virement trésor,Salary / Income
+Paiement client prestation développement logiciel MoMo,Salary / Income
+Recette journalière boutique vente marchandises,Salary / Income
+Prime trimestrielle performance entreprise virement,Salary / Income
+Honoraires consultant audit informatique reçu,Salary / Income
+Règlement facture client création site web Orange Money,Salary / Income
+Bénéfice vente récolte cacao et café marché,Salary / Income
+Remboursement frais déplacement mission service,Salary / Income
+Cachet animation événement mariage week-end,Salary / Income
+Commission mensuelle courtier ventes immobilières,Salary / Income
+Gains débrouille livraison courses motos ville,Salary / Income
+Bourse excellence universitaire virement reçu,Salary / Income
+Loyer perçu locataire studio annexe maison,Salary / Income
+Tour de bouffe tontine caisse principale reçu,Salary / Income
+Transfert diaspora reçu MoneyGram famille,Salary / Income
+Cotisation tontine njangi mensuelle réunion quartier,Investments
+Dépôt épargne compte bloqué microfinance MUFFA,Investments
+Versement épargne bancaire compte rémunéré Afriland,Investments
+Traite mensuelle achat lot terrain Odza,Investments
+Achat poussins d'un jour et sacs provende élevage,Investments
+Cotisation caisse épargne rentrée scolaire réunion,Investments
+Souscription bons du trésor épargne BVMAC,Investments
+Apport capital ouverture kiosque Mobile Money,Investments
+Achat sacs maïs sec pour stockage et revente,Investments
+Cotisation tontine immobilière achat terrain groupe,Investments
+Renforcement fonds de roulement boutique quartier,Investments
+Acquisition moulin à écraser manioc activité,Investments
+Placement épargne dépôt à terme banque locale,Investments
+Investissement bananeraie plantain village,Investments
+Cotisation mutuelle épargne projet familial,Investments
+Achat vitrine réfrigérée pour commerce boissons,Investments
+Frais scolarité tranche pension collège bilingue,Other
+Achat cahiers livres scolaires et sac d'école,Other
+Transfert OM maman aide financière village,Other
+Envoi MTN MoMo argent poche petit frère fac,Other
+Cotisation deuil solidarité famille village,Other
+Enveloppe cadeau mariage collègue bureau,Other
+Offrande culte dimanche et dîme église,Other
+Don association aide enfants orphelinat,Other
+Frais retrait cash kiosque MTN Mobile Money,Other
+Timbre communal et légalisation acte naissance,Other
+Frais dossier passeport biométrique et CNI,Other
+Impression mémoire et reliure bureautique,Other
+Cotisation réunion familiale mensuelle association,Other
+Soutien médical ordonnance oncle au village,Other
+Contribution arbre de Noël école primaire,Other
+Frais envoi colis agence bus vers Bafoussam,Other
