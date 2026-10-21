@@ -1,0 +1,182 @@
+@page "/tontines"
+@using SmartBudgetML.Services.Tontines
+@using SmartBudgetML.Services.Sms
+@using SmartBudgetML.Services.Notifications
+@inject IDatabaseService DbService
+@inject ILocalAuthService AuthService
+@inject ISmsParserRegistry SmsRegistry
+@inject ILocalNotificationService Notifications
+@inject IStringLocalizer<AppStrings> L
+
+<PageTitle>@L["Tontines_PageTitle"]</PageTitle>
+
+<div class="settings-container">
+    <div class="screen-header-row">
+        <div>
+            <h1 class="screen-title">@L["Tontines_Title"]</h1>
+            <p class="screen-subtitle">@L["Tontines_Subtitle"]</p>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(StatusBanner))
+    {
+        <div class="card-dark" role="status" style="border-left: 3px solid var(--accent-emerald);">
+            <span>@StatusBanner</span>
+        </div>
+    }
+
+    @* Active Tontine Summary Card *@
+    <div class="settings-section-card" id="card-tontine-summary">
+        <div class="settings-section-header">
+            <span class="settings-section-title">🤝 @ActiveTontine.Name</span>
+            <span class="status-badge-live">@ActiveTontine.Frequency</span>
+        </div>
+
+        <div class="analytics-stat-grid">
+            <div class="analytics-stat-tile primary">
+                <span class="analytics-stat-label">@L["Tontines_PotLabel"]</span>
+                <span class="analytics-stat-value">@UiFormat.Money(Summary.PotAmount, Currency, 0)</span>
+            </div>
+            <div class="analytics-stat-tile cyan">
+                <span class="analytics-stat-label">@L["Tontines_NetBalanceLabel"]</span>
+                <span class="analytics-stat-value">@UiFormat.Money(Summary.NetUserBalance, Currency, 0)</span>
+            </div>
+        </div>
+
+        @if (NextBeneficiary != null)
+        {
+            <div class="card-footnote">
+                @L["Tontines_NextBeneficiary"] <strong style="color:var(--accent-cyan)">@NextBeneficiary.Name</strong>
+            </div>
+        }
+
+        <button id="btn-quick-contribute" type="button" class="retrain-action-btn" @onclick="RecordMyContributionAsync">
+            @L["Tontines_ContributeQuickBtn"] (@UiFormat.Money(ActiveTontine.ContributionAmount, Currency, 0))
+        </button>
+    </div>
+
+    @* SMS Paste / Share Box (No READ_SMS Permission) *@
+    <div class="settings-section-card" id="card-sms-import">
+        <span class="settings-section-title">📲 @L["Tontines_SmsSectionTitle"]</span>
+        <textarea id="input-sms-batch" class="form-input-dark" rows="4"
+                  placeholder="@L["Tontines_SmsPlaceholder"]"
+                  @bind="PastedSmsBatch"></textarea>
+        <button id="btn-parse-sms" type="button" class="btn-secondary-action" @onclick="ParsePastedSms">
+            @L["Tontines_SmsAnalyzeBtn"]
+        </button>
+
+        @if (ParsedSmsResults.Count > 0)
+        {
+            <div class="transaction-list">
+                @foreach (var tx in ParsedSmsResults)
+                {
+                    <div class="transaction-card">
+                        <div class="transaction-meta">
+                            <span class="transaction-desc">@tx.Operator · @tx.Type</span>
+                            <span class="transaction-cat-name">Réf: @(tx.Reference ?? "—") · Frais: @UiFormat.Money(tx.Fee, Currency, 0)</span>
+                        </div>
+                        <span class="transaction-amount @(tx.IsIncome ? "income" : "expense")">
+                            @(tx.IsIncome ? "+" : "-")@UiFormat.Money(tx.Amount, Currency, 0)
+                        </span>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private string Currency = "FCFA";
+    private Tontine ActiveTontine = new()
+    {
+        Id = 1,
+        Name = "Tontine Solidaire",
+        ContributionAmount = 25_000m,
+        Frequency = TontineFrequency.Monthly,
+        TotalMembers = 5,
+        MyTurnOrder = 2,
+        StartDate = DateTime.Today
+    };
+    private List<TontineMember> Members = new();
+    private List<TontineRound> Rounds = new();
+    private List<TontineContribution> Contributions = new();
+    private TontineUserSummary Summary = new(0m, 0m, 0m, 0m, 0, 0);
+    private TontineMember? NextBeneficiary;
+    private string PastedSmsBatch = string.Empty;
+    private IReadOnlyList<ParsedMobileMoneyTransaction> ParsedSmsResults = Array.Empty<ParsedMobileMoneyTransaction>();
+    private string? StatusBanner;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var profile = await AuthService.GetUserProfileAsync();
+        if (profile != null && !string.IsNullOrWhiteSpace(profile.CurrencySymbol))
+        {
+            Currency = profile.CurrencySymbol;
+        }
+
+        Members = new List<TontineMember>
+        {
+            new() { Id = 1, TontineId = 1, Name = "Paul", TurnOrder = 1 },
+            new() { Id = 2, TontineId = 1, Name = profile?.FullName ?? "Moi", TurnOrder = 2, IsCurrentUser = true },
+            new() { Id = 3, TontineId = 1, Name = "Chantal", TurnOrder = 3 },
+            new() { Id = 4, TontineId = 1, Name = "Eric", TurnOrder = 4 },
+            new() { Id = 5, TontineId = 1, Name = "Nadine", TurnOrder = 5 }
+        };
+
+        Rounds = TontineCalculator.GenerateSchedule(ActiveTontine, Members);
+        RefreshSummary();
+    }
+
+    private void RefreshSummary()
+    {
+        Summary = TontineCalculator.CalculateUserSummary(ActiveTontine, Rounds, Members, Contributions);
+        NextBeneficiary = TontineCalculator.GetNextBeneficiary(Rounds, Members);
+    }
+
+    private async Task RecordMyContributionAsync()
+    {
+        var me = Members.FirstOrDefault(m => m.IsCurrentUser);
+        if (me == null) return;
+
+        int nextRoundNum = Contributions.Count(c => c.MemberId == me.Id) + 1;
+        var contrib = new TontineContribution
+        {
+            TontineId = ActiveTontine.Id,
+            RoundNumber = nextRoundNum,
+            MemberId = me.Id,
+            Amount = ActiveTontine.ContributionAmount,
+            Date = DateTime.Today,
+            IsPaid = true
+        };
+        Contributions.Add(contrib);
+
+        var tontineCat = (await DbService.Categories.GetAllAsync())
+            .FirstOrDefault(c => c.Key == "tontine");
+
+        if (tontineCat != null)
+        {
+            await DbService.Expenses.InsertAsync(new Expense
+            {
+                Description = $"Cotisation {ActiveTontine.Name} (Tour {nextRoundNum})",
+                Amount = ActiveTontine.ContributionAmount,
+                CategoryId = tontineCat.Id,
+                Date = DateTime.Today,
+                IsFixedOrRecurring = true
+            });
+        }
+
+        await Notifications.ScheduleReminderAsync(new ScheduledReminder(
+            $"tontine-{ActiveTontine.Id}-r{nextRoundNum + 1}",
+            ActiveTontine.Name,
+            $"Prochaine cotisation : {UiFormat.Money(ActiveTontine.ContributionAmount, Currency, 0)}",
+            DateTime.UtcNow.AddDays(30)));
+
+        RefreshSummary();
+        StatusBanner = $"Cotisation du tour {nextRoundNum} enregistrée ({UiFormat.Money(ActiveTontine.ContributionAmount, Currency, 0)}).";
+    }
+
+    private void ParsePastedSms()
+    {
+        ParsedSmsResults = SmsRegistry.ParseBatch(PastedSmsBatch);
+    }
+}

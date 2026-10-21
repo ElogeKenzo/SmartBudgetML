@@ -1,11 +1,15 @@
 using Microsoft.Extensions.Logging;
 using SmartBudgetML.Services.Auth;
+using SmartBudgetML.Services.Budget;
 using SmartBudgetML.Services.Data;
 using SmartBudgetML.Services.Database;
 using SmartBudgetML.Services.Formatting;
 using SmartBudgetML.Services.Localization;
 using SmartBudgetML.Services.ML;
+using SmartBudgetML.Services.Notifications;
 using SmartBudgetML.Services.Security;
+using SmartBudgetML.Services.Sms;
+using SmartBudgetML.Services.Tontines;
 
 namespace SmartBudgetML;
 
@@ -36,6 +40,8 @@ public static class MauiProgram
         builder.Services.AddSingleton<ICsvExpenseExporter, CsvExpenseExporter>();
         builder.Services.AddSingleton<ICurrencyFormatter, CurrencyFormatter>();
         builder.Services.AddSingleton(typeof(IStringLocalizer<>), typeof(ResxStringLocalizer<>));
+        builder.Services.AddSingleton<ISmsParserRegistry, SmsParserRegistry>();
+        builder.Services.AddSingleton<ILocalNotificationService, InMemoryLocalNotificationService>();
 
         // Security & Authentication
         builder.Services.AddSingleton<IBiometricService, BiometricService>();

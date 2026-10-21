@@ -171,4 +171,15 @@
   <data name="Onboarding_ErrNameRequired" xml:space="preserve"><value>Please enter your name.</value></data>
   <data name="Onboarding_ErrNegativeAmount" xml:space="preserve"><value>Amounts cannot be negative.</value></data>
   <data name="Onboarding_ErrPinMismatch" xml:space="preserve"><value>PINs do not match.</value></data>
+  <data name="Nav_Tontines" xml:space="preserve"><value>Tontines</value></data>
+  <data name="Tontines_PageTitle" xml:space="preserve"><value>Tontines &amp; Njangi · SmartBudget ML</value></data>
+  <data name="Tontines_Title" xml:space="preserve"><value>Tontines &amp; Njangi</value></data>
+  <data name="Tontines_Subtitle" xml:space="preserve"><value>Track contributions, pot rounds, and net balance</value></data>
+  <data name="Tontines_PotLabel" xml:space="preserve"><value>Pot per round</value></data>
+  <data name="Tontines_NetBalanceLabel" xml:space="preserve"><value>My net balance (Received - Contributed)</value></data>
+  <data name="Tontines_NextBeneficiary" xml:space="preserve"><value>Next beneficiary:</value></data>
+  <data name="Tontines_ContributeQuickBtn" xml:space="preserve"><value>✓ I contributed this round</value></data>
+  <data name="Tontines_SmsSectionTitle" xml:space="preserve"><value>Mobile Money SMS Import (No READ_SMS permission)</value></data>
+  <data name="Tontines_SmsPlaceholder" xml:space="preserve"><value>Paste one or more Orange Money / MTN MoMo SMS messages here...</value></data>
+  <data name="Tontines_SmsAnalyzeBtn" xml:space="preserve"><value>Parse pasted SMS</value></data>
 </root>

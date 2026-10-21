@@ -15,6 +15,10 @@ public interface IDatabaseService
     IRepository<UserProfile> UserProfiles { get; }
     IRepository<AppSettings> Settings { get; }
     IRepository<CategoryFeedback> CategoryFeedbacks { get; }
+    IRepository<Tontine> Tontines { get; }
+    IRepository<TontineMember> TontineMembers { get; }
+    IRepository<TontineRound> TontineRounds { get; }
+    IRepository<TontineContribution> TontineContributions { get; }
     Task<SQLiteAsyncConnection> GetConnectionAsync();
     Task SeedDefaultDataAsync();
 
