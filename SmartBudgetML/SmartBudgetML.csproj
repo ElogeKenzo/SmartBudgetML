@@ -35,7 +35,8 @@
 		<MauiImage Include="Resources\Images\*" />
 		<MauiFont Include="Resources\Fonts\*" />
 		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
-		<EmbeddedResource Include="Resources\Strings\*.resx" />
+				<EmbeddedResource Remove="Resources\Strings\*.resx" />
+		<EmbeddedResource Include="Resources\Strings\*.resx" WithCulture="false" Type="Non-Resx" />
 	</ItemGroup>
 
 	<ItemGroup>

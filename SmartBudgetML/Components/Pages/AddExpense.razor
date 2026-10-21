@@ -318,7 +318,7 @@
             await Task.Delay(DebounceDelayMs, token);
             if (token.IsCancellationRequested) return;
 
-            var settings = await SettingsProvider.GetSettingsAsync();
+            var settings = await SettingsProvider.GetOrCreateSettingsAsync();
             if (!settings.AutoCategorizeEnabled)
             {
                 PredictedCategoryName = null;
