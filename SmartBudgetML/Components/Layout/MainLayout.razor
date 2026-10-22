@@ -65,6 +65,8 @@
 
     private static readonly string[] ChromelessRoutes = { "onboarding", "unlock", "vault-error" };
 
+    private bool _isRegistered;
+
     private bool IsChromeless
     {
         get
@@ -124,6 +126,7 @@
     {
         var relative = NavManager.ToBaseRelativePath(NavManager.Uri).Split('?', '#')[0].Trim('/');
         var isRegistered = await AuthService.IsUserRegisteredAsync();
+        _isRegistered = isRegistered;
 
         if (!isRegistered)
         {
@@ -157,18 +160,28 @@
     }
 
     private void OnLockStateChanged(object? sender, EventArgs e)
-        => InvokeAsync(() =>
+        => InvokeAsync(RedirectIfLocked);
+
+    // Also runs on every navigation, so Back cannot reach a page while the app is locked.
+    private void RedirectIfLocked()
+    {
+        var relative = NavManager.ToBaseRelativePath(NavManager.Uri);
+        var target = LockNavigationCoordinator.GetRedirect(relative, AuthService.IsAppUnlocked);
+        if (target != null)
         {
-            var relative = NavManager.ToBaseRelativePath(NavManager.Uri);
-            var target = LockNavigationCoordinator.GetRedirect(relative, AuthService.IsAppUnlocked);
-            if (target != null)
-            {
-                NavManager.NavigateTo(target, replace: true);
-            }
-        });
+            NavManager.NavigateTo(target, replace: true);
+        }
+    }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
-        => InvokeAsync(StateHasChanged);
+        => InvokeAsync(() =>
+        {
+            if (_isRegistered)
+            {
+                RedirectIfLocked();
+            }
+            StateHasChanged();
+        });
 
     private void OnLanguageChanged()
         => InvokeAsync(StateHasChanged);
