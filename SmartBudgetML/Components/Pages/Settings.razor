@@ -8,6 +8,7 @@
 @inject IExpenseCategorizerService Categorizer
 @inject IModelEvaluator ModelEvaluator
 @inject ICsvExpenseExporter CsvExporter
+@inject IFileExportService FileExport
 @inject IStringLocalizer<AppStrings> L
 @inject ILogger<Settings> Logger
 
@@ -165,7 +166,7 @@
             </svg>
         </div>
 
-        <div class="settings-action-row" id="row-backup-data" @onclick="BackupDatabase">
+        <div class="settings-action-row" id="row-backup-data" @onclick="OpenBackup">
             <div class="action-row-left">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -175,6 +176,19 @@
                 <span>@L["Settings_BackupDb"]</span>
             </div>
             <span style="font-size: 11px; color: var(--text-muted);">@DbSize</span>
+        </div>
+
+        <div class="settings-action-row" id="row-restore-data" @onclick="OpenRestore">
+            <div class="action-row-left">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="1 4 1 10 7 10"></polyline>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                </svg>
+                <span>@L["Settings_RestoreDb"]</span>
+            </div>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
         </div>
 
         <div class="settings-action-row danger" id="row-clear-data" @onclick="HandlePurgeClick">
@@ -349,37 +363,37 @@
 
     private async Task ExportData()
     {
+        string filePath;
         try
         {
             var expenses = await DbService.Expenses.GetAllAsync();
             var categories = await DbService.Categories.GetAllAsync();
-            var filePath = await CsvExporter.ExportToFileAsync(expenses, categories);
-
-            FeedbackMessage = $"CSV: {Path.GetFileName(filePath)} ({expenses.Count}).";
+            filePath = await CsvExporter.ExportToFileAsync(expenses, categories);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "CSV export failed.");
-            FeedbackMessage = $"Export failed: {ex.Message}";
+            FeedbackMessage = L["Settings_ExportFailed"].Value;
+            return;
         }
-    }
 
-    private async Task BackupDatabase()
-    {
+        // The share sheet gives no result: never claim the file was exported.
+        FeedbackMessage = L["Share_ChooseApp"].Value;
+        StateHasChanged();
         try
         {
-            var backupDir = Path.GetDirectoryName(DbService.DatabasePath) ?? AppDomain.CurrentDomain.BaseDirectory;
-            var backupFile = Path.Combine(backupDir, $"smartbudget_backup_{DateTime.UtcNow:yyyyMMdd_HHmmss}.db3");
-            var savedPath = await DbService.BackupDatabaseAsync(backupFile);
-            DbSize = await DbService.GetFormattedDatabaseSizeAsync();
-            FeedbackMessage = $"{Path.GetFileName(savedPath)} ({DbSize}).";
+            await FileExport.ShareFileAsync(filePath, L["Settings_ExportShareTitle"].Value);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Database backup failed.");
-            FeedbackMessage = $"Backup failed: {ex.Message}";
+            Logger.LogError(ex, "Opening the share sheet for the CSV export failed.");
+            FeedbackMessage = L["Settings_ExportFailed"].Value;
         }
     }
+
+    private void OpenBackup() => NavManager.NavigateTo("backup");
+
+    private void OpenRestore() => NavManager.NavigateTo("restore");
 
     private async Task HandlePurgeClick()
     {

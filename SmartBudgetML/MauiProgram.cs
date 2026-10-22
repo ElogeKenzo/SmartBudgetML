@@ -36,7 +36,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<ISecureKeyStore, MauiSecureKeyStore>();
         builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
         builder.Services.AddSingleton<IAppSettingsProvider, AppSettingsProvider>();
-        builder.Services.AddSingleton<IFileExportService, LocalFileExportService>();
+        builder.Services.AddSingleton<IFileExportService, MauiFileExportService>();
         builder.Services.AddSingleton<ICsvExpenseExporter, CsvExpenseExporter>();
         builder.Services.AddSingleton<ICurrencyFormatter, CurrencyFormatter>();
         builder.Services.AddSingleton(typeof(IStringLocalizer<>), typeof(ResxStringLocalizer<>));

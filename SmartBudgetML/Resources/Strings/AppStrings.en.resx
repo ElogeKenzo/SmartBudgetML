@@ -130,8 +130,45 @@
   <data name="Settings_DailyRemindersDesc" xml:space="preserve"><value>Gentle reminder to log your daily receipts</value></data>
   <data name="Settings_DataSectionTitle" xml:space="preserve"><value>Data &amp; Encrypted Storage</value></data>
   <data name="Settings_ExportCsv" xml:space="preserve"><value>Export Expense Data (CSV)</value></data>
-  <data name="Settings_BackupDb" xml:space="preserve"><value>Backup Local Database</value></data>
+  <data name="Settings_BackupDb" xml:space="preserve"><value>Encrypted backup (password)</value></data>
   <data name="Settings_ClearDb" xml:space="preserve"><value>Clear Local Database &amp; Key</value></data>
+  <data name="Settings_RestoreDb" xml:space="preserve"><value>Restore a backup</value></data>
+  <data name="Settings_ExportShareTitle" xml:space="preserve"><value>SmartBudget expenses</value></data>
+  <data name="Settings_ExportFailed" xml:space="preserve"><value>The export could not be prepared. Try again.</value></data>
+  <data name="Share_ChooseApp" xml:space="preserve"><value>Choose an app to save the file.</value></data>
+  <data name="Backup_PageTitle" xml:space="preserve"><value>Backup · SmartBudget ML</value></data>
+  <data name="Backup_Title" xml:space="preserve"><value>Encrypted backup</value></data>
+  <data name="Backup_Subtitle" xml:space="preserve"><value>Protected by a password you choose, so it can be restored on another phone.</value></data>
+  <data name="Backup_Password" xml:space="preserve"><value>Backup password</value></data>
+  <data name="Backup_PasswordConfirm" xml:space="preserve"><value>Confirm the password</value></data>
+  <data name="Backup_PasswordHint" xml:space="preserve"><value>At least 8 characters. It is not stored anywhere: if it is lost, the backup cannot be read and nobody can recover it.</value></data>
+  <data name="Backup_TooShort" xml:space="preserve"><value>The password must have at least 8 characters.</value></data>
+  <data name="Backup_Mismatch" xml:space="preserve"><value>The two passwords do not match.</value></data>
+  <data name="Backup_Create" xml:space="preserve"><value>Create and share the backup</value></data>
+  <data name="Backup_Working" xml:space="preserve"><value>Preparing…</value></data>
+  <data name="Backup_Ready" xml:space="preserve"><value>Backup {0} created and checked. Choose an app to save it.</value></data>
+  <data name="Backup_Failed" xml:space="preserve"><value>The backup could not be created. Try again.</value></data>
+  <data name="Backup_ShareTitle" xml:space="preserve"><value>SmartBudget backup</value></data>
+  <data name="Restore_PageTitle" xml:space="preserve"><value>Restore · SmartBudget ML</value></data>
+  <data name="Restore_Title" xml:space="preserve"><value>Restore a backup</value></data>
+  <data name="Restore_Subtitle" xml:space="preserve"><value>Choose a .sbbackup file and enter its password.</value></data>
+  <data name="Restore_PickFile" xml:space="preserve"><value>Choose the file</value></data>
+  <data name="Restore_NoFile" xml:space="preserve"><value>No file chosen</value></data>
+  <data name="Restore_PickFailed" xml:space="preserve"><value>The file could not be opened. Try again.</value></data>
+  <data name="Restore_Password" xml:space="preserve"><value>Backup password</value></data>
+  <data name="Restore_Check" xml:space="preserve"><value>Check the backup</value></data>
+  <data name="Restore_Unreadable" xml:space="preserve"><value>Wrong password or damaged file. Your current data was not changed.</value></data>
+  <data name="Restore_NotABackup" xml:space="preserve"><value>This file is not a SmartBudget backup. Your current data was not changed.</value></data>
+  <data name="Restore_TooNew" xml:space="preserve"><value>This backup comes from a newer version of the app. Update the app, then try again.</value></data>
+  <data name="Restore_Valid" xml:space="preserve"><value>Backup checked.</value></data>
+  <data name="Restore_Confirm1" xml:space="preserve"><value>This replaces all current data. Continue?</value></data>
+  <data name="Restore_Confirm2" xml:space="preserve"><value>Final confirmation: the current data will be replaced by the backup.</value></data>
+  <data name="Restore_PinNotice" xml:space="preserve"><value>After the restore the app locks: unlock it with the PIN you used when the backup was made.</value></data>
+  <data name="Restore_Start" xml:space="preserve"><value>Restore</value></data>
+  <data name="Restore_ConfirmButton" xml:space="preserve"><value>Replace my data</value></data>
+  <data name="Restore_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Restore_Working" xml:space="preserve"><value>Restoring…</value></data>
+  <data name="Restore_Failed" xml:space="preserve"><value>The restore failed. Restart the app and check your data.</value></data>
   <data name="Settings_ConfirmPurge" xml:space="preserve"><value>⚠️ Tap again to permanently erase vault &amp; key</value></data>
   <data name="Settings_FooterNote" xml:space="preserve"><value>SmartBudget ML · 256-bit SQLCipher · PBKDF2 600k · 100% Offline</value></data>
 
@@ -154,6 +191,7 @@
   <data name="VaultError_Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="VaultError_RetryFailed" xml:space="preserve"><value>Still unavailable. Try again later.</value></data>
   <data name="VaultError_ResetFailed" xml:space="preserve"><value>Reset failed. Restart the app and try again.</value></data>
+  <data name="VaultError_RestoreHint" xml:space="preserve"><value>If you have a backup (.sbbackup) and its password, you can restore it from Settings after the reset.</value></data>
   <data name="Onboarding_PageTitle" xml:space="preserve"><value>Create your account · SmartBudget ML</value></data>
   <data name="Onboarding_TitleStep1" xml:space="preserve"><value>Create your profile</value></data>
   <data name="Onboarding_TitleStep2" xml:space="preserve"><value>Secure your data</value></data>

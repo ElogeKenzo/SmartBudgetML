@@ -27,7 +27,7 @@
 
   <ItemGroup>
     <Compile Include="..\SmartBudgetML\Models\**\*.cs" LinkBase="Models" />
-    <Compile Include="..\SmartBudgetML\Services\**\*.cs" Exclude="..\SmartBudgetML\Services\Auth\BiometricService.cs;..\SmartBudgetML\Services\Security\MauiSecureKeyStore.cs" LinkBase="Services" />
+    <Compile Include="..\SmartBudgetML\Services\**\*.cs" Exclude="..\SmartBudgetML\Services\Auth\BiometricService.cs;..\SmartBudgetML\Services\Security\MauiSecureKeyStore.cs;..\SmartBudgetML\Services\Data\MauiFileExportService.cs" LinkBase="Services" />
     <Compile Include="..\SmartBudgetML\Resources\Strings\AppStrings.cs" LinkBase="Resources\Strings" />
     <Compile Include="..\SmartBudgetML\Components\Shared\UiFormat.cs" LinkBase="Components\Shared" />
     <None Include="..\SmartBudgetML\Resources\Raw\*.csv" CopyToOutputDirectory="PreserveNewest" LinkBase="Resources\Raw" />

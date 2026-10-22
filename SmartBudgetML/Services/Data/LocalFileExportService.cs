@@ -2,6 +2,10 @@ using System.Text;
 
 namespace SmartBudgetML.Services.Data;
 
+/// <summary>
+/// Writes exports to a private folder. Sharing needs the platform share sheet:
+/// see <c>MauiFileExportService</c> in the app.
+/// </summary>
 public class LocalFileExportService : IFileExportService
 {
     private readonly string _exportDirectory;
@@ -23,20 +27,11 @@ public class LocalFileExportService : IFileExportService
         }
     }
 
+    public string ExportDirectory => _exportDirectory;
+
     public async Task<string> WriteExportFileAsync(string fileName, string content, Encoding? encoding = null)
     {
-        if (string.IsNullOrWhiteSpace(fileName))
-        {
-            throw new ArgumentException("File name must not be empty.", nameof(fileName));
-        }
-
-        if (!Directory.Exists(_exportDirectory))
-        {
-            Directory.CreateDirectory(_exportDirectory);
-        }
-
-        var safeFileName = Path.GetFileName(fileName);
-        var fullPath = Path.Combine(_exportDirectory, safeFileName);
+        var fullPath = PrepareExportPath(fileName);
         var targetEncoding = encoding ?? new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
 
         await File.WriteAllTextAsync(fullPath, content ?? string.Empty, targetEncoding);
@@ -49,4 +44,25 @@ public class LocalFileExportService : IFileExportService
 
         return fullPath;
     }
+
+    public string PrepareExportPath(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            throw new ArgumentException("File name must not be empty.", nameof(fileName));
+        }
+
+        Directory.CreateDirectory(_exportDirectory);
+
+        // Exports hold personal data: keep only the file about to be shared.
+        foreach (var previous in Directory.GetFiles(_exportDirectory))
+        {
+            File.Delete(previous);
+        }
+
+        return Path.Combine(_exportDirectory, Path.GetFileName(fileName));
+    }
+
+    public virtual Task ShareFileAsync(string path, string title) =>
+        throw new PlatformNotSupportedException("Sharing a file needs the platform share sheet.");
 }

@@ -190,8 +190,9 @@ public class Phase1HonestyTests : IDisposable
     [Fact]
     public async Task DatabaseService_BackupAndRestore_RestoresWipedData_AndRejectsCorruptFile()
     {
+        const string BackupPassword = "sauvegarde-test";
         var dbPath = Path.Combine(_tempDir, "main_budget.db3");
-        var backupPath = Path.Combine(_tempDir, "backup_budget.db3");
+        var backupPath = Path.Combine(_tempDir, "smartbudget-20260310.sbbackup");
         var corruptPath = Path.Combine(_tempDir, "corrupt_file.db3");
 
         var db = new DatabaseService(dbPath);
@@ -211,8 +212,8 @@ public class Phase1HonestyTests : IDisposable
         Assert.NotEqual("240 KB", formattedSize);
         Assert.NotEqual("180 KB", formattedSize);
 
-        // Perform real SQLite backup
-        var savedBackupPath = await db.BackupDatabaseAsync(backupPath);
+        // Perform real password-encrypted backup
+        var savedBackupPath = await db.CreatePasswordBackupAsync(backupPath, BackupPassword);
         Assert.True(File.Exists(savedBackupPath));
 
         // Wipe expenses in original DB
@@ -225,10 +226,11 @@ public class Phase1HonestyTests : IDisposable
 
         // Attempt to restore a corrupt non-SQLite file -> must throw and keep DB intact
         await File.WriteAllTextAsync(corruptPath, "NOT A VALID SQLITE FILE HEADER");
-        await Assert.ThrowsAsync<InvalidDataException>(() => db.RestoreDatabaseAsync(corruptPath));
+        await Assert.ThrowsAsync<BackupRestoreException>(() => db.RestorePasswordBackupAsync(corruptPath, BackupPassword));
+        Assert.Equal(0, await db.Expenses.CountAsync());
 
         // Restore from valid backup -> expense is back
-        await db.RestoreDatabaseAsync(backupPath);
+        await db.RestorePasswordBackupAsync(backupPath, BackupPassword);
         var restoredExpenses = await db.Expenses.GetAllAsync();
         Assert.Single(restoredExpenses);
         Assert.Equal("Cotisation Tontine", restoredExpenses[0].Description);

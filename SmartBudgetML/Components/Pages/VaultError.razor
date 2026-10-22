@@ -13,6 +13,7 @@
         <p class="lock-sub" id="vault-error-reason">
             @(DbService.VaultState == VaultState.KeyLost ? L["VaultError_KeyLost"] : L["VaultError_KeyUnavailable"])
         </p>
+        <p class="lock-sub" id="vault-error-restore-hint">@L["VaultError_RestoreHint"]</p>
 
         @if (!string.IsNullOrEmpty(FeedbackMessage))
         {

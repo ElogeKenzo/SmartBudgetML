@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Reflection;
 using System.Text;
 using SQLite;
 using SmartBudgetML.Models;
@@ -9,11 +10,22 @@ namespace SmartBudgetML.Services.Database;
 /// <summary>
 /// Orchestrates the local SQLite/SQLCipher database lifecycle, schema migrations,
 /// plaintext-to-encrypted database migration, real file size inspection,
-/// atomic backup/restore, secure purge, and typed generic repositories.
+/// password-encrypted backup and restore, secure purge, and typed generic repositories.
 /// </summary>
 public class DatabaseService : IDatabaseService
 {
+    /// <summary>Copy of the database taken just before a restore replaces it.</summary>
+    public const string PreRestoreSuffix = ".pre-restore";
+    private const string RestoreTempSuffix = ".restore_tmp";
+
     private static readonly byte[] SqliteMagicHeader = Encoding.ASCII.GetBytes("SQLite format 3\0");
+
+    // Every table a backup must contain, read from the models' [Table] names.
+    private static readonly string[] RequiredTables = new[]
+    {
+        typeof(Category), typeof(Expense), typeof(UserProfile), typeof(AppSettings), typeof(CategoryFeedback),
+        typeof(Tontine), typeof(TontineMember), typeof(TontineRound), typeof(TontineContribution)
+    }.Select(t => t.GetCustomAttribute<TableAttribute>()?.Name ?? t.Name).ToArray();
 
     private readonly string _databasePath;
     private readonly ISecureKeyStore? _keyStore;
@@ -368,11 +380,20 @@ public class DatabaseService : IDatabaseService
         return $"{mb.ToString("0.00", CultureInfo.InvariantCulture)} MB";
     }
 
-    public async Task<string> BackupDatabaseAsync(string destinationPath)
+    /// <summary>
+    /// Writes a copy of the whole database encrypted with <paramref name="password"/>, not with the
+    /// phone's master key, so it can be restored on another phone (lot 8D). The file is validated
+    /// before it is returned. The password is never stored or logged.
+    /// </summary>
+    public async Task<string> CreatePasswordBackupAsync(string destinationPath, string password)
     {
         if (string.IsNullOrWhiteSpace(destinationPath))
         {
             throw new ArgumentException("Backup destination path cannot be empty.", nameof(destinationPath));
+        }
+        if (BackupPasswordPolicy.Validate(password, password) != BackupPasswordCheck.Ok)
+        {
+            throw new ArgumentException("Backup password is too short.", nameof(password));
         }
 
         var conn = await GetConnectionAsync();
@@ -382,44 +403,101 @@ public class DatabaseService : IDatabaseService
             Directory.CreateDirectory(dir);
         }
 
-        if (File.Exists(destinationPath))
+        var tempPath = destinationPath + ".tmp";
+        DeleteIfExists(tempPath);
+        try
         {
-            File.Delete(destinationPath);
+            // Bound parameters: no quoting of the path or the password is needed.
+            await conn.ExecuteAsync("ATTACH DATABASE ? AS backup KEY ?;", tempPath, password);
+            try
+            {
+                await conn.ExecuteScalarAsync<string>("SELECT sqlcipher_export('backup');");
+                await conn.ExecuteAsync($"PRAGMA backup.user_version = {DatabaseConstants.SchemaVersion};");
+            }
+            finally
+            {
+                await conn.ExecuteAsync("DETACH DATABASE backup;");
+            }
+
+            var status = await ValidatePasswordBackupAsync(tempPath, password);
+            if (status != BackupValidationStatus.Valid)
+            {
+                throw new InvalidDataException($"The new backup failed validation: {status}.");
+            }
+
+            File.Move(tempPath, destinationPath, overwrite: true);
+            return destinationPath;
         }
-
-        var escapedPath = destinationPath.Replace("'", "''");
-        await conn.ExecuteAsync($"VACUUM INTO '{escapedPath}';");
-
-        ValidateDatabaseFile(destinationPath, _masterKey);
-        return destinationPath;
+        catch
+        {
+            DeleteIfExists(tempPath);
+            throw;
+        }
     }
 
-    public async Task RestoreDatabaseAsync(string backupFilePath)
+    /// <summary>
+    /// Opens the backup with the password and checks integrity, tables and schema version.
+    /// Reads only: the current database is never touched. Runs off the calling thread because
+    /// SQLCipher derives the key from the password with PBKDF2.
+    /// </summary>
+    public Task<BackupValidationStatus> ValidatePasswordBackupAsync(string backupFilePath, string password) =>
+        Task.Run(() => ValidateBackupFile(backupFilePath, password));
+
+    /// <summary>
+    /// Replaces all current data with the backup, re-encrypted with this phone's master key.
+    /// Throws <see cref="BackupRestoreException"/> without changing anything when the backup is
+    /// refused. The previous database is kept as <see cref="PreRestoreSuffix"/>.
+    /// </summary>
+    public async Task RestorePasswordBackupAsync(string backupFilePath, string password)
     {
-        if (string.IsNullOrWhiteSpace(backupFilePath) || !File.Exists(backupFilePath))
+        var status = await ValidatePasswordBackupAsync(backupFilePath, password);
+        if (status != BackupValidationStatus.Valid)
         {
-            throw new FileNotFoundException("Backup file does not exist.", backupFilePath);
+            throw new BackupRestoreException(status);
         }
 
-        string? key = _keyStore != null ? _masterKey ?? await _keyStore.GetMasterKeyAsync() : null;
-        ValidateDatabaseFile(backupFilePath, key);
+        await InitializeAsync();
+        var importPath = _databasePath + RestoreTempSuffix;
+        var targetKey = _isEncrypted ? _masterKey : null;
+        DeleteIfExists(importPath);
 
         await _initLock.WaitAsync();
         try
         {
-            if (_connection != null)
+            try
             {
-                await _connection.CloseAsync();
-                _connection = null;
+                await Task.Run(() => ImportBackupInto(backupFilePath, password, importPath, targetKey));
+            }
+            catch (Exception ex)
+            {
+                throw new BackupRestoreException(BackupValidationStatus.NotABackup, ex);
             }
 
-            File.Copy(backupFilePath, _databasePath, overwrite: true);
+            var preRestorePath = _databasePath + PreRestoreSuffix;
+            await CloseConnectionAsync();
+            File.Copy(_databasePath, preRestorePath, overwrite: true);
+            try
+            {
+                File.Copy(importPath, _databasePath, overwrite: true);
+                DeleteJournalFiles();
+                await OpenAndProvisionTablesAsync();
+                await SeedDefaultDataAsync();
+            }
+            catch
+            {
+                await CloseConnectionAsync();
+                File.Copy(preRestorePath, _databasePath, overwrite: true);
+                File.Delete(preRestorePath);
+                DeleteJournalFiles();
+                await OpenAndProvisionTablesAsync();
+                throw;
+            }
 
-            await OpenAndProvisionTablesAsync();
             _isInitialized = true;
         }
         finally
         {
+            DeleteIfExists(importPath);
             _initLock.Release();
         }
     }
@@ -439,7 +517,7 @@ public class DatabaseService : IDatabaseService
             _isEncrypted = false;
             _masterKey = null;
 
-            string[] suffixes = { "", "-wal", "-shm", ".bak", ".enc_tmp" };
+            string[] suffixes = { "", "-wal", "-shm", ".bak", ".enc_tmp", PreRestoreSuffix, RestoreTempSuffix };
             foreach (var suffix in suffixes)
             {
                 var target = _databasePath + suffix;
@@ -460,43 +538,111 @@ public class DatabaseService : IDatabaseService
         }
     }
 
-    private static void ValidateDatabaseFile(string filePath, string? masterKey)
+    private static BackupValidationStatus ValidateBackupFile(string filePath, string password)
     {
-        var fileInfo = new FileInfo(filePath);
-        if (!fileInfo.Exists || fileInfo.Length < SqliteMagicHeader.Length)
+        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath) || string.IsNullOrEmpty(password))
         {
-            throw new InvalidDataException($"File '{filePath}' is too small or invalid.");
+            return BackupValidationStatus.Unreadable;
         }
 
-        if (string.IsNullOrWhiteSpace(masterKey))
-        {
-            byte[] header = new byte[SqliteMagicHeader.Length];
-            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            int read = fs.Read(header, 0, header.Length);
-            if (read < header.Length || !header.SequenceEqual(SqliteMagicHeader))
-            {
-                throw new InvalidDataException($"File '{filePath}' does not have a valid SQLite format 3 header.");
-            }
-        }
-
+        SQLiteConnection conn;
         try
         {
-            var connStr = new SQLiteConnectionString(filePath, SQLiteOpenFlags.ReadOnly, storeDateTimeAsTicks: true, key: masterKey);
-            using var checkConn = new SQLiteConnection(connStr);
-            var integrity = checkConn.ExecuteScalar<string>("PRAGMA integrity_check;");
-            if (!string.Equals(integrity, "ok", StringComparison.OrdinalIgnoreCase))
+            conn = new SQLiteConnection(new SQLiteConnectionString(filePath, SQLiteOpenFlags.ReadOnly, storeDateTimeAsTicks: true, key: password));
+        }
+        catch (SQLiteException)
+        {
+            return BackupValidationStatus.Unreadable;
+        }
+
+        using (conn)
+        {
+            try
             {
-                throw new InvalidDataException($"SQLite integrity check failed for '{filePath}': {integrity}");
+                // A wrong password or a damaged file only fails on the first read.
+                conn.ExecuteScalar<int>("SELECT count(*) FROM sqlite_master;");
             }
-            checkConn.Close();
+            catch (SQLiteException)
+            {
+                return BackupValidationStatus.Unreadable;
+            }
+
+            try
+            {
+                var integrity = conn.ExecuteScalar<string>("PRAGMA integrity_check;");
+                if (!string.Equals(integrity, "ok", StringComparison.OrdinalIgnoreCase))
+                {
+                    return BackupValidationStatus.NotABackup;
+                }
+
+                if (conn.ExecuteScalar<int>("PRAGMA user_version;") > DatabaseConstants.SchemaVersion)
+                {
+                    return BackupValidationStatus.TooNew;
+                }
+
+                var tables = conn.QueryScalars<string>("SELECT name FROM sqlite_master WHERE type = 'table';");
+                return RequiredTables.All(t => tables.Contains(t, StringComparer.OrdinalIgnoreCase))
+                    ? BackupValidationStatus.Valid
+                    : BackupValidationStatus.NotABackup;
+            }
+            catch (SQLiteException)
+            {
+                return BackupValidationStatus.NotABackup;
+            }
         }
-        catch (InvalidDataException)
+    }
+
+    /// <summary>Copies every table of the backup into a new file encrypted with <paramref name="targetKey"/>.</summary>
+    private static void ImportBackupInto(string backupFilePath, string password, string importPath, string? targetKey)
+    {
+        // ReadWrite | Create: the attached import file inherits the open flags of the main connection.
+        using var source = new SQLiteConnection(new SQLiteConnectionString(
+            backupFilePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks: true, key: password));
+        source.Execute("ATTACH DATABASE ? AS restored KEY ?;", importPath, targetKey ?? string.Empty);
+        try
         {
-            throw;
+            source.ExecuteScalar<string>("SELECT sqlcipher_export('restored');");
+            source.Execute($"PRAGMA restored.user_version = {DatabaseConstants.SchemaVersion};");
+
+            foreach (var table in RequiredTables)
+            {
+                var quoted = "\"" + table.Replace("\"", "\"\"") + "\"";
+                var backupCount = source.ExecuteScalar<long>($"SELECT count(*) FROM main.{quoted};");
+                var importedCount = source.ExecuteScalar<long>($"SELECT count(*) FROM restored.{quoted};");
+                if (backupCount != importedCount)
+                {
+                    throw new InvalidOperationException($"Row count mismatch for table {table} during restore.");
+                }
+            }
         }
-        catch (Exception ex)
+        finally
         {
-            throw new InvalidDataException($"Corrupt or undecryptable SQLite backup file '{filePath}': {ex.Message}", ex);
+            source.Execute("DETACH DATABASE restored;");
+        }
+    }
+
+    private async Task CloseConnectionAsync()
+    {
+        if (_connection != null)
+        {
+            await _connection.CloseAsync();
+            _connection = null;
+        }
+    }
+
+    private void DeleteJournalFiles()
+    {
+        foreach (var suffix in new[] { "-wal", "-shm", "-journal" })
+        {
+            DeleteIfExists(_databasePath + suffix);
+        }
+    }
+
+    private static void DeleteIfExists(string path)
+    {
+        if (File.Exists(path))
+        {
+            File.Delete(path);
         }
     }
 }
