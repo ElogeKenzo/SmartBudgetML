@@ -46,9 +46,12 @@ public class LocalAuthService : ILocalAuthService
         _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
+    public event EventHandler? LockStateChanged;
+
     public void LockApp()
     {
         IsAppUnlocked = false;
+        LockStateChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public void MarkAppUnlocked()

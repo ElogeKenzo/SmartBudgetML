@@ -248,7 +248,7 @@
 
     private void LockApp()
     {
+        // MainLayout navigates to /unlock on LockStateChanged.
         AuthService.LockApp();
-        NavManager.NavigateTo("unlock");
     }
 }

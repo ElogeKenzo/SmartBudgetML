@@ -78,6 +78,7 @@
     {
         NavManager.LocationChanged += OnLocationChanged;
         L.OnLanguageChanged += OnLanguageChanged;
+        AuthService.LockStateChanged += OnLockStateChanged;
 
         try
         {
@@ -146,9 +147,20 @@
 
     private void LockApp()
     {
+        // Navigation to /unlock is done by OnLockStateChanged.
         AuthService.LockApp();
-        NavManager.NavigateTo("unlock");
     }
+
+    private void OnLockStateChanged(object? sender, EventArgs e)
+        => InvokeAsync(() =>
+        {
+            var relative = NavManager.ToBaseRelativePath(NavManager.Uri);
+            var target = LockNavigationCoordinator.GetRedirect(relative, AuthService.IsAppUnlocked);
+            if (target != null)
+            {
+                NavManager.NavigateTo(target, replace: true);
+            }
+        });
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
         => InvokeAsync(StateHasChanged);
@@ -160,5 +172,6 @@
     {
         NavManager.LocationChanged -= OnLocationChanged;
         L.OnLanguageChanged -= OnLanguageChanged;
+        AuthService.LockStateChanged -= OnLockStateChanged;
     }
 }
