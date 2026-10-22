@@ -68,13 +68,16 @@
                 </svg>
                 <span>@L["Profile_ResetPin"]</span>
             </button>
-            <button id="btn-test-auth" type="button" class="btn-secondary-action" @onclick="TestBiometrics">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 2a10 10 0 0 0-10 10c0 3 1.5 6 4 8"></path>
-                    <path d="M12 6a6 6 0 0 0-6 6c0 2 1 4 2.5 5"></path>
-                </svg>
-                <span>@L["Profile_TestBiometrics"]</span>
-            </button>
+            @if (BiometricsAvailable)
+            {
+                <button id="btn-test-auth" type="button" class="btn-secondary-action" @onclick="TestBiometrics">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a10 10 0 0 0-10 10c0 3 1.5 6 4 8"></path>
+                        <path d="M12 6a6 6 0 0 0-6 6c0 2 1 4 2.5 5"></path>
+                    </svg>
+                    <span>@L["Profile_TestBiometrics"]</span>
+                </button>
+            }
         </div>
         <p class="card-footnote">
             @L["Profile_SecurityFootnote"]
@@ -112,13 +115,16 @@
             </div>
         </div>
 
-        <div class="switch-container bordered-top">
-            <div class="switch-label-group">
-                <span class="switch-title">@L["Profile_BiometricUnlock"]</span>
-                <span class="switch-desc">@L["Profile_BiometricDesc"]</span>
+        @if (BiometricsAvailable)
+        {
+            <div class="switch-container bordered-top">
+                <div class="switch-label-group">
+                    <span class="switch-title">@L["Profile_BiometricUnlock"]</span>
+                    <span class="switch-desc">@L["Profile_BiometricDesc"]</span>
+                </div>
+                <ToggleSwitch Id="toggle-biometrics" Value="BiometricsEnabled" ValueChanged="OnToggleBiometrics" />
             </div>
-            <ToggleSwitch Id="toggle-biometrics" Value="BiometricsEnabled" ValueChanged="OnToggleBiometrics" />
-        </div>
+        }
     </div>
 
     @* Link to Settings *@
@@ -161,6 +167,7 @@
     };
 
     private bool BiometricsEnabled = false;
+    private bool BiometricsAvailable = false;
     private string? StatusMessage;
 
     protected override async Task OnInitializedAsync()
@@ -173,6 +180,7 @@
                 User = profile;
             }
             BiometricsEnabled = await AuthService.IsBiometricEnabledAsync();
+            BiometricsAvailable = await AuthService.IsBiometricAvailableAsync();
         }
         catch (Exception ex)
         {

@@ -13,7 +13,7 @@
             ErrorMessage="@ErrorMessage"
             IsVerifying="@IsVerifying"
             VerifyingText="@L["Unlock_Verifying"].Value"
-            ShowBiometric="true"
+            ShowBiometric="@ShowBiometric"
             OnPinComplete="HandlePinComplete"
             OnBiometricRequested="HandleBiometricUnlock" />
 
@@ -22,6 +22,7 @@
     private int PinLength = 6;
     private bool IsLockedOut = false;
     private bool IsVerifying = false;
+    private bool ShowBiometric = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -29,6 +30,7 @@
         {
             var settings = await AuthService.GetSettingsAsync();
             PinLength = settings.PinLength == 4 ? 4 : 6;
+            ShowBiometric = settings.IsBiometricEnabled && await AuthService.IsBiometricAvailableAsync();
 
             var remaining = await AuthService.GetRemainingLockoutTimeAsync();
             if (remaining.HasValue && remaining.Value > TimeSpan.Zero)

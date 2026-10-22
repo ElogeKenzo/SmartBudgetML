@@ -32,25 +32,31 @@ public class BiometricService : IBiometricService
                 return Task.FromResult(false);
             }
 
+            var apiLevel = (int)Build.VERSION.SdkInt;
             bool hasFingerprintFeature = context.PackageManager.HasSystemFeature(PackageManager.FeatureFingerprint);
-            if (!hasFingerprintFeature)
-            {
-                return Task.FromResult(false);
-            }
+            bool? biometricManagerSuccess = null;
+            bool? hasEnrolledFingerprints = null;
 
-            if (OperatingSystem.IsAndroidVersionAtLeast(29))
+            if (hasFingerprintFeature && OperatingSystem.IsAndroidVersionAtLeast(29))
             {
                 var bm = context.GetSystemService(Android.Content.Context.BiometricService) as BiometricManager;
                 if (bm != null)
                 {
 #pragma warning disable CA1422
-                    var canAuth = bm.CanAuthenticate();
+                    biometricManagerSuccess = bm.CanAuthenticate() == BiometricCode.Success;
 #pragma warning restore CA1422
-                    return Task.FromResult(canAuth == BiometricCode.Success);
                 }
             }
+            else if (hasFingerprintFeature && OperatingSystem.IsAndroidVersionAtLeast(28))
+            {
+#pragma warning disable CA1422, CS0618
+                var fm = context.GetSystemService(Android.Content.Context.FingerprintService) as Android.Hardware.Fingerprints.FingerprintManager;
+                hasEnrolledFingerprints = fm?.IsHardwareDetected == true && fm.HasEnrolledFingerprints;
+#pragma warning restore CA1422, CS0618
+            }
 
-            return Task.FromResult(true);
+            return Task.FromResult(BiometricAvailabilityPolicy.IsAvailable(
+                apiLevel, hasFingerprintFeature, biometricManagerSuccess, hasEnrolledFingerprints));
 #else
             return Task.FromResult(false);
 #endif
