@@ -29,13 +29,17 @@
 		<RunAOTCompilation>false</RunAOTCompilation>
 	</PropertyGroup>
 
+	<PropertyGroup Condition="'$(EnableSelfTest)' == 'true'">
+		<DefineConstants>$(DefineConstants);SB_SELFTEST</DefineConstants>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#0B0E17" />
 		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#0B0E17" BaseSize="128,128" />
 		<MauiImage Include="Resources\Images\*" />
 		<MauiFont Include="Resources\Fonts\*" />
 		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
-				<EmbeddedResource Remove="Resources\Strings\*.resx" />
+		<EmbeddedResource Remove="Resources\Strings\*.resx" />
 		<EmbeddedResource Include="Resources\Strings\*.resx" WithCulture="false" Type="Non-Resx" />
 	</ItemGroup>
 

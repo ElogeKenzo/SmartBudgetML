@@ -16,6 +16,10 @@ public partial class App : Application
     {
         var window = new Window(new MainPage());
 
+#if SB_SELFTEST
+        SelfTest.SelfTestHost.StartOnce();
+#endif
+
         window.Deactivated += (_, _) => _authService?.RecordBackgrounded();
         window.Stopped += (_, _) => _authService?.RecordBackgrounded();
         window.Resumed += async (_, _) =>

@@ -18,7 +18,13 @@ Ordre de travail demandé (un commit par étape) :
    - Aucun trou entre les seuils. Les bornes sont figées par le test `ForecastReliability_FollowsDocumentedDayThresholds` (13 cas, verts). `RAPPORT_PROJET.md` et `docs/ML_EVALUATION.md` disaient déjà la même chose. `PHASE-4.md` omettait le mode hebdomadaire : c'est complété. `README.md` ne donne aucun seuil.
    - Écart restant (pour le lot 8H, textes) : le message `High` du mode mensuel dit « plus de 14 jours », alors que le niveau commence au jour 14. Ces messages sont aussi en français codé en dur dans le service.
    **Point D** : `PHASE8_FICHIER_UNIQUE.md` (non suivi, paquet d'origine déjà éclaté dans `docs/` au commit `e24f683`) a été supprimé.
-4. [ ] `SelfTestRunner` (`#if SB_SELFTEST`) + preuve que le build Release normal n'en contient aucune trace + script d'émulateur + workflow CI.
+4. [~] **Auto-test embarqué (fait, commité)** :
+   - Cœur `Services/SelfTest/SelfTestRunner.cs`, compilé aussi par les tests. Amorçage Android `SelfTest/SelfTestHost.cs` (MauiSecureKeyStore + logcat, tag `SB_SELFTEST`), lancé une seule fois depuis `App.CreateWindow`. Les deux fichiers sont entièrement sous `#if SB_SELFTEST` ; la constante n'existe que si `-p:EnableSelfTest=true`.
+   - 9 étapes : base chiffrée, profil + PIN, dépense, entraînement ML, « Moto bendskin Akwa » → transport, « Facture ENEO » → utilities, vérification du PIN (temps de hachage), prévision, nettoyage. L'auto-test utilise sa propre base `selftest/selftest.db3` et ne purge jamais la clé maître.
+   - Tests hôte `SelfTestRunnerTests` (parcours 9/9 et chemin d'échec). Suite : 154/154 (VÉRIFIÉ-TESTS).
+   - **Preuve d'absence** : `python tools/check_selftest_absent.py SmartBudgetML/obj/Release/net10.0-android/SmartBudgetML.dll` donne ABSENT sur le build normal et PRESENT avec `--expect-present` sur le build `EnableSelfTest=true` (vérifié localement). Sur l'APK, le contrôle n'est PAS probant : `libassembly-store.so` est compressé, donc il répond ABSENT même sur l'APK d'auto-test. On contrôle donc la DLL IL, qui est l'entrée du linker.
+   - Environnement local : pas d'émulateur ni de `gh` sur ce PC. L'émulateur ne tourne qu'en CI. Suivi des runs : API REST publique de GitHub (dépôt public `ElogeKenzo/SmartBudgetML`), ou journaux collés par l'utilisateur.
+   - [ ] Reste : script d'émulateur + workflow CI.
 
 Changements encore non commités laissés par la session précédente (à reprendre à l'étape 4) : `EnableSelfTest` → `SB_SELFTEST` dans `SmartBudgetML.csproj` (+ correction d'indentation), `SB_SELFTEST` et `coverlet.collector` dans `SmartBudgetML.Tests.csproj` (accepté par l'utilisateur). Fins de ligne : garder celles de chaque fichier (les `.csproj` sont en LF), pas de `.gitattributes`.
 
