@@ -33,30 +33,30 @@ public class CurrencyFormatter : ICurrencyFormatter
             case "XAF":
             case "FCFA":
             case "CFA":
-            {
-                var rounded = Math.Round(abs, 0, MidpointRounding.AwayFromZero);
-                return $"{sign}{rounded.ToString("N0", SpaceCommaFormat)} FCFA";
-            }
+                {
+                    var rounded = Math.Round(abs, 0, MidpointRounding.AwayFromZero);
+                    return $"{sign}{rounded.ToString("N0", SpaceCommaFormat)} FCFA";
+                }
             case "EUR":
             case "€":
-            {
-                return $"{sign}{abs.ToString("N2", SpaceCommaFormat)} €";
-            }
+                {
+                    return $"{sign}{abs.ToString("N2", SpaceCommaFormat)} €";
+                }
             case "MAD":
-            {
-                return $"{sign}{abs.ToString("N2", SpaceCommaFormat)} MAD";
-            }
+                {
+                    return $"{sign}{abs.ToString("N2", SpaceCommaFormat)} MAD";
+                }
             case "GBP":
             case "£":
-            {
-                return $"{sign}£{abs.ToString("N2", CommaDotFormat)}";
-            }
+                {
+                    return $"{sign}£{abs.ToString("N2", CommaDotFormat)}";
+                }
             case "USD":
             case "$":
             default:
-            {
-                return $"{sign}${abs.ToString("N2", CommaDotFormat)}";
-            }
+                {
+                    return $"{sign}${abs.ToString("N2", CommaDotFormat)}";
+                }
         }
     }
 }

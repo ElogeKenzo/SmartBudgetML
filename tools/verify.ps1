@@ -49,6 +49,21 @@ try {
             $failures.Add("Android Release build failed")
         }
     }
+
+    # 2b. Android artifact gates (same scripts as the CI build-android job)
+    $selfTestAbsentStr = "SKIPPED"
+    $align16kStr = "SKIPPED"
+    if ($androidStatus -eq "PASS") {
+        $ilDll = Join-Path $repoRoot "SmartBudgetML/obj/Release/net10.0-android/SmartBudgetML.dll"
+        $null = & python -I (Join-Path $repoRoot "tools/check_selftest_absent.py") $ilDll
+        $selfTestAbsentStr = if ($LASTEXITCODE -eq 0) { "PASS" } else { "FAIL" }
+        if ($selfTestAbsentStr -ne "PASS") { $failures.Add("SB_SELFTEST code found in the Release build") }
+
+        $apk = Join-Path $repoRoot "SmartBudgetML/bin/Release/net10.0-android/com.smartbudgetml.app-Signed.apk"
+        $null = & python -I (Join-Path $repoRoot "tools/check_elf_alignment.py") $apk
+        $align16kStr = if ($LASTEXITCODE -eq 0) { "PASS" } else { "FAIL" }
+        if ($align16kStr -ne "PASS") { $failures.Add("Native libraries not aligned on 16 KB pages") }
+    }
     $ErrorActionPreference = "Stop"
 
     # 3. Guardrails
@@ -152,6 +167,8 @@ try {
         "| Manifeste Android : ``USE_BIOMETRIC`` seul | ``$gManStr`` | Permissions : ``$permsJoined`` |",
         "| Aucun ``READ_SMS`` / ``RECEIVE_SMS`` | ``$gSmsStr`` | $($readSmsCount + $manifestReadSms) occurrence(s) |",
         "| ``git ls-files`` sans keystore ni ``.sb_vault_key`` | ``$gGitStr`` | $($leakedSecrets.Count) fichier(s) sensible(s) suivi(s) |",
+        "| Build Release Android sans code ``SB_SELFTEST`` | ``$selfTestAbsentStr`` | ``tools/check_selftest_absent.py`` sur la DLL IL |",
+        "| Bibliotheques natives alignees sur 16 Ko | ``$align16kStr`` | ``tools/check_elf_alignment.py`` sur l'APK |",
         "",
         "## 4. Metriques ML Reelles (issues de ``artifacts/ml-eval.json``)",
         "- **Echantillons :** ``$trainSamples`` entrainement (``seed_fr.csv``) / ``$holdoutSamples`` validation (``holdout_fr.csv``), ``$catCount`` categories dans le jeu courant.",
