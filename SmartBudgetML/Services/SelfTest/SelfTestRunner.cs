@@ -64,6 +64,8 @@ public sealed class SelfTestRunner
         await StepAsync("categorize_utilities", () => ExpectCategoryAsync("Facture ENEO", "utilities"));
         await StepAsync("pin_hash_verify", VerifyPinAsync);
         await StepAsync("forecast", ForecastAsync);
+        await StepAsync("reopen_encrypted_db", ReopenEncryptedDatabaseAsync);
+        await StepAsync("lock_app", LockAppAsync);
         await StepAsync("cleanup", CleanupAsync);
 
         _log($"{Tag}|DONE|{Passed}/{Total}");
@@ -163,6 +165,45 @@ public sealed class SelfTestRunner
         var expenses = await database.Expenses.GetAllAsync();
         var forecast = new BudgetForecastingService().ForecastPeriod(expenses, 200_000m);
         Require(forecast.CurrentTotalSpend == 500m, $"forecast spend {forecast.CurrentTotalSpend} instead of 500");
+    }
+
+    // Closes the database and opens it again with the stored key: the vault must be Ready
+    // and the expense still there (lot 8C, N6).
+    private async Task ReopenEncryptedDatabaseAsync()
+    {
+        var database = RequireDatabase();
+        var connection = await database.GetConnectionAsync();
+        await connection.CloseAsync();
+
+        _database = new DatabaseService(DatabasePath, _keyStore);
+        await _database.InitializeAsync();
+        Require(_database.VaultState == VaultState.Ready, $"vault state {_database.VaultState} after reopen");
+        Require(_database.IsEncrypted, "reopened database is not encrypted");
+        Require(await _database.Expenses.CountAsync() == 1, "expense lost after reopen");
+    }
+
+    // Locking must raise LockStateChanged, which MainLayout turns into a redirect to /unlock (N3).
+    private Task LockAppAsync()
+    {
+        var auth = _auth ?? throw new InvalidOperationException("auth not initialized");
+        auth.MarkAppUnlocked();
+        var raised = 0;
+        void OnLocked(object? sender, EventArgs e) => raised++;
+        auth.LockStateChanged += OnLocked;
+        try
+        {
+            auth.LockApp();
+        }
+        finally
+        {
+            auth.LockStateChanged -= OnLocked;
+        }
+
+        Require(raised == 1, $"LockStateChanged raised {raised} times");
+        Require(!auth.IsAppUnlocked, "app is still unlocked");
+        Require(LockNavigationCoordinator.GetRedirect("", auth.IsAppUnlocked) == LockNavigationCoordinator.UnlockRoute,
+            "lock does not redirect to unlock");
+        return Task.CompletedTask;
     }
 
     private async Task CleanupAsync()

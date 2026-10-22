@@ -78,6 +78,10 @@ try {
     $guardNoSyncBlock = ($syncBlockCount -eq 0)
     if (-not $guardNoSyncBlock) { $failures.Add("GetAwaiter().GetResult() found: $syncBlockCount") }
 
+    $vaultKeyFileCount = @($srcFiles | Select-String -Pattern 'sb_vault_key').Count
+    $guardNoVaultKeyFile = ($vaultKeyFileCount -eq 0)
+    if (-not $guardNoVaultKeyFile) { $failures.Add("Plaintext key fallback .sb_vault_key referenced in app code: $vaultKeyFileCount") }
+
     $manifestPath = Join-Path $repoRoot "SmartBudgetML/Platforms/Android/AndroidManifest.xml"
     [xml]$manifestXml = Get-Content $manifestPath
     $permissions = @($manifestXml.manifest.'uses-permission' | ForEach-Object { $_.GetAttribute("name", "http://schemas.android.com/apk/res/android") })
@@ -138,6 +142,7 @@ try {
     $gManStr      = if ($guardManifestPerms) { "PASS" } else { "FAIL" }
     $gSmsStr      = if ($guardNoReadSms) { "PASS" } else { "FAIL" }
     $gGitStr      = if ($guardNoKeystoreTracked) { "PASS" } else { "FAIL" }
+    $gVaultStr    = if ($guardNoVaultKeyFile) { "PASS" } else { "FAIL" }
     $permsJoined  = $permissions -join ", "
 
     $statusLines = @(
@@ -164,6 +169,7 @@ try {
         "|---|---|---|",
         "| Aucun ``catch {}`` vide | ``$gCatchStr`` | $emptyCatchCount occurrence(s) |",
         "| Aucun ``GetAwaiter().GetResult()`` | ``$gSyncStr`` | $syncBlockCount occurrence(s) |",
+        "| Aucun repli de cle en clair ``sb_vault_key`` dans ``SmartBudgetML/`` | ``$gVaultStr`` | $vaultKeyFileCount occurrence(s) |",
         "| Manifeste Android : ``USE_BIOMETRIC`` seul | ``$gManStr`` | Permissions : ``$permsJoined`` |",
         "| Aucun ``READ_SMS`` / ``RECEIVE_SMS`` | ``$gSmsStr`` | $($readSmsCount + $manifestReadSms) occurrence(s) |",
         "| ``git ls-files`` sans keystore ni ``.sb_vault_key`` | ``$gGitStr`` | $($leakedSecrets.Count) fichier(s) sensible(s) suivi(s) |",

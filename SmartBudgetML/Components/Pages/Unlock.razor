@@ -11,7 +11,9 @@
             PinLength="@PinLength"
             IsLockedOut="@IsLockedOut"
             ErrorMessage="@ErrorMessage"
-            ShowBiometric="true"
+            IsVerifying="@IsVerifying"
+            VerifyingText="@L["Unlock_Verifying"].Value"
+            ShowBiometric="@ShowBiometric"
             OnPinComplete="HandlePinComplete"
             OnBiometricRequested="HandleBiometricUnlock" />
 
@@ -19,6 +21,8 @@
     private string? ErrorMessage;
     private int PinLength = 6;
     private bool IsLockedOut = false;
+    private bool IsVerifying = false;
+    private bool ShowBiometric = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -26,6 +30,7 @@
         {
             var settings = await AuthService.GetSettingsAsync();
             PinLength = settings.PinLength == 4 ? 4 : 6;
+            ShowBiometric = settings.IsBiometricEnabled && await AuthService.IsBiometricAvailableAsync();
 
             var remaining = await AuthService.GetRemainingLockoutTimeAsync();
             if (remaining.HasValue && remaining.Value > TimeSpan.Zero)
@@ -43,8 +48,11 @@
     private async Task HandlePinComplete(string pin)
     {
         ErrorMessage = null;
+        IsVerifying = true;
         try
         {
+            // PBKDF2 runs off the UI thread; yield once so "Verifying…" renders first.
+            await Task.Yield();
             var result = await AuthService.VerifyPinWithStatusAsync(pin);
             if (result.IsValid)
             {
@@ -64,6 +72,10 @@
         {
             Logger.LogError(ex, "Error verifying PIN during unlock.");
             ErrorMessage = L["Unlock_IncorrectPin"].Value;
+        }
+        finally
+        {
+            IsVerifying = false;
         }
     }
 

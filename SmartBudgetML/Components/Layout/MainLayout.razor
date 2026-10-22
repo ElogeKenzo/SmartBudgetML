@@ -63,7 +63,9 @@
         }
     }
 
-    private static readonly string[] ChromelessRoutes = { "onboarding", "unlock" };
+    private static readonly string[] ChromelessRoutes = { "onboarding", "unlock", "vault-error" };
+
+    private bool _isRegistered;
 
     private bool IsChromeless
     {
@@ -78,6 +80,7 @@
     {
         NavManager.LocationChanged += OnLocationChanged;
         L.OnLanguageChanged += OnLanguageChanged;
+        AuthService.LockStateChanged += OnLockStateChanged;
 
         try
         {
@@ -104,6 +107,11 @@
 
             await CheckAuthRouteAsync();
         }
+        catch (VaultUnavailableException ex)
+        {
+            Logger.LogError(ex, "Database vault unavailable: {State}.", ex.State);
+            NavManager.NavigateTo("vault-error", replace: true);
+        }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error initializing MainLayout.");
@@ -118,6 +126,7 @@
     {
         var relative = NavManager.ToBaseRelativePath(NavManager.Uri).Split('?', '#')[0].Trim('/');
         var isRegistered = await AuthService.IsUserRegisteredAsync();
+        _isRegistered = isRegistered;
 
         if (!isRegistered)
         {
@@ -146,12 +155,33 @@
 
     private void LockApp()
     {
+        // Navigation to /unlock is done by OnLockStateChanged.
         AuthService.LockApp();
-        NavManager.NavigateTo("unlock");
+    }
+
+    private void OnLockStateChanged(object? sender, EventArgs e)
+        => InvokeAsync(RedirectIfLocked);
+
+    // Also runs on every navigation, so Back cannot reach a page while the app is locked.
+    private void RedirectIfLocked()
+    {
+        var relative = NavManager.ToBaseRelativePath(NavManager.Uri);
+        var target = LockNavigationCoordinator.GetRedirect(relative, AuthService.IsAppUnlocked);
+        if (target != null)
+        {
+            NavManager.NavigateTo(target, replace: true);
+        }
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
-        => InvokeAsync(StateHasChanged);
+        => InvokeAsync(() =>
+        {
+            if (_isRegistered)
+            {
+                RedirectIfLocked();
+            }
+            StateHasChanged();
+        });
 
     private void OnLanguageChanged()
         => InvokeAsync(StateHasChanged);
@@ -160,5 +190,6 @@
     {
         NavManager.LocationChanged -= OnLocationChanged;
         L.OnLanguageChanged -= OnLanguageChanged;
+        AuthService.LockStateChanged -= OnLockStateChanged;
     }
 }

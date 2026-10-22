@@ -21,9 +21,11 @@ public class DatabaseService : IDatabaseService
     private readonly SemaphoreSlim _initLock = new(1, 1);
     private bool _isInitialized;
     private bool _isEncrypted;
+    private string? _masterKey;
 
     public string DatabasePath => _databasePath;
     public bool IsEncrypted => _isEncrypted;
+    public VaultState VaultState { get; private set; } = VaultState.Ready;
 
     public IRepository<Expense> Expenses { get; private set; } = null!;
     public IRepository<Category> Categories { get; private set; } = null!;
@@ -72,7 +74,7 @@ public class DatabaseService : IDatabaseService
         string? masterKey = null;
         if (_keyStore != null)
         {
-            masterKey = await _keyStore.GetOrCreateMasterKeyAsync();
+            masterKey = await ResolveMasterKeyAsync();
 
             if (File.Exists(_databasePath) && IsPlaintextSqliteFile(_databasePath))
             {
@@ -82,12 +84,31 @@ public class DatabaseService : IDatabaseService
 
         if (!string.IsNullOrWhiteSpace(masterKey))
         {
+            var existedBeforeOpen = File.Exists(_databasePath);
             var connStr = new SQLiteConnectionString(
                 _databasePath,
                 DatabaseConstants.Flags,
                 storeDateTimeAsTicks: true,
                 key: masterKey);
             _connection = new SQLiteAsyncConnection(connStr);
+
+            if (existedBeforeOpen)
+            {
+                try
+                {
+                    // A wrong key only shows up on the first read: "file is not a database".
+                    await _connection.ExecuteScalarAsync<int>("SELECT count(*) FROM sqlite_master;");
+                }
+                catch (SQLiteException ex)
+                {
+                    await _connection.CloseAsync();
+                    _connection = null;
+                    VaultState = VaultState.KeyLost;
+                    throw new VaultUnavailableException(VaultState.KeyLost, ex);
+                }
+            }
+
+            _masterKey = masterKey;
             _isEncrypted = true;
         }
         else
@@ -119,6 +140,47 @@ public class DatabaseService : IDatabaseService
         TontineMembers = new SqliteRepository<TontineMember>(_connection);
         TontineRounds = new SqliteRepository<TontineRound>(_connection);
         TontineContributions = new SqliteRepository<TontineContribution>(_connection);
+        VaultState = VaultState.Ready;
+    }
+
+    /// <summary>
+    /// Returns the stored key, or creates one only when there is no database or the database is
+    /// plaintext (migration). Never creates a key over an existing encrypted database (N6).
+    /// </summary>
+    private async Task<string> ResolveMasterKeyAsync()
+    {
+        string? key;
+        try
+        {
+            key = await _keyStore!.GetMasterKeyAsync();
+        }
+        catch (Exception ex)
+        {
+            VaultState = VaultState.KeyUnavailable;
+            throw new VaultUnavailableException(VaultState.KeyUnavailable, ex);
+        }
+
+        if (!string.IsNullOrWhiteSpace(key))
+        {
+            return key;
+        }
+
+        var file = new FileInfo(_databasePath);
+        if (file.Exists && file.Length > 0 && !IsPlaintextSqliteFile(_databasePath))
+        {
+            VaultState = VaultState.KeyLost;
+            throw new VaultUnavailableException(VaultState.KeyLost);
+        }
+
+        try
+        {
+            return await _keyStore.CreateMasterKeyAsync();
+        }
+        catch (Exception ex)
+        {
+            VaultState = VaultState.KeyUnavailable;
+            throw new VaultUnavailableException(VaultState.KeyUnavailable, ex);
+        }
     }
 
     private static bool IsPlaintextSqliteFile(string filePath)
@@ -148,63 +210,40 @@ public class DatabaseService : IDatabaseService
 
         try
         {
-            // 1. Read all existing entities from the plaintext database
+            // 1. Export the whole plaintext database (every table, ids included) into a new
+            //    SQLCipher file. Row-by-row InsertAll would renumber AutoIncrement ids and break
+            //    Expense.CategoryId and the tontine links.
             var plainConnStr = new SQLiteConnectionString(dbPath, DatabaseConstants.Flags, storeDateTimeAsTicks: true);
             var plainConn = new SQLiteAsyncConnection(plainConnStr);
-
-            await plainConn.CreateTableAsync<Category>();
-            await plainConn.CreateTableAsync<Expense>();
-            await plainConn.CreateTableAsync<UserProfile>();
-            await plainConn.CreateTableAsync<AppSettings>();
-            await plainConn.CreateTableAsync<CategoryFeedback>();
-
-            var categories = await plainConn.Table<Category>().ToListAsync();
-            var expenses = await plainConn.Table<Expense>().ToListAsync();
-            var profiles = await plainConn.Table<UserProfile>().ToListAsync();
-            var settings = await plainConn.Table<AppSettings>().ToListAsync();
-            var feedbacks = await plainConn.Table<CategoryFeedback>().ToListAsync();
-
-            await plainConn.CloseAsync();
-
-            // 2. Create the encrypted SQLCipher database and copy all rows
-            var encConnStr = new SQLiteConnectionString(
-                tempEncryptedPath,
-                DatabaseConstants.Flags,
-                storeDateTimeAsTicks: true,
-                key: masterKey);
-            var encConn = new SQLiteAsyncConnection(encConnStr);
-
-            await encConn.CreateTableAsync<Category>();
-            await encConn.CreateTableAsync<Expense>();
-            await encConn.CreateTableAsync<UserProfile>();
-            await encConn.CreateTableAsync<AppSettings>();
-            await encConn.CreateTableAsync<CategoryFeedback>();
-
-            if (categories.Count > 0) await encConn.InsertAllAsync(categories);
-            if (expenses.Count > 0) await encConn.InsertAllAsync(expenses);
-            if (profiles.Count > 0) await encConn.InsertAllAsync(profiles);
-            if (settings.Count > 0) await encConn.InsertAllAsync(settings);
-            if (feedbacks.Count > 0) await encConn.InsertAllAsync(feedbacks);
-
-            // 3. Verify 100% row count parity before replacing
-            var encCatCount = await encConn.Table<Category>().CountAsync();
-            var encExpCount = await encConn.Table<Expense>().CountAsync();
-            var encProfCount = await encConn.Table<UserProfile>().CountAsync();
-            var encSetCount = await encConn.Table<AppSettings>().CountAsync();
-            var encFbCount = await encConn.Table<CategoryFeedback>().CountAsync();
-
-            await encConn.CloseAsync();
-
-            if (encCatCount != categories.Count ||
-                encExpCount != expenses.Count ||
-                encProfCount != profiles.Count ||
-                encSetCount != settings.Count ||
-                encFbCount != feedbacks.Count)
+            try
             {
-                throw new InvalidOperationException("Row count mismatch during SQLCipher database migration.");
+                var escapedTarget = tempEncryptedPath.Replace("'", "''");
+                var escapedKey = masterKey.Replace("'", "''");
+                await plainConn.ExecuteAsync($"ATTACH DATABASE '{escapedTarget}' AS encrypted KEY '{escapedKey}';");
+                await plainConn.ExecuteScalarAsync<string>("SELECT sqlcipher_export('encrypted');");
+
+                // 2. Verify row count parity for every table before replacing
+                var tables = await plainConn.QueryScalarsAsync<string>(
+                    "SELECT name FROM main.sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%';");
+                foreach (var table in tables)
+                {
+                    var quoted = "\"" + table.Replace("\"", "\"\"") + "\"";
+                    var plainCount = await plainConn.ExecuteScalarAsync<long>($"SELECT count(*) FROM main.{quoted};");
+                    var encCount = await plainConn.ExecuteScalarAsync<long>($"SELECT count(*) FROM encrypted.{quoted};");
+                    if (plainCount != encCount)
+                    {
+                        throw new InvalidOperationException($"Row count mismatch for table {table} during SQLCipher database migration.");
+                    }
+                }
+
+                await plainConn.ExecuteAsync("DETACH DATABASE encrypted;");
+            }
+            finally
+            {
+                await plainConn.CloseAsync();
             }
 
-            // 4. Atomically replace original plaintext file with encrypted file
+            // 3. Atomically replace original plaintext file with encrypted file
             File.Copy(tempEncryptedPath, dbPath, overwrite: true);
             File.Delete(tempEncryptedPath);
         }
@@ -351,8 +390,7 @@ public class DatabaseService : IDatabaseService
         var escapedPath = destinationPath.Replace("'", "''");
         await conn.ExecuteAsync($"VACUUM INTO '{escapedPath}';");
 
-        string? key = _keyStore != null ? await _keyStore.GetOrCreateMasterKeyAsync() : null;
-        ValidateDatabaseFile(destinationPath, key);
+        ValidateDatabaseFile(destinationPath, _masterKey);
         return destinationPath;
     }
 
@@ -363,7 +401,7 @@ public class DatabaseService : IDatabaseService
             throw new FileNotFoundException("Backup file does not exist.", backupFilePath);
         }
 
-        string? key = _keyStore != null ? await _keyStore.GetOrCreateMasterKeyAsync() : null;
+        string? key = _keyStore != null ? _masterKey ?? await _keyStore.GetMasterKeyAsync() : null;
         ValidateDatabaseFile(backupFilePath, key);
 
         await _initLock.WaitAsync();
@@ -399,6 +437,7 @@ public class DatabaseService : IDatabaseService
 
             _isInitialized = false;
             _isEncrypted = false;
+            _masterKey = null;
 
             string[] suffixes = { "", "-wal", "-shm", ".bak", ".enc_tmp" };
             foreach (var suffix in suffixes)

@@ -16,10 +16,17 @@
             }
         </div>
 
-        <div class="lock-error" role="alert">@ErrorMessage</div>
+        @if (IsVerifying)
+        {
+            <div class="lock-sub" id="lock-verifying" role="status">@VerifyingText</div>
+        }
+        else
+        {
+            <div class="lock-error" role="alert">@ErrorMessage</div>
+        }
 
         <div class="lock-keypad">
-            <NumericKeypad IdPrefix="lock" LeftKey="@(ShowBiometric ? KeypadLeftKey.Biometric : KeypadLeftKey.None)" OnKey="HandleKey" />
+            <NumericKeypad IdPrefix="lock" Disabled="@IsVerifying" LeftKey="@(ShowBiometric ? KeypadLeftKey.Biometric : KeypadLeftKey.None)" OnKey="HandleKey" />
         </div>
     </div>
 </div>
@@ -32,6 +39,8 @@
     [Parameter] public string Subtitle { get; set; } = "Enter your PIN to unlock";
     [Parameter] public string? ErrorMessage { get; set; }
     [Parameter] public bool ShowBiometric { get; set; } = true;
+    [Parameter] public bool IsVerifying { get; set; }
+    [Parameter] public string? VerifyingText { get; set; }
 
     [Parameter] public EventCallback<string> OnPinComplete { get; set; }
     [Parameter] public EventCallback OnBiometricRequested { get; set; }
@@ -40,7 +49,7 @@
 
     private async Task HandleKey(string key)
     {
-        if (IsLockedOut)
+        if (IsLockedOut || IsVerifying)
         {
             _pin = string.Empty;
             return;

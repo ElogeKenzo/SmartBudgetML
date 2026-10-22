@@ -5,22 +5,23 @@
 ## 1. Metadonnees et Compilation
 | Cle | Valeur |
 |---|---|
-| **Date de verification** | `2026-10-22 01:19:14 UTC` |
-| **Branche / Commit** | `feature/phase8-b-ci` (`b502546` / `b502546e7b73c374b5af1071f836e6c7c47bd669`) |
+| **Date de verification** | `2026-10-22 03:17:17 UTC` |
+| **Branche / Commit** | `feature/phase8-c-securite` (`a04a9fd` / `a04a9fd7a6c1ed23a4e77cc281e2683c45e725cf`) |
 | **Build Tests (net10.0)** | `PASS` |
 | **Build Android (net10.0-android Release)** | `PASS` |
-| **Cles de traduction (AppStrings)** | `155` FR / `155` EN |
+| **Cles de traduction (AppStrings)** | `168` FR / `168` EN |
 
 ## 2. Suite de Tests xUnit
 | Total | Reussis | Echecs | Ignores | Statut |
 |---:|---:|---:|---:|---|
-| **154** | **154** | **0** | **0** | `PASS` |
+| **183** | **183** | **0** | **0** | `PASS` |
 
 ## 3. Garde-fous d'Audit
 | Garde-fou | Resultat | Detail |
 |---|---|---|
 | Aucun `catch {}` vide | `PASS` | 0 occurrence(s) |
 | Aucun `GetAwaiter().GetResult()` | `PASS` | 0 occurrence(s) |
+| Aucun repli de cle en clair `sb_vault_key` dans `SmartBudgetML/` | `PASS` | 0 occurrence(s) |
 | Manifeste Android : `USE_BIOMETRIC` seul | `PASS` | Permissions : `android.permission.USE_BIOMETRIC` |
 | Aucun `READ_SMS` / `RECEIVE_SMS` | `PASS` | 0 occurrence(s) |
 | `git ls-files` sans keystore ni `.sb_vault_key` | `PASS` | 0 fichier(s) sensible(s) suivi(s) |
@@ -29,9 +30,9 @@
 
 ## 4. Metriques ML Reelles (issues de `artifacts/ml-eval.json`)
 - **Echantillons :** `314` entrainement (`seed_fr.csv`) / `176` validation (`holdout_fr.csv`), `11` categories dans le jeu courant.
-- **Latence d'inference (1 000 appels) :** Moyenne = `0.0252 ms`, p95 = `0.0445 ms`.
-- **Temps d'entrainement :** `639 ms`.
-- **Taille du modele serialise :** `111202 octets` (`108.6 Ko`).
+- **Latence d'inference (1 000 appels) :** Moyenne = `0.0668 ms`, p95 = `0.134 ms`.
+- **Temps d'entrainement :** `2329 ms`.
+- **Taille du modele serialise :** `111183 octets` (`108.6 Ko`).
 
 | Approche | Reussites / Total | Micro-Accuracy | Macro-Accuracy | Macro-F1 |
 |---|---:|---:|---:|---:|

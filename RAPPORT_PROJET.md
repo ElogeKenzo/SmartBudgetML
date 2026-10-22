@@ -86,7 +86,7 @@ Chaque composant est étiqueté selon son niveau réel de vérification :
 | Fonctionnalité / Composant | Statut de Vérification | Preuve Technique |
 |---|---|---|
 | Chiffrement SQLCipher 256 bits & migration auto depuis SQLite clair (`A1`) | `VÉRIFIÉ-TESTS` | `Phase3SecurityTests.EncryptedDatabase_*`, `UnencryptedDatabase_AutomaticallyMigratesToEncrypted_*` |
-| Stockage matériel Android Keystore (`MauiSecureKeyStore`, `N6`) | `PARTIEL` | Implémenté via `SecureStorage.Default` mais repli en clair `.sb_vault_key` à supprimer en Lot 8C. |
+| Stockage de la clé via `SecureStorage` (`MauiSecureKeyStore`, `N6`) | `VÉRIFIÉ-TESTS` / `NON-VÉRIFIÉ-APPAREIL` | Clé protégée par le Keystore Android lorsque l'appareil le permet ; repli en clair `.sb_vault_key` supprimé en Lot 8C, état du coffre (`Ready`, `KeyUnavailable`, `KeyLost`) et écran `/vault-error`. |
 | Évaluation réelle du modèle ML (`ModelEvaluator`, `A2`) | `VÉRIFIÉ-TESTS` | `Phase1HonestyTests.ModelEvaluator_*`, `Phase4MlHybridTests.HoldoutEvaluation_*` |
 | Persistance du seuil de confiance ML (`A3`) & du feedback (`A7`) | `VÉRIFIÉ-TESTS` | `Phase1HonestyTests.AppSettingsProvider_*`, `ExpenseCategorizerService_PersistsFeedbackInSqlite_*` |
 | Export CSV RFC 4180 UTF-8 BOM (`A4`) & Backup/Restore `VACUUM INTO` (`A5`, `N4`, `N5`) | `PARTIEL` | Services validés par `Phase1HonestyTests`, mais écriture dans `AppDataDirectory` sans partage système ni UI de restauration (Lot 8D). |

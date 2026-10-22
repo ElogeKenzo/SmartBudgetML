@@ -95,7 +95,7 @@ public class Phase5CameroonLocalizationTests
     {
         var dbPath = Path.Combine(Path.GetTempPath(), $"sb_p5_mig_{Guid.NewGuid():N}.db3");
         var keyStore = new InMemorySecureKeyStore();
-        var masterKey = await keyStore.GetOrCreateMasterKeyAsync();
+        var masterKey = await keyStore.CreateMasterKeyAsync();
 
         try
         {

@@ -141,6 +141,19 @@
   <data name="Unlock_IncorrectPin" xml:space="preserve"><value>Incorrect PIN. Please try again.</value></data>
   <data name="Unlock_LockedRetryIn" xml:space="preserve"><value>Locked due to failed attempts. Retry in {0}s.</value></data>
   <data name="Unlock_BiometricFailed" xml:space="preserve"><value>Biometric authentication failed.</value></data>
+  <data name="Unlock_Verifying" xml:space="preserve"><value>Verifying…</value></data>
+  <data name="VaultError_PageTitle" xml:space="preserve"><value>Data unavailable · SmartBudget ML</value></data>
+  <data name="VaultError_Title" xml:space="preserve"><value>Data unavailable</value></data>
+  <data name="VaultError_KeyUnavailable" xml:space="preserve"><value>The phone's secure storage is not responding. No data was changed. Try again in a moment.</value></data>
+  <data name="VaultError_KeyLost" xml:space="preserve"><value>The encryption key for your data cannot be found on this phone. The data file was not changed.</value></data>
+  <data name="VaultError_Retry" xml:space="preserve"><value>Try again</value></data>
+  <data name="VaultError_Reset" xml:space="preserve"><value>Reset the vault (erases data)</value></data>
+  <data name="VaultError_ResetConfirm1" xml:space="preserve"><value>All app data on this phone will be erased. Continue?</value></data>
+  <data name="VaultError_ResetConfirm2" xml:space="preserve"><value>Final confirmation: erasing cannot be undone.</value></data>
+  <data name="VaultError_ResetConfirmButton" xml:space="preserve"><value>Confirm erase</value></data>
+  <data name="VaultError_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="VaultError_RetryFailed" xml:space="preserve"><value>Still unavailable. Try again later.</value></data>
+  <data name="VaultError_ResetFailed" xml:space="preserve"><value>Reset failed. Restart the app and try again.</value></data>
   <data name="Onboarding_PageTitle" xml:space="preserve"><value>Create your account · SmartBudget ML</value></data>
   <data name="Onboarding_TitleStep1" xml:space="preserve"><value>Create your profile</value></data>
   <data name="Onboarding_TitleStep2" xml:space="preserve"><value>Secure your data</value></data>

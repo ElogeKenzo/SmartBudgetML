@@ -84,13 +84,16 @@
                        placeholder="••••••" @bind="_model.PinConfirm" @bind:event="oninput" autocomplete="new-password" />
             </div>
 
-            <div class="switch-container bordered-top">
-                <div class="switch-label-group">
-                    <span class="switch-title">@L["Profile_BiometricUnlock"]</span>
-                    <span class="switch-desc">@L["Profile_BiometricDesc"]</span>
+            @if (_biometricsAvailable)
+            {
+                <div class="switch-container bordered-top">
+                    <div class="switch-label-group">
+                        <span class="switch-title">@L["Profile_BiometricUnlock"]</span>
+                        <span class="switch-desc">@L["Profile_BiometricDesc"]</span>
+                    </div>
+                    <ToggleSwitch Id="toggle-onboarding-biometric" @bind-Value="_model.EnableBiometrics" />
                 </div>
-                <ToggleSwitch Id="toggle-onboarding-biometric" @bind-Value="_model.EnableBiometrics" />
-            </div>
+            }
 
             @if (_error is not null)
             {
@@ -117,6 +120,13 @@
     private int _step = 1;
     private bool _busy;
     private string? _error;
+    private bool _biometricsAvailable;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Biometric availability does not touch the database, so it works before onboarding.
+        _biometricsAvailable = await AuthService.IsBiometricAvailableAsync();
+    }
     private readonly OnboardingForm _model = new();
 
     private void GoToSecurity()

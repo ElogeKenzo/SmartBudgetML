@@ -40,6 +40,8 @@ public class SelfTestRunnerTests : IDisposable
             Assert.True(long.TryParse(parts[3], out var ms) && ms >= 0, line);
         });
         Assert.Contains(stepLines, l => l.StartsWith("SB_SELFTEST|categorize_transport|OK|"));
+        Assert.Contains(stepLines, l => l.StartsWith("SB_SELFTEST|reopen_encrypted_db|OK|"));
+        Assert.Contains(stepLines, l => l.StartsWith("SB_SELFTEST|lock_app|OK|"));
         Assert.Contains(stepLines, l => l.StartsWith("SB_SELFTEST|categorize_utilities|OK|"));
         Assert.False(File.Exists(runner.DatabasePath), "self-test database must be removed by cleanup");
     }
@@ -54,7 +56,8 @@ public class SelfTestRunnerTests : IDisposable
 
         Assert.False(success);
         Assert.StartsWith("SB_SELFTEST|open_encrypted_db|FAIL|", lines[0]);
-        Assert.Contains("InvalidOperationException", lines[0]);
+        Assert.Contains("VaultUnavailableException", lines[0]);
+        Assert.Contains("KeyUnavailable", lines[0]);
         Assert.True(runner.Passed < runner.Total);
         Assert.Equal($"SB_SELFTEST|DONE|{runner.Passed}/{runner.Total}", lines[^1]);
     }
@@ -67,7 +70,9 @@ public class SelfTestRunnerTests : IDisposable
 
     private sealed class FailingKeyStore : ISecureKeyStore
     {
-        public Task<string> GetOrCreateMasterKeyAsync() =>
+        public Task<string?> GetMasterKeyAsync() =>
+            throw new InvalidOperationException("secure storage unavailable");
+        public Task<string> CreateMasterKeyAsync() =>
             throw new InvalidOperationException("secure storage unavailable");
         public Task<bool> HasMasterKeyAsync() => Task.FromResult(false);
         public Task PurgeMasterKeyAsync() => Task.CompletedTask;

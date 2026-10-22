@@ -58,7 +58,7 @@ public class Phase3SecurityTests : IDisposable
     {
         var dbPath = Path.Combine(_tempDir, "encrypted_vault.db3");
         var keyStoreA = new InMemorySecureKeyStore();
-        var keyA = await keyStoreA.GetOrCreateMasterKeyAsync();
+        var keyA = await keyStoreA.CreateMasterKeyAsync();
         Assert.Equal(64, keyA.Length); // 32 bytes = 64 hex chars
 
         var dbA = new DatabaseService(dbPath, keyStoreA);
@@ -88,7 +88,7 @@ public class Phase3SecurityTests : IDisposable
 
         // 2. Attempting to read with a different Key B must fail with SQLiteException
         var keyStoreB = new InMemorySecureKeyStore();
-        var keyB = await keyStoreB.GetOrCreateMasterKeyAsync();
+        var keyB = await keyStoreB.CreateMasterKeyAsync();
         Assert.NotEqual(keyA, keyB);
 
         var connWithKeyB = new SQLiteAsyncConnection(

@@ -17,6 +17,10 @@ public interface ILocalAuthService
 {
     bool IsAppUnlocked { get; }
     DateTime? LastBackgroundUtc { get; }
+
+    /// <summary>Raised when the app becomes locked (manual lock or auto-lock on resume).</summary>
+    event EventHandler? LockStateChanged;
+
     void LockApp();
     void MarkAppUnlocked();
     void RecordBackgrounded(DateTime? utcNow = null);

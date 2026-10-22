@@ -3,8 +3,8 @@ using System.Security.Cryptography;
 namespace SmartBudgetML.Services.Security;
 
 /// <summary>
-/// Thread-safe in-memory implementation of <see cref="ISecureKeyStore"/> for unit tests
-/// and fallback environments. Generates a 32-byte (256-bit) CSPRNG key encoded as 64 hex characters.
+/// Thread-safe in-memory implementation of <see cref="ISecureKeyStore"/> for unit tests.
+/// Generates a 32-byte (256-bit) CSPRNG key encoded as 64 hex characters.
 /// </summary>
 public class InMemorySecureKeyStore : ISecureKeyStore
 {
@@ -16,15 +16,19 @@ public class InMemorySecureKeyStore : ISecureKeyStore
         _masterKeyHex = initialKeyHex;
     }
 
-    public Task<string> GetOrCreateMasterKeyAsync()
+    public Task<string?> GetMasterKeyAsync()
     {
         lock (_lock)
         {
-            if (string.IsNullOrWhiteSpace(_masterKeyHex))
-            {
-                byte[] keyBytes = RandomNumberGenerator.GetBytes(32);
-                _masterKeyHex = Convert.ToHexString(keyBytes);
-            }
+            return Task.FromResult(string.IsNullOrWhiteSpace(_masterKeyHex) ? null : _masterKeyHex);
+        }
+    }
+
+    public Task<string> CreateMasterKeyAsync()
+    {
+        lock (_lock)
+        {
+            _masterKeyHex = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
             return Task.FromResult(_masterKeyHex);
         }
     }
