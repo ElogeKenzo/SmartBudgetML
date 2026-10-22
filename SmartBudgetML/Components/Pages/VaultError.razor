@@ -1,0 +1,102 @@
+@page "/vault-error"
+@using Microsoft.Extensions.Logging
+@inject NavigationManager NavManager
+@inject IDatabaseService DbService
+@inject IStringLocalizer<AppStrings> L
+@inject ILogger<VaultError> Logger
+
+<PageTitle>@L["VaultError_PageTitle"]</PageTitle>
+
+<div class="lock-overlay" id="vault-error">
+    <div class="lock-card">
+        <h1 class="lock-title">@L["VaultError_Title"]</h1>
+        <p class="lock-sub" id="vault-error-reason">
+            @(DbService.VaultState == VaultState.KeyLost ? L["VaultError_KeyLost"] : L["VaultError_KeyUnavailable"])
+        </p>
+
+        @if (!string.IsNullOrEmpty(FeedbackMessage))
+        {
+            <div class="lock-error" role="alert">@FeedbackMessage</div>
+        }
+
+        @if (_reset.Step == VaultResetStep.Idle)
+        {
+            <button id="btn-vault-retry" type="button" class="btn-primary-gradient" disabled="@IsBusy" @onclick="RetryAsync">
+                @L["VaultError_Retry"]
+            </button>
+            <button id="btn-vault-reset" type="button" class="btn-ghost" disabled="@IsBusy" @onclick="ResetAsync">
+                @L["VaultError_Reset"]
+            </button>
+        }
+        else
+        {
+            <p class="lock-error" id="vault-reset-warning" role="alert">
+                @(_reset.Step == VaultResetStep.FirstConfirmation ? L["VaultError_ResetConfirm1"] : L["VaultError_ResetConfirm2"])
+            </p>
+            <button id="btn-vault-reset-confirm" type="button" class="btn-logout" disabled="@IsBusy" @onclick="ResetAsync">
+                @L["VaultError_ResetConfirmButton"]
+            </button>
+            <button id="btn-vault-reset-cancel" type="button" class="btn-ghost" disabled="@IsBusy" @onclick="CancelReset">
+                @L["VaultError_Cancel"]
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    private readonly VaultResetConfirmation _reset = new();
+    private string? FeedbackMessage;
+    private bool IsBusy;
+
+    private async Task RetryAsync()
+    {
+        IsBusy = true;
+        FeedbackMessage = null;
+        try
+        {
+            await DbService.InitializeAsync();
+            NavManager.NavigateTo("", forceLoad: true);
+        }
+        catch (VaultUnavailableException ex)
+        {
+            Logger.LogWarning(ex, "Vault retry failed: {State}.", ex.State);
+            FeedbackMessage = L["VaultError_RetryFailed"].Value;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task ResetAsync()
+    {
+        FeedbackMessage = null;
+        if (!_reset.Advance())
+        {
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            await DbService.PurgeDatabaseAndKeyAsync();
+            await DbService.InitializeAsync();
+            NavManager.NavigateTo("onboarding", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Vault reset failed.");
+            FeedbackMessage = L["VaultError_ResetFailed"].Value;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void CancelReset()
+    {
+        _reset.Cancel();
+        FeedbackMessage = null;
+    }
+}

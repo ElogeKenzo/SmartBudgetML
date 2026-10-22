@@ -142,6 +142,18 @@
   <data name="Unlock_LockedRetryIn" xml:space="preserve"><value>Application verrouillée après plusieurs échecs. Réessayez dans {0}s.</value></data>
   <data name="Unlock_BiometricFailed" xml:space="preserve"><value>Échec de l'authentification biométrique.</value></data>
   <data name="Unlock_Verifying" xml:space="preserve"><value>Vérification…</value></data>
+  <data name="VaultError_PageTitle" xml:space="preserve"><value>Données inaccessibles · SmartBudget ML</value></data>
+  <data name="VaultError_Title" xml:space="preserve"><value>Données inaccessibles</value></data>
+  <data name="VaultError_KeyUnavailable" xml:space="preserve"><value>Le stockage sécurisé du téléphone ne répond pas. Aucune donnée n'a été modifiée. Réessayez dans un instant.</value></data>
+  <data name="VaultError_KeyLost" xml:space="preserve"><value>La clé de chiffrement de vos données est introuvable sur ce téléphone. Le fichier de données n'a pas été modifié.</value></data>
+  <data name="VaultError_Retry" xml:space="preserve"><value>Réessayer</value></data>
+  <data name="VaultError_Reset" xml:space="preserve"><value>Réinitialiser le coffre (efface les données)</value></data>
+  <data name="VaultError_ResetConfirm1" xml:space="preserve"><value>Toutes les données de l'application sur ce téléphone seront effacées. Continuer ?</value></data>
+  <data name="VaultError_ResetConfirm2" xml:space="preserve"><value>Dernière confirmation : l'effacement est définitif.</value></data>
+  <data name="VaultError_ResetConfirmButton" xml:space="preserve"><value>Confirmer l'effacement</value></data>
+  <data name="VaultError_Cancel" xml:space="preserve"><value>Annuler</value></data>
+  <data name="VaultError_RetryFailed" xml:space="preserve"><value>Toujours inaccessible. Réessayez plus tard.</value></data>
+  <data name="VaultError_ResetFailed" xml:space="preserve"><value>La réinitialisation a échoué. Redémarrez l'application et réessayez.</value></data>
   <data name="Onboarding_PageTitle" xml:space="preserve"><value>Créer votre profil · SmartBudget ML</value></data>
   <data name="Onboarding_TitleStep1" xml:space="preserve"><value>Créez votre profil</value></data>
   <data name="Onboarding_TitleStep2" xml:space="preserve"><value>Protégez vos données</value></data>

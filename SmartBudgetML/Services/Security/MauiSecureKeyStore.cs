@@ -5,12 +5,15 @@ using Microsoft.Maui.Storage;
 namespace SmartBudgetML.Services.Security;
 
 /// <summary>
-/// Hardware-backed master key store using MAUI SecureStorage (Android Keystore).
-/// Labeled NON-VÉRIFIÉ-APPAREIL for physical Android Keystore hardware execution.
+/// Master key store using MAUI SecureStorage, protected by the Android Keystore when the device allows it.
+/// There is no fallback: if SecureStorage fails, the exception reaches DatabaseService, which reports
+/// <see cref="VaultState.KeyUnavailable"/>. The key is never written anywhere else.
+/// Labeled NON-VÉRIFIÉ-APPAREIL for physical Android Keystore execution.
 /// </summary>
 public class MauiSecureKeyStore : ISecureKeyStore
 {
     private const string KeyAlias = "smartbudget_sqlcipher_master_key_v2";
+    private const int KeyHexLength = 64;
     private readonly ILogger<MauiSecureKeyStore>? _logger;
     private string? _cachedKey;
 
@@ -19,53 +22,34 @@ public class MauiSecureKeyStore : ISecureKeyStore
         _logger = logger;
     }
 
-    public async Task<string> GetOrCreateMasterKeyAsync()
+    public async Task<string?> GetMasterKeyAsync()
     {
         if (!string.IsNullOrWhiteSpace(_cachedKey))
         {
             return _cachedKey;
         }
 
-        try
+        var existing = await SecureStorage.Default.GetAsync(KeyAlias);
+        if (string.IsNullOrWhiteSpace(existing) || existing.Length < KeyHexLength)
         {
-            var existing = await SecureStorage.Default.GetAsync(KeyAlias);
-            if (!string.IsNullOrWhiteSpace(existing) && existing.Length >= 64)
-            {
-                _cachedKey = existing;
-                return existing;
-            }
+            return null;
+        }
 
-            byte[] keyBytes = RandomNumberGenerator.GetBytes(32);
-            var generatedHex = Convert.ToHexString(keyBytes);
-            await SecureStorage.Default.SetAsync(KeyAlias, generatedHex);
-            _cachedKey = generatedHex;
-            return generatedHex;
-        }
-        catch (Exception ex)
-        {
-            _logger?.LogError(ex, "SecureStorage access failed; falling back to local protected key file.");
-            return await GetOrCreateFallbackFileKeyAsync();
-        }
+        _cachedKey = existing;
+        return existing;
+    }
+
+    public async Task<string> CreateMasterKeyAsync()
+    {
+        var generatedHex = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+        await SecureStorage.Default.SetAsync(KeyAlias, generatedHex);
+        _cachedKey = generatedHex;
+        return generatedHex;
     }
 
     public async Task<bool> HasMasterKeyAsync()
     {
-        if (!string.IsNullOrWhiteSpace(_cachedKey))
-        {
-            return true;
-        }
-
-        try
-        {
-            var existing = await SecureStorage.Default.GetAsync(KeyAlias);
-            return !string.IsNullOrWhiteSpace(existing);
-        }
-        catch (Exception ex)
-        {
-            _logger?.LogWarning(ex, "SecureStorage check failed; checking fallback file.");
-            var fallbackPath = GetFallbackKeyFilePath();
-            return File.Exists(fallbackPath);
-        }
+        return await GetMasterKeyAsync() != null;
     }
 
     public Task PurgeMasterKeyAsync()
@@ -80,42 +64,6 @@ public class MauiSecureKeyStore : ISecureKeyStore
             _logger?.LogWarning(ex, "SecureStorage remove failed during key purge.");
         }
 
-        var fallbackPath = GetFallbackKeyFilePath();
-        if (File.Exists(fallbackPath))
-        {
-            File.Delete(fallbackPath);
-        }
-
         return Task.CompletedTask;
-    }
-
-    private static string GetFallbackKeyFilePath()
-    {
-        var baseDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        if (string.IsNullOrWhiteSpace(baseDir))
-        {
-            baseDir = AppDomain.CurrentDomain.BaseDirectory;
-        }
-        return Path.Combine(baseDir, ".sb_vault_key");
-    }
-
-    private async Task<string> GetOrCreateFallbackFileKeyAsync()
-    {
-        var path = GetFallbackKeyFilePath();
-        if (File.Exists(path))
-        {
-            var stored = (await File.ReadAllTextAsync(path)).Trim();
-            if (stored.Length >= 64)
-            {
-                _cachedKey = stored;
-                return stored;
-            }
-        }
-
-        byte[] keyBytes = RandomNumberGenerator.GetBytes(32);
-        var hex = Convert.ToHexString(keyBytes);
-        await File.WriteAllTextAsync(path, hex);
-        _cachedKey = hex;
-        return hex;
     }
 }

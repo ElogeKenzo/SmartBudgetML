@@ -21,9 +21,11 @@ public class DatabaseService : IDatabaseService
     private readonly SemaphoreSlim _initLock = new(1, 1);
     private bool _isInitialized;
     private bool _isEncrypted;
+    private string? _masterKey;
 
     public string DatabasePath => _databasePath;
     public bool IsEncrypted => _isEncrypted;
+    public VaultState VaultState { get; private set; } = VaultState.Ready;
 
     public IRepository<Expense> Expenses { get; private set; } = null!;
     public IRepository<Category> Categories { get; private set; } = null!;
@@ -72,7 +74,7 @@ public class DatabaseService : IDatabaseService
         string? masterKey = null;
         if (_keyStore != null)
         {
-            masterKey = await _keyStore.GetOrCreateMasterKeyAsync();
+            masterKey = await ResolveMasterKeyAsync();
 
             if (File.Exists(_databasePath) && IsPlaintextSqliteFile(_databasePath))
             {
@@ -82,12 +84,31 @@ public class DatabaseService : IDatabaseService
 
         if (!string.IsNullOrWhiteSpace(masterKey))
         {
+            var existedBeforeOpen = File.Exists(_databasePath);
             var connStr = new SQLiteConnectionString(
                 _databasePath,
                 DatabaseConstants.Flags,
                 storeDateTimeAsTicks: true,
                 key: masterKey);
             _connection = new SQLiteAsyncConnection(connStr);
+
+            if (existedBeforeOpen)
+            {
+                try
+                {
+                    // A wrong key only shows up on the first read: "file is not a database".
+                    await _connection.ExecuteScalarAsync<int>("SELECT count(*) FROM sqlite_master;");
+                }
+                catch (SQLiteException ex)
+                {
+                    await _connection.CloseAsync();
+                    _connection = null;
+                    VaultState = VaultState.KeyLost;
+                    throw new VaultUnavailableException(VaultState.KeyLost, ex);
+                }
+            }
+
+            _masterKey = masterKey;
             _isEncrypted = true;
         }
         else
@@ -119,6 +140,47 @@ public class DatabaseService : IDatabaseService
         TontineMembers = new SqliteRepository<TontineMember>(_connection);
         TontineRounds = new SqliteRepository<TontineRound>(_connection);
         TontineContributions = new SqliteRepository<TontineContribution>(_connection);
+        VaultState = VaultState.Ready;
+    }
+
+    /// <summary>
+    /// Returns the stored key, or creates one only when there is no database or the database is
+    /// plaintext (migration). Never creates a key over an existing encrypted database (N6).
+    /// </summary>
+    private async Task<string> ResolveMasterKeyAsync()
+    {
+        string? key;
+        try
+        {
+            key = await _keyStore!.GetMasterKeyAsync();
+        }
+        catch (Exception ex)
+        {
+            VaultState = VaultState.KeyUnavailable;
+            throw new VaultUnavailableException(VaultState.KeyUnavailable, ex);
+        }
+
+        if (!string.IsNullOrWhiteSpace(key))
+        {
+            return key;
+        }
+
+        var file = new FileInfo(_databasePath);
+        if (file.Exists && file.Length > 0 && !IsPlaintextSqliteFile(_databasePath))
+        {
+            VaultState = VaultState.KeyLost;
+            throw new VaultUnavailableException(VaultState.KeyLost);
+        }
+
+        try
+        {
+            return await _keyStore.CreateMasterKeyAsync();
+        }
+        catch (Exception ex)
+        {
+            VaultState = VaultState.KeyUnavailable;
+            throw new VaultUnavailableException(VaultState.KeyUnavailable, ex);
+        }
     }
 
     private static bool IsPlaintextSqliteFile(string filePath)
@@ -351,8 +413,7 @@ public class DatabaseService : IDatabaseService
         var escapedPath = destinationPath.Replace("'", "''");
         await conn.ExecuteAsync($"VACUUM INTO '{escapedPath}';");
 
-        string? key = _keyStore != null ? await _keyStore.GetOrCreateMasterKeyAsync() : null;
-        ValidateDatabaseFile(destinationPath, key);
+        ValidateDatabaseFile(destinationPath, _masterKey);
         return destinationPath;
     }
 
@@ -363,7 +424,7 @@ public class DatabaseService : IDatabaseService
             throw new FileNotFoundException("Backup file does not exist.", backupFilePath);
         }
 
-        string? key = _keyStore != null ? await _keyStore.GetOrCreateMasterKeyAsync() : null;
+        string? key = _keyStore != null ? _masterKey ?? await _keyStore.GetMasterKeyAsync() : null;
         ValidateDatabaseFile(backupFilePath, key);
 
         await _initLock.WaitAsync();
@@ -399,6 +460,7 @@ public class DatabaseService : IDatabaseService
 
             _isInitialized = false;
             _isEncrypted = false;
+            _masterKey = null;
 
             string[] suffixes = { "", "-wal", "-shm", ".bak", ".enc_tmp" };
             foreach (var suffix in suffixes)

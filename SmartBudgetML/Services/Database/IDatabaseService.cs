@@ -1,5 +1,6 @@
 using SQLite;
 using SmartBudgetML.Models;
+using SmartBudgetML.Services.Security;
 
 namespace SmartBudgetML.Services.Database;
 
@@ -24,6 +25,9 @@ public interface IDatabaseService
 
     string DatabasePath { get; }
     bool IsEncrypted { get; }
+
+    /// <summary>Vault state after the last open attempt; InitializeAsync throws VaultUnavailableException when not Ready.</summary>
+    VaultState VaultState { get; }
     Task<long> GetDatabaseSizeBytesAsync();
     Task<string> GetFormattedDatabaseSizeAsync();
     Task<string> BackupDatabaseAsync(string destinationPath);

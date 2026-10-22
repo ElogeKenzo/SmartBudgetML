@@ -63,7 +63,7 @@
         }
     }
 
-    private static readonly string[] ChromelessRoutes = { "onboarding", "unlock" };
+    private static readonly string[] ChromelessRoutes = { "onboarding", "unlock", "vault-error" };
 
     private bool IsChromeless
     {
@@ -104,6 +104,11 @@
             });
 
             await CheckAuthRouteAsync();
+        }
+        catch (VaultUnavailableException ex)
+        {
+            Logger.LogError(ex, "Database vault unavailable: {State}.", ex.State);
+            NavManager.NavigateTo("vault-error", replace: true);
         }
         catch (Exception ex)
         {
