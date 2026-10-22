@@ -74,7 +74,7 @@ else
     REASON="$COUNTS etapes OK"
   fi
 fi
-if grep -q -E '^SB_SELFTEST\|[^|]+\|(FAIL|FATAL)' "$SELFTEST_LOG"; then
+if grep -q -E '^SB_SELFTEST\|([^|]+\|)?(FAIL|FATAL)' "$SELFTEST_LOG"; then
   STATUS="ECHEC"
   REASON="${REASON:+$REASON; }au moins une etape FAIL/FATAL"
 fi
@@ -106,7 +106,7 @@ echo "Result: $STATUS ${REASON}"
 echo "::notice title=Emulator self-test::${DONE_LINE:-no DONE line}, TotalTime=${TOTAL_TIME} ms, PSS=${TOTAL_PSS} KB"
 if [ "$STATUS" != "OK" ]; then
   echo "::error title=Emulator self-test::${REASON}"
-  if FAILED_STEPS="$(grep -E '^SB_SELFTEST\|[^|]+\|(FAIL|FATAL)' "$SELFTEST_LOG")"; then
+  if FAILED_STEPS="$(grep -E '^SB_SELFTEST\|([^|]+\|)?(FAIL|FATAL)' "$SELFTEST_LOG")"; then
     printf '%s\n' "$FAILED_STEPS" | head -n 10 | while IFS= read -r line; do
       echo "::error title=SB_SELFTEST step::${line}"
     done
