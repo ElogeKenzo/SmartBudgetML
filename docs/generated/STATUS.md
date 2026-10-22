@@ -5,8 +5,8 @@
 ## 1. Metadonnees et Compilation
 | Cle | Valeur |
 |---|---|
-| **Date de verification** | `2026-10-22 00:17:02 UTC` |
-| **Branche / Commit** | `feature/phase8-b-ci` (`15cdb48` / `15cdb48c1d238d406536d23a3feb67c512382dda`) |
+| **Date de verification** | `2026-10-22 01:19:14 UTC` |
+| **Branche / Commit** | `feature/phase8-b-ci` (`b502546` / `b502546e7b73c374b5af1071f836e6c7c47bd669`) |
 | **Build Tests (net10.0)** | `PASS` |
 | **Build Android (net10.0-android Release)** | `PASS` |
 | **Cles de traduction (AppStrings)** | `155` FR / `155` EN |
@@ -29,9 +29,9 @@
 
 ## 4. Metriques ML Reelles (issues de `artifacts/ml-eval.json`)
 - **Echantillons :** `314` entrainement (`seed_fr.csv`) / `176` validation (`holdout_fr.csv`), `11` categories dans le jeu courant.
-- **Latence d'inference (1 000 appels) :** Moyenne = `0.0367 ms`, p95 = `0.0711 ms`.
-- **Temps d'entrainement :** `842 ms`.
-- **Taille du modele serialise :** `111197 octets` (`108.6 Ko`).
+- **Latence d'inference (1 000 appels) :** Moyenne = `0.0252 ms`, p95 = `0.0445 ms`.
+- **Temps d'entrainement :** `639 ms`.
+- **Taille du modele serialise :** `111202 octets` (`108.6 Ko`).
 
 | Approche | Reussites / Total | Micro-Accuracy | Macro-Accuracy | Macro-F1 |
 |---|---:|---:|---:|---:|
