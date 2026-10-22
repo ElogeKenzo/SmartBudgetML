@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using SmartBudgetML.Models;
 using SmartBudgetML.Services.Auth;
+using SmartBudgetML.Services.Data;
 using SmartBudgetML.Services.Database;
 using SmartBudgetML.Services.ML;
 using SmartBudgetML.Services.Security;
@@ -21,6 +22,9 @@ public sealed class SelfTestRunner
 
     // Test-only PIN for the throwaway self-test profile (6 digits, non-trivial).
     private const string SelfTestPin = "482917";
+
+    // Test-only backup password for the throwaway self-test backup.
+    private const string SelfTestBackupPassword = "selftest-sauvegarde";
 
     private readonly ISecureKeyStore _keyStore;
     private readonly IBiometricService _biometricService;
@@ -49,6 +53,8 @@ public sealed class SelfTestRunner
 
     public string DatabasePath => Path.Combine(_workDirectory, "selftest.db3");
     public string ModelPath => Path.Combine(_workDirectory, "selftest_model.zip");
+    public string BackupPath => Path.Combine(_workDirectory, "selftest.sbbackup");
+    private string ExportDirectory => Path.Combine(_workDirectory, "exports");
 
     public async Task<bool> RunAsync()
     {
@@ -66,6 +72,9 @@ public sealed class SelfTestRunner
         await StepAsync("forecast", ForecastAsync);
         await StepAsync("reopen_encrypted_db", ReopenEncryptedDatabaseAsync);
         await StepAsync("lock_app", LockAppAsync);
+        await StepAsync("export_csv", ExportCsvAsync);
+        await StepAsync("password_backup", PasswordBackupAsync);
+        await StepAsync("password_restore", PasswordRestoreAsync);
         await StepAsync("cleanup", CleanupAsync);
 
         _log($"{Tag}|DONE|{Passed}/{Total}");
@@ -206,6 +215,49 @@ public sealed class SelfTestRunner
         return Task.CompletedTask;
     }
 
+    // CSV export as the Settings screen does it, minus the share sheet (lot 8D).
+    private async Task ExportCsvAsync()
+    {
+        var database = RequireDatabase();
+        var exporter = new CsvExpenseExporter(new LocalFileExportService(ExportDirectory));
+        var path = await exporter.ExportToFileAsync(
+            await database.Expenses.GetAllAsync(),
+            await database.Categories.GetAllAsync());
+        var content = await File.ReadAllTextAsync(path);
+        Require(content.Contains("Moto bendskin Akwa"), "exported CSV does not contain the expense");
+    }
+
+    // Backup encrypted with a password, not with the phone key (lot 8D, N5).
+    private async Task PasswordBackupAsync()
+    {
+        var database = RequireDatabase();
+        await database.CreatePasswordBackupAsync(BackupPath, SelfTestBackupPassword);
+        var status = await database.ValidatePasswordBackupAsync(BackupPath, SelfTestBackupPassword);
+        Require(status == BackupValidationStatus.Valid, $"backup validation gave {status}");
+        var wrong = await database.ValidatePasswordBackupAsync(BackupPath, "mauvais-mot-de-passe");
+        Require(wrong == BackupValidationStatus.Unreadable, $"wrong password gave {wrong}");
+    }
+
+    // An expense added after the backup must disappear once the backup is restored.
+    private async Task PasswordRestoreAsync()
+    {
+        var database = RequireDatabase();
+        var category = _transportCategory ?? throw new InvalidOperationException("transport category missing");
+        await database.Expenses.InsertAsync(new Expense
+        {
+            Description = "Taxi apres sauvegarde",
+            Amount = 1000m,
+            CategoryId = category.Id,
+            Date = DateTime.Today
+        });
+
+        await database.RestorePasswordBackupAsync(BackupPath, SelfTestBackupPassword);
+        Require(database.IsEncrypted, "restored database is not encrypted");
+        var expenses = await database.Expenses.GetAllAsync();
+        Require(expenses.Count == 1 && expenses[0].Description == "Moto bendskin Akwa",
+            $"restore gave {expenses.Count} expenses instead of the backed-up one");
+    }
+
     private async Task CleanupAsync()
     {
         if (_database is not null)
@@ -216,9 +268,16 @@ public sealed class SelfTestRunner
         }
 
         DeleteDatabaseFiles();
-        if (File.Exists(ModelPath))
+        foreach (var file in new[] { ModelPath, BackupPath })
         {
-            File.Delete(ModelPath);
+            if (File.Exists(file))
+            {
+                File.Delete(file);
+            }
+        }
+        if (Directory.Exists(ExportDirectory))
+        {
+            Directory.Delete(ExportDirectory, recursive: true);
         }
 
         Require(!File.Exists(DatabasePath), "self-test database was not deleted");
@@ -226,7 +285,7 @@ public sealed class SelfTestRunner
 
     private void DeleteDatabaseFiles()
     {
-        foreach (var suffix in new[] { "", "-wal", "-shm", "-journal" })
+        foreach (var suffix in new[] { "", "-wal", "-shm", "-journal", DatabaseService.PreRestoreSuffix })
         {
             var target = DatabasePath + suffix;
             if (File.Exists(target))

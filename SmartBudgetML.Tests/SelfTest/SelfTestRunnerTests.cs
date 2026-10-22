@@ -43,7 +43,11 @@ public class SelfTestRunnerTests : IDisposable
         Assert.Contains(stepLines, l => l.StartsWith("SB_SELFTEST|reopen_encrypted_db|OK|"));
         Assert.Contains(stepLines, l => l.StartsWith("SB_SELFTEST|lock_app|OK|"));
         Assert.Contains(stepLines, l => l.StartsWith("SB_SELFTEST|categorize_utilities|OK|"));
+        Assert.Contains(stepLines, l => l.StartsWith("SB_SELFTEST|export_csv|OK|"));
+        Assert.Contains(stepLines, l => l.StartsWith("SB_SELFTEST|password_backup|OK|"));
+        Assert.Contains(stepLines, l => l.StartsWith("SB_SELFTEST|password_restore|OK|"));
         Assert.False(File.Exists(runner.DatabasePath), "self-test database must be removed by cleanup");
+        Assert.False(File.Exists(runner.BackupPath), "self-test backup must be removed by cleanup");
     }
 
     [Fact]
