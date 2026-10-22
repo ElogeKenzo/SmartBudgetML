@@ -15,7 +15,7 @@ All information you enter remains exclusively on your phone:
 - Category corrections used to train the on-device machine learning model locally on your phone.
 
 ## 3. Data Security & Encryption
-- **Encryption at rest:** Your data is stored in a local database encrypted with **256-bit SQLCipher** (`sqlite-net-sqlcipher`). The 256-bit master key is generated via a cryptographic random number generator (CSPRNG) and stored in the hardware-backed *Android Keystore* (`SecureStorage`).
+- **Encryption at rest:** Your data is stored in a local database encrypted with **256-bit SQLCipher** (`sqlite-net-sqlcipher`). The 256-bit master key is generated via a cryptographic random number generator (CSPRNG) and stored via `SecureStorage`, protected by the Android Keystore when the device allows it. It is never written anywhere else: if secure storage is unavailable, the app shows an error screen instead of opening the data.
 - **Local PIN:** Your PIN is hashed locally using **PBKDF2-HMAC-SHA256 with 600,000 iterations** and a unique 128-bit cryptographic salt.
 - **Biometrics:** When enabled, fingerprint verification is handled exclusively by the Android OS (`BiometricPrompt`). SmartBudget ML never accesses raw biometric data.
 - **Mobile Money SMS Import:** SmartBudget ML **never** reads your SMS inbox automatically (no `READ_SMS` permission). Only text messages you explicitly paste or share into the app are parsed locally in memory.
