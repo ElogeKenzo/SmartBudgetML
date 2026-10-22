@@ -7,7 +7,7 @@ Phase 8 : corriger les écarts relevés par l'audit du code `develop` (voir `doc
 - **Lot 8A terminé** : build réparé, vraies métriques ML, `./tools/verify.ps1` et `docs/generated/STATUS.md`, documents réalignés.
 - **Lot 8B terminé** : CI réelle (5 jobs), auto-test `SB_SELFTEST` sur émulateur x86_64, runs verts notés dans `docs/CI_RUN_LOG.md`. `develop` et le tag `Phase8-8B` sont sur `origin`.
 - **Lot 8C terminé** (`feature/phase8-c-securite`, tag `Phase8-8C`, poussé, CI verte notée dans `docs/CI_RUN_LOG.md`).
-- **Lot 8D terminé** (`feature/phase8-d-export-backup`, fusionnée dans `develop` en local, tag `Phase8-8D`). **Rien n'est poussé** : la CI n'a pas encore tourné sur 8D.
+- **Lot 8D terminé** (`feature/phase8-d-export-backup`, fusionnée dans `develop`, tag `Phase8-8D`). Branche, `develop` et tag sont sur `origin` ; runs CI verts notés dans `docs/CI_RUN_LOG.md` (`SB_SELFTEST|DONE|14/14` sur l'émulateur).
 
 ## 2. Lot 8D : ce qui a été fait
 1. **Partage** (`65a7b0f`) : `IFileExportService` gagne `ExportDirectory`, `PrepareExportPath` (ne garde que le dernier fichier exporté : données personnelles) et `ShareFileAsync`. `MauiFileExportService` (exclu du projet de tests) écrit dans `FileSystem.CacheDirectory/exports` puis appelle `Share.Default.RequestAsync(ShareFileRequest)`. Aucune permission. L'écran dit « Choisissez une application pour enregistrer le fichier », jamais « exporté ».
@@ -21,7 +21,7 @@ Phase 8 : corriger les écarts relevés par l'audit du code `develop` (voir `doc
 
 Tests : `PasswordBackupTests` (13 : restauration croisée vers une autre clé maître, sauvegarde illisible avec la clé du téléphone, `user_version`, mauvais mot de passe, fichier corrompu, base étrangère, version trop récente, validation puis annulation avec SHA-256 inchangé, `.pre-restore`, purge, politique du mot de passe, nom de fichier, dossier d'export), `Phase1HonestyTests.DatabaseService_BackupAndRestore_*` réécrit.
 
-Preuves de cette session : `./tools/verify.ps1` **PASS** (199/199 tests, build Android PASS, tous les garde-fous PASS) ; `dotnet format --verify-no-changes` OK sur les deux projets. Statuts : VÉRIFIÉ-TESTS, VÉRIFIÉ-BUILD. Pas encore VÉRIFIÉ-CI ni VÉRIFIÉ-ÉMULATEUR (non poussé). Téléphone : NON-VÉRIFIÉ-APPAREIL (points 13 à 18 de la checklist).
+Preuves de cette session : `./tools/verify.ps1` **PASS** (199/199 tests, build Android PASS, tous les garde-fous PASS) ; `dotnet format --verify-no-changes` OK sur les deux projets. Statuts : VÉRIFIÉ-TESTS, VÉRIFIÉ-BUILD ; puis VÉRIFIÉ-CI et VÉRIFIÉ-ÉMULATEUR pour ce que couvre l'auto-test (runs 39725000964 et 39725001152, `SB_SELFTEST|DONE|14/14` ; le menu de partage et le sélecteur de fichier ne sont pas couverts). Téléphone : NON-VÉRIFIÉ-APPAREIL (points 13 à 18 de la checklist).
 
 Limite connue : la mémoire des corrections ML (`ExpenseCategorizerService._userMemory`) n'est rechargée qu'au prochain démarrage de l'application après une restauration (même chose après une purge, comportement antérieur).
 
@@ -36,7 +36,7 @@ Limite connue : la mémoire des corrections ML (`ExpenseCategorizerService._user
 - Pièges hérités (lots 8A et 8B) : `tools/verify.ps1` doit rester en ASCII pur ; encadrer les appels `dotnet` avec `$ErrorActionPreference = "Continue"`.
 
 ## 5. Prochaine étape
-1. Demander à l'utilisateur l'autorisation de pousser `develop`, la branche `feature/phase8-d-export-backup` et le tag `Phase8-8D`, puis noter les runs CI dans `docs/CI_RUN_LOG.md` (attendu : `SB_SELFTEST|DONE|14/14`).
+1. Le commit du journal CI de 8D est sur `develop` en local : le pousser si l'utilisateur le demande. Tester les points 13 à 18 de la checklist sur le téléphone.
 2. Lot suivant selon `docs/phase8/00-INDEX.md`.
 3. Restent hors périmètre : `LocalAuthServiceTests` et `Phase5CameroonLocalizationTests` gardent le motif « connexion non fermée et `catch {}` vide » ; `Settings.razor` (chargement, enregistrement, réentraînement, purge) et `Profile.razor` affichent encore `ex.Message` (N10, lot 8H) ; avertissements Node.js 20 des actions `@v4`.
 
