@@ -6,7 +6,7 @@
 Phase 8 : corriger les écarts relevés par l'audit du code `develop` (voir `docs/phase8/00-INDEX.md`).
 - **Lot 8A terminé** : build réparé, vraies métriques ML, `./tools/verify.ps1` et `docs/generated/STATUS.md`, documents réalignés.
 - **Lot 8B terminé** : CI réelle (5 jobs), auto-test `SB_SELFTEST` sur émulateur x86_64, runs verts notés dans `docs/CI_RUN_LOG.md`. `develop` et le tag `Phase8-8B` sont sur `origin`.
-- **Lot 8C terminé en local** (`feature/phase8-c-securite`, fusionnée dans `develop`, tag local `Phase8-8C`). **Pas encore poussé, donc aucun run CI pour ce lot.**
+- **Lot 8C terminé** (`feature/phase8-c-securite`, fusionnée dans `develop`, tag `Phase8-8C`). Branche, `develop` et tag sont sur `origin` ; runs CI verts notés dans `docs/CI_RUN_LOG.md` (`SB_SELFTEST|DONE|11/11` sur l'émulateur).
 
 ## 2. Lot 8C : ce qui a été fait (un commit par étape)
 1. **N3, verrouillage visible** (`b227c51`, `a04a9fd`) : événement `ILocalAuthService.LockStateChanged` (déclenché par `LockApp`, donc aussi par l'auto-verrouillage au retour). `MainLayout` s'abonne, se désabonne dans `Dispose` et navigue vers `/unlock` (`replace: true`) via `LockNavigationCoordinator.GetRedirect` (classe pure : pas de redirection si déjà sur `unlock`, `onboarding` ou `vault-error`). La même vérification tourne à chaque changement d'adresse, une fois l'utilisateur inscrit : le bouton Retour ne peut plus montrer une page pendant le verrouillage. Tests `LockStateTests` (9). Le branchement dans `MainLayout` n'est pas testé automatiquement (pas de bUnit) : point 14 de `docs/DEVICE_TEST_CHECKLIST.md`.
@@ -18,7 +18,7 @@ Phase 8 : corriger les écarts relevés par l'audit du code `develop` (voir `doc
 6. **Textes Play Store** (`1831251`) : politique FR/EN et Data Safety disent « protégée par le Keystore Android lorsque l'appareil le permet ».
 7. **Auto-test** (`8801341`) : étapes `reopen_encrypted_db` et `lock_app` (11 étapes au total, auparavant 9). Nouveau garde-fou dans `verify.ps1` : aucun `sb_vault_key` dans `SmartBudgetML/`. Le seul `sb_vault_key` restant dans le code est dans `VaultStateTests`, qui vérifie l'absence du fichier.
 
-Preuves de cette session : `./tools/verify.ps1` **PASS** sur `a04a9fd` (183/183 tests, build Android PASS avec les 2 mêmes CS1570, tous les garde-fous PASS) ; `dotnet format --verify-no-changes` OK sur les deux projets. Statuts : VÉRIFIÉ-TESTS, VÉRIFIÉ-BUILD ; CI et émulateur pour 8C : **pas encore** ; téléphone : NON-VÉRIFIÉ-APPAREIL.
+Preuves de cette session : `./tools/verify.ps1` **PASS** sur `a04a9fd` (183/183 tests, build Android PASS avec les 2 mêmes CS1570, tous les garde-fous PASS) ; `dotnet format --verify-no-changes` OK sur les deux projets. Statuts : VÉRIFIÉ-TESTS, VÉRIFIÉ-BUILD ; puis VÉRIFIÉ-CI et VÉRIFIÉ-ÉMULATEUR pour ce que couvre l'auto-test (runs 39718171107 et 39718171086, `SB_SELFTEST|DONE|11/11`) ; téléphone : NON-VÉRIFIÉ-APPAREIL.
 
 ## 3. Fichiers importants
 - `docs/phase8/00-INDEX.md` et `docs/phase8/8D-export-backup-restore.md` (lot suivant)
@@ -31,9 +31,8 @@ Preuves de cette session : `./tools/verify.ps1` **PASS** sur `a04a9fd` (183/183 
 - Pièges hérités (lots 8A et 8B) : `tools/verify.ps1` doit rester en ASCII pur ; encadrer les appels `dotnet` avec `$ErrorActionPreference = "Continue"`.
 
 ## 5. Prochaine étape
-1. Pousser `feature/phase8-c-securite` et `develop` (avec l'accord de l'utilisateur), puis noter le run CI dans `docs/CI_RUN_LOG.md` (attendu sur l'émulateur : `SB_SELFTEST|DONE|11/11`).
-2. Lot 8D (`docs/phase8/8D-export-backup-restore.md`). Il doit ajouter sur `/vault-error` le rappel de la restauration d'une sauvegarde.
-3. Restent hors périmètre : `LocalAuthServiceTests` et `Phase5CameroonLocalizationTests` gardent le motif « connexion non fermée et `catch {}` vide » ; `Settings.razor` et `Profile.razor` affichent encore `ex.Message` (N10, lot 8H) ; avertissements Node.js 20 des actions `@v4`.
+1. Lot 8D (`docs/phase8/8D-export-backup-restore.md`). Il doit ajouter sur `/vault-error` le rappel de la restauration d'une sauvegarde.
+2. Restent hors périmètre : `LocalAuthServiceTests` et `Phase5CameroonLocalizationTests` gardent le motif « connexion non fermée et `catch {}` vide » ; `Settings.razor` et `Profile.razor` affichent encore `ex.Message` (N10, lot 8H) ; avertissements Node.js 20 des actions `@v4`.
 
 ## Décisions prises
 1. Pas de réécriture de l'historique Git pour retirer les anciens identifiants SMS (décision #3).
