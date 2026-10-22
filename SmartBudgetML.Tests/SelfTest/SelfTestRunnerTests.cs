@@ -40,6 +40,8 @@ public class SelfTestRunnerTests : IDisposable
             Assert.True(long.TryParse(parts[3], out var ms) && ms >= 0, line);
         });
         Assert.Contains(stepLines, l => l.StartsWith("SB_SELFTEST|categorize_transport|OK|"));
+        Assert.Contains(stepLines, l => l.StartsWith("SB_SELFTEST|reopen_encrypted_db|OK|"));
+        Assert.Contains(stepLines, l => l.StartsWith("SB_SELFTEST|lock_app|OK|"));
         Assert.Contains(stepLines, l => l.StartsWith("SB_SELFTEST|categorize_utilities|OK|"));
         Assert.False(File.Exists(runner.DatabasePath), "self-test database must be removed by cleanup");
     }
