@@ -1,5 +1,5 @@
 ﻿{
-  "evaluatedAtUtc": "2026-10-22T03:18:12Z",
+  "evaluatedAtUtc": "2026-10-22T04:41:59Z",
   "trainingSampleCount": 314,
   "holdoutSampleCount": 176,
   "categoryCount": 11,
@@ -38,10 +38,10 @@
     "macroF1": 0.994313
   },
   "benchmark": {
-    "trainTimeMs": 2329,
-    "avgInferenceMs": 0.0668,
-    "p95InferenceMs": 0.134,
-    "modelSizeBytes": 111183,
+    "trainTimeMs": 1919,
+    "avgInferenceMs": 0.2897,
+    "p95InferenceMs": 0.1232,
+    "modelSizeBytes": 111202,
     "modelSizeKb": 108.6
   }
 }

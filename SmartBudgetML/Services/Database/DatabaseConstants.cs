@@ -12,6 +12,12 @@ public static class DatabaseConstants
 {
     public const string DatabaseFilename = "smartbudget.db3";
 
+    /// <summary>
+    /// Written to PRAGMA user_version of every backup. A backup with a higher value comes from a
+    /// newer app and is refused. Increase it when a change to the tables cannot be read by older code.
+    /// </summary>
+    public const int SchemaVersion = 1;
+
     public const SQLiteOpenFlags Flags =
         SQLiteOpenFlags.ReadWrite |
         SQLiteOpenFlags.Create |

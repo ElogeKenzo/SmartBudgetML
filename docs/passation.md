@@ -6,24 +6,29 @@
 Phase 8 : corriger les écarts relevés par l'audit du code `develop` (voir `docs/phase8/00-INDEX.md`).
 - **Lot 8A terminé** : build réparé, vraies métriques ML, `./tools/verify.ps1` et `docs/generated/STATUS.md`, documents réalignés.
 - **Lot 8B terminé** : CI réelle (5 jobs), auto-test `SB_SELFTEST` sur émulateur x86_64, runs verts notés dans `docs/CI_RUN_LOG.md`. `develop` et le tag `Phase8-8B` sont sur `origin`.
-- **Lot 8C terminé** (`feature/phase8-c-securite`, fusionnée dans `develop`, tag `Phase8-8C`). Branche, `develop` et tag sont sur `origin` ; runs CI verts notés dans `docs/CI_RUN_LOG.md` (`SB_SELFTEST|DONE|11/11` sur l'émulateur).
+- **Lot 8C terminé** (`feature/phase8-c-securite`, tag `Phase8-8C`, poussé, CI verte notée dans `docs/CI_RUN_LOG.md`).
+- **Lot 8D terminé** (`feature/phase8-d-export-backup`, fusionnée dans `develop` en local, tag `Phase8-8D`). **Rien n'est poussé** : la CI n'a pas encore tourné sur 8D.
 
-## 2. Lot 8C : ce qui a été fait (un commit par étape)
-1. **N3, verrouillage visible** (`b227c51`, `a04a9fd`) : événement `ILocalAuthService.LockStateChanged` (déclenché par `LockApp`, donc aussi par l'auto-verrouillage au retour). `MainLayout` s'abonne, se désabonne dans `Dispose` et navigue vers `/unlock` (`replace: true`) via `LockNavigationCoordinator.GetRedirect` (classe pure : pas de redirection si déjà sur `unlock`, `onboarding` ou `vault-error`). La même vérification tourne à chaque changement d'adresse, une fois l'utilisateur inscrit : le bouton Retour ne peut plus montrer une page pendant le verrouillage. Tests `LockStateTests` (9). Le branchement dans `MainLayout` n'est pas testé automatiquement (pas de bUnit) : point 14 de `docs/DEVICE_TEST_CHECKLIST.md`.
-2. **N8, PBKDF2 hors du fil UI** (`9b46628`) : `HashPinAsync` (`Task.Run`) pour la pose, la vérification et la montée v1→v2. Clavier désactivé et « Vérification… » (`Unlock_Verifying`) pendant le calcul. Test `PinHashingThreadTests` : un contexte de synchronisation à fil unique sert de faux fil UI. Avant le correctif, il était bloqué 1 186 ms (un hachage = 1 228 ms sur le PC de dev) ; après, 6 ms. Itérations inchangées. Temps sur Redmi : point 13 de la checklist.
-3. **N6, plus de repli en clair** (`a0cee85`) : `ISecureKeyStore` = `GetMasterKeyAsync` (null si absente, exception si le stockage échoue) + `CreateMasterKeyAsync`. `MauiSecureKeyStore` n'écrit plus jamais `.sb_vault_key`. `DatabaseService.VaultState` : `KeyUnavailable` (stockage en échec, rien n'est écrit ailleurs et aucune base n'est créée), `KeyLost` (base chiffrée sans clé ou avec une mauvaise clé : fichier intact, aucune clé créée), `Ready`. `InitializeAsync` lève alors `VaultUnavailableException`. `MainLayout` envoie vers `/vault-error` (FR/EN), avec Réessayer et la réinitialisation à double confirmation (`VaultResetConfirmation`). Tests `VaultStateTests` (a, b, c, plus mauvaise clé, migration et nouvel essai) et `VaultResetConfirmationTests`.
-   - **Volontairement absent** : la phrase « une sauvegarde peut être restaurée » n'est pas affichée sur `/vault-error`, car la restauration n'a pas encore d'écran (N5, règle 4). **À ajouter au lot 8D** quand la restauration sera atteignable.
-4. **Migration claire → chiffrée** (`9db5615`) : le test avec identifiants à trous a échoué avant le correctif (la catégorie 4 devenait 2, et les tables de tontines étaient perdues). La copie passe maintenant par `ATTACH DATABASE … KEY …; SELECT sqlcipher_export('encrypted'); DETACH`, accepté par `SQLitePCLRaw.bundle_e_sqlcipher 2.1.11`, avec un contrôle du nombre de lignes de chaque table. Note : le seeding remet ensuite les catégories par défaut supprimées, avec de nouveaux identifiants ; c'est le comportement existant de `MigrateLegacyCategoriesAsync`.
-5. **N16, biométrie** (`92223aa`) : `BiometricAvailabilityPolicy` (faux sous API 28, sans capteur, sans empreinte ; `BiometricManager` dès API 29, `FingerprintManager` en API 28 : si un appel lève une exception, la biométrie reste cachée). Bouton du verrouillage, interrupteur et test du Profil, interrupteur de l'onboarding masqués sinon. NON-VÉRIFIÉ-APPAREIL (point 15 de la checklist).
-6. **Textes Play Store** (`1831251`) : politique FR/EN et Data Safety disent « protégée par le Keystore Android lorsque l'appareil le permet ».
-7. **Auto-test** (`8801341`) : étapes `reopen_encrypted_db` et `lock_app` (11 étapes au total, auparavant 9). Nouveau garde-fou dans `verify.ps1` : aucun `sb_vault_key` dans `SmartBudgetML/`. Le seul `sb_vault_key` restant dans le code est dans `VaultStateTests`, qui vérifie l'absence du fichier.
+## 2. Lot 8D : ce qui a été fait
+1. **Partage** (`65a7b0f`) : `IFileExportService` gagne `ExportDirectory`, `PrepareExportPath` (ne garde que le dernier fichier exporté : données personnelles) et `ShareFileAsync`. `MauiFileExportService` (exclu du projet de tests) écrit dans `FileSystem.CacheDirectory/exports` puis appelle `Share.Default.RequestAsync(ShareFileRequest)`. Aucune permission. L'écran dit « Choisissez une application pour enregistrer le fichier », jamais « exporté ».
+2. **Export CSV** : format inchangé (RFC 4180, BOM UTF-8), branché sur le partage. `ex.Message` retiré des deux gestionnaires concernés de `Settings.razor` (les autres restent pour 8H).
+3. **Sauvegarde par mot de passe** : `DatabaseService.CreatePasswordBackupAsync` (`ATTACH DATABASE ? AS backup KEY ?` avec paramètres liés, donc aucun échappement à faire ; `sqlcipher_export` ; `PRAGMA backup.user_version = DatabaseConstants.SchemaVersion` (= 1) ; fichier `.tmp` validé puis renommé). `BackupPasswordPolicy` (8 caractères, confirmation), `BackupFileNames.ForDate` → `smartbudget-AAAAMMJJ.sbbackup`. Écran `/backup`. Le mot de passe n'est ni stocké ni journalisé, et il est effacé des champs après usage.
+4. **Restauration** : `ValidatePasswordBackupAsync` (lecture seule, dans `Task.Run` car PBKDF2) → `Valid`, `Unreadable` (mauvais mot de passe ou fichier abîmé : SQLCipher ne sait pas les distinguer), `NotABackup` (intégrité ou tables manquantes), `TooNew` (`user_version` > `SchemaVersion`). `RestorePasswordBackupAsync` : nouvelle validation, import dans `.restore_tmp` rechiffré avec la clé du téléphone (contrôle du nombre de lignes par table), fermeture, copie `.pre-restore`, remplacement, réouverture et seeding ; en cas d'échec après remplacement, retour à `.pre-restore`. La purge efface aussi `.pre-restore` et `.restore_tmp`. Écran `/restore` : `FilePicker` (`ACTION_OPEN_DOCUMENT`, sans permission : vérifié dans le source MAUI), mot de passe, vérification, double confirmation (réutilise `VaultResetConfirmation`), puis `LockApp` et `/unlock` : le PIN valable est celui de la sauvegarde (dit à l'écran).
+5. **Ancien chemin supprimé** : `BackupDatabaseAsync` / `RestoreDatabaseAsync` (`VACUUM INTO`, `smartbudget_backup_*.db3`) retirés de `IDatabaseService` et de `Settings.razor`. `Select-String "backup_" SmartBudgetML/Components` : vide.
+6. **`/vault-error`** : phrase `VaultError_RestoreHint` (restaurer depuis Paramètres après la réinitialisation), désormais vraie.
+7. **Docs** : README (et nombre de clés de traduction remplacé par un lien vers `STATUS.md`, il était déjà faux), politiques FR/EN, nouveau `docs/GUIDE_UTILISATEUR.md` (limité à l'export, la sauvegarde et la restauration), checklist appareil (point 11 revu, points 16 à 18 ajoutés).
+8. **Auto-test** (`a583086`) : étapes `export_csv`, `password_backup`, `password_restore` (14 étapes au total, partage exclu).
 
-Preuves de cette session : `./tools/verify.ps1` **PASS** sur `a04a9fd` (183/183 tests, build Android PASS avec les 2 mêmes CS1570, tous les garde-fous PASS) ; `dotnet format --verify-no-changes` OK sur les deux projets. Statuts : VÉRIFIÉ-TESTS, VÉRIFIÉ-BUILD ; puis VÉRIFIÉ-CI et VÉRIFIÉ-ÉMULATEUR pour ce que couvre l'auto-test (runs 39718171107 et 39718171086, `SB_SELFTEST|DONE|11/11`) ; téléphone : NON-VÉRIFIÉ-APPAREIL.
+Tests : `PasswordBackupTests` (13 : restauration croisée vers une autre clé maître, sauvegarde illisible avec la clé du téléphone, `user_version`, mauvais mot de passe, fichier corrompu, base étrangère, version trop récente, validation puis annulation avec SHA-256 inchangé, `.pre-restore`, purge, politique du mot de passe, nom de fichier, dossier d'export), `Phase1HonestyTests.DatabaseService_BackupAndRestore_*` réécrit.
+
+Preuves de cette session : `./tools/verify.ps1` **PASS** (199/199 tests, build Android PASS, tous les garde-fous PASS) ; `dotnet format --verify-no-changes` OK sur les deux projets. Statuts : VÉRIFIÉ-TESTS, VÉRIFIÉ-BUILD. Pas encore VÉRIFIÉ-CI ni VÉRIFIÉ-ÉMULATEUR (non poussé). Téléphone : NON-VÉRIFIÉ-APPAREIL (points 13 à 18 de la checklist).
+
+Limite connue : la mémoire des corrections ML (`ExpenseCategorizerService._userMemory`) n'est rechargée qu'au prochain démarrage de l'application après une restauration (même chose après une purge, comportement antérieur).
 
 ## 3. Fichiers importants
-- `docs/phase8/00-INDEX.md` et `docs/phase8/8D-export-backup-restore.md` (lot suivant)
-- `SmartBudgetML/Services/Database/DatabaseService.cs` (état du coffre, migration), `Services/Security/*`, `Components/Pages/VaultError.razor`
-- `tools/verify.ps1`, `docs/generated/STATUS.md`, `docs/AUDIT_REGISTER.md`, `docs/DEVICE_TEST_CHECKLIST.md` (points 13 à 15 ajoutés)
+- `docs/phase8/00-INDEX.md` (lot suivant : 8E)
+- `SmartBudgetML/Services/Database/DatabaseService.cs` (sauvegarde, restauration), `Services/Data/*FileExportService.cs`, `Components/Pages/Backup.razor`, `Restore.razor`, `Settings.razor`, `VaultError.razor`
+- `tools/verify.ps1`, `docs/generated/STATUS.md`, `docs/AUDIT_REGISTER.md`, `docs/DEVICE_TEST_CHECKLIST.md`
 
 ## 4. Ce qui a été essayé et qui a raté
 - Éditer des `.resx` ou des `.razor` par script PowerShell 5.1 : `[IO.File]::WriteAllText` avec `UTF8Encoding($true)` ajoute un BOM absent de l'original ; un `Where-Object` sur une seule ligne renvoie une chaîne, et `[0]` donne alors un caractère. Utiliser l'outil Edit.
@@ -31,13 +36,15 @@ Preuves de cette session : `./tools/verify.ps1` **PASS** sur `a04a9fd` (183/183 
 - Pièges hérités (lots 8A et 8B) : `tools/verify.ps1` doit rester en ASCII pur ; encadrer les appels `dotnet` avec `$ErrorActionPreference = "Continue"`.
 
 ## 5. Prochaine étape
-1. Lot 8D (`docs/phase8/8D-export-backup-restore.md`). Il doit ajouter sur `/vault-error` le rappel de la restauration d'une sauvegarde.
-2. Restent hors périmètre : `LocalAuthServiceTests` et `Phase5CameroonLocalizationTests` gardent le motif « connexion non fermée et `catch {}` vide » ; `Settings.razor` et `Profile.razor` affichent encore `ex.Message` (N10, lot 8H) ; avertissements Node.js 20 des actions `@v4`.
+1. Demander à l'utilisateur l'autorisation de pousser `develop`, la branche `feature/phase8-d-export-backup` et le tag `Phase8-8D`, puis noter les runs CI dans `docs/CI_RUN_LOG.md` (attendu : `SB_SELFTEST|DONE|14/14`).
+2. Lot suivant selon `docs/phase8/00-INDEX.md`.
+3. Restent hors périmètre : `LocalAuthServiceTests` et `Phase5CameroonLocalizationTests` gardent le motif « connexion non fermée et `catch {}` vide » ; `Settings.razor` (chargement, enregistrement, réentraînement, purge) et `Profile.razor` affichent encore `ex.Message` (N10, lot 8H) ; avertissements Node.js 20 des actions `@v4`.
 
 ## Décisions prises
 1. Pas de réécriture de l'historique Git pour retirer les anciens identifiants SMS (décision #3).
 2. `docs/generated/STATUS.md` (généré par `./tools/verify.ps1`) est la source de vérité unique pour les comptes de tests et les métriques ML.
 3. (8C) Aucune clé n'est jamais créée par-dessus une base chiffrée existante, et aucune base n'est réparée automatiquement : c'est l'utilisateur qui décide, depuis `/vault-error`.
+4. (8D) La sauvegarde est chiffrée par un mot de passe choisi par l'utilisateur (décision par défaut n° 2), jamais stocké ; la restauration réinstalle le profil et le PIN de la sauvegarde.
 
 ## Commandes utiles
 - Vérification complète :

@@ -130,8 +130,45 @@
   <data name="Settings_DailyRemindersDesc" xml:space="preserve"><value>Rappel discret pour noter vos dépenses du jour</value></data>
   <data name="Settings_DataSectionTitle" xml:space="preserve"><value>Données et Stockage Chiffré</value></data>
   <data name="Settings_ExportCsv" xml:space="preserve"><value>Exporter les dépenses (CSV)</value></data>
-  <data name="Settings_BackupDb" xml:space="preserve"><value>Sauvegarder la base locale</value></data>
+  <data name="Settings_BackupDb" xml:space="preserve"><value>Sauvegarde chiffrée (mot de passe)</value></data>
   <data name="Settings_ClearDb" xml:space="preserve"><value>Effacer la base locale et la clé</value></data>
+  <data name="Settings_RestoreDb" xml:space="preserve"><value>Restaurer une sauvegarde</value></data>
+  <data name="Settings_ExportShareTitle" xml:space="preserve"><value>Dépenses SmartBudget</value></data>
+  <data name="Settings_ExportFailed" xml:space="preserve"><value>L'export n'a pas pu être préparé. Réessayez.</value></data>
+  <data name="Share_ChooseApp" xml:space="preserve"><value>Choisissez une application pour enregistrer le fichier.</value></data>
+  <data name="Backup_PageTitle" xml:space="preserve"><value>Sauvegarde · SmartBudget ML</value></data>
+  <data name="Backup_Title" xml:space="preserve"><value>Sauvegarde chiffrée</value></data>
+  <data name="Backup_Subtitle" xml:space="preserve"><value>Protégée par un mot de passe que vous choisissez : elle peut être restaurée sur un autre téléphone.</value></data>
+  <data name="Backup_Password" xml:space="preserve"><value>Mot de passe de la sauvegarde</value></data>
+  <data name="Backup_PasswordConfirm" xml:space="preserve"><value>Confirmez le mot de passe</value></data>
+  <data name="Backup_PasswordHint" xml:space="preserve"><value>8 caractères minimum. Il n'est enregistré nulle part : s'il est perdu, la sauvegarde est illisible et personne ne peut la récupérer.</value></data>
+  <data name="Backup_TooShort" xml:space="preserve"><value>Le mot de passe doit contenir au moins 8 caractères.</value></data>
+  <data name="Backup_Mismatch" xml:space="preserve"><value>Les deux mots de passe ne correspondent pas.</value></data>
+  <data name="Backup_Create" xml:space="preserve"><value>Créer et partager la sauvegarde</value></data>
+  <data name="Backup_Working" xml:space="preserve"><value>Préparation…</value></data>
+  <data name="Backup_Ready" xml:space="preserve"><value>Sauvegarde {0} créée et vérifiée. Choisissez une application pour l'enregistrer.</value></data>
+  <data name="Backup_Failed" xml:space="preserve"><value>La sauvegarde n'a pas pu être créée. Réessayez.</value></data>
+  <data name="Backup_ShareTitle" xml:space="preserve"><value>Sauvegarde SmartBudget</value></data>
+  <data name="Restore_PageTitle" xml:space="preserve"><value>Restauration · SmartBudget ML</value></data>
+  <data name="Restore_Title" xml:space="preserve"><value>Restaurer une sauvegarde</value></data>
+  <data name="Restore_Subtitle" xml:space="preserve"><value>Choisissez un fichier .sbbackup et saisissez son mot de passe.</value></data>
+  <data name="Restore_PickFile" xml:space="preserve"><value>Choisir le fichier</value></data>
+  <data name="Restore_NoFile" xml:space="preserve"><value>Aucun fichier choisi</value></data>
+  <data name="Restore_PickFailed" xml:space="preserve"><value>Le fichier n'a pas pu être ouvert. Réessayez.</value></data>
+  <data name="Restore_Password" xml:space="preserve"><value>Mot de passe de la sauvegarde</value></data>
+  <data name="Restore_Check" xml:space="preserve"><value>Vérifier la sauvegarde</value></data>
+  <data name="Restore_Unreadable" xml:space="preserve"><value>Mot de passe incorrect ou fichier endommagé. Vos données actuelles n'ont pas été modifiées.</value></data>
+  <data name="Restore_NotABackup" xml:space="preserve"><value>Ce fichier n'est pas une sauvegarde SmartBudget. Vos données actuelles n'ont pas été modifiées.</value></data>
+  <data name="Restore_TooNew" xml:space="preserve"><value>Cette sauvegarde vient d'une version plus récente de l'application. Mettez l'application à jour, puis réessayez.</value></data>
+  <data name="Restore_Valid" xml:space="preserve"><value>Sauvegarde vérifiée.</value></data>
+  <data name="Restore_Confirm1" xml:space="preserve"><value>Cette action remplace toutes les données actuelles. Continuer ?</value></data>
+  <data name="Restore_Confirm2" xml:space="preserve"><value>Dernière confirmation : les données actuelles seront remplacées par celles de la sauvegarde.</value></data>
+  <data name="Restore_PinNotice" xml:space="preserve"><value>Après la restauration, l'application se verrouille : déverrouillez-la avec le code PIN utilisé au moment de la sauvegarde.</value></data>
+  <data name="Restore_Start" xml:space="preserve"><value>Restaurer</value></data>
+  <data name="Restore_ConfirmButton" xml:space="preserve"><value>Remplacer mes données</value></data>
+  <data name="Restore_Cancel" xml:space="preserve"><value>Annuler</value></data>
+  <data name="Restore_Working" xml:space="preserve"><value>Restauration…</value></data>
+  <data name="Restore_Failed" xml:space="preserve"><value>La restauration a échoué. Redémarrez l'application et vérifiez vos données.</value></data>
   <data name="Settings_ConfirmPurge" xml:space="preserve"><value>⚠️ Appuyez à nouveau pour supprimer définitivement le coffre</value></data>
   <data name="Settings_FooterNote" xml:space="preserve"><value>SmartBudget ML · SQLCipher 256 bits · PBKDF2 600k · 100 % Hors-Ligne</value></data>
 
@@ -154,6 +191,7 @@
   <data name="VaultError_Cancel" xml:space="preserve"><value>Annuler</value></data>
   <data name="VaultError_RetryFailed" xml:space="preserve"><value>Toujours inaccessible. Réessayez plus tard.</value></data>
   <data name="VaultError_ResetFailed" xml:space="preserve"><value>La réinitialisation a échoué. Redémarrez l'application et réessayez.</value></data>
+  <data name="VaultError_RestoreHint" xml:space="preserve"><value>Si vous avez une sauvegarde (.sbbackup) et son mot de passe, vous pourrez la restaurer depuis Paramètres après la réinitialisation.</value></data>
   <data name="Onboarding_PageTitle" xml:space="preserve"><value>Créer votre profil · SmartBudget ML</value></data>
   <data name="Onboarding_TitleStep1" xml:space="preserve"><value>Créez votre profil</value></data>
   <data name="Onboarding_TitleStep2" xml:space="preserve"><value>Protégez vos données</value></data>

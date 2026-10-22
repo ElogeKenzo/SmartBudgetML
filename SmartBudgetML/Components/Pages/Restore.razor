@@ -1,0 +1,179 @@
+@page "/restore"
+@using Microsoft.Extensions.Logging
+@inject NavigationManager NavManager
+@inject IDatabaseService DbService
+@inject ILocalAuthService AuthService
+@inject IStringLocalizer<AppStrings> L
+@inject ILogger<Restore> Logger
+
+<PageTitle>@L["Restore_PageTitle"]</PageTitle>
+
+<div class="settings-container">
+    <div class="screen-header-row">
+        <div>
+            <h1 class="screen-title">@L["Restore_Title"]</h1>
+            <p class="screen-subtitle">@L["Restore_Subtitle"]</p>
+        </div>
+        <button id="btn-restore-back" class="header-action-btn" type="button" title="@L["Settings_Back"]" disabled="@IsBusy" @onclick="GoBack">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </button>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(FeedbackMessage))
+    {
+        <div class="card-dark" role="status" style="margin-bottom: 12px; border-left: 3px solid var(--accent-cyan);">
+            <span>@FeedbackMessage</span>
+        </div>
+    }
+
+    <div class="settings-section-card" id="section-restore">
+        @if (_confirmation.Step == VaultResetStep.Idle)
+        {
+            <button id="btn-restore-pick" type="button" class="btn-ghost" disabled="@IsBusy" @onclick="PickFileAsync">
+                @L["Restore_PickFile"]
+            </button>
+            <p class="card-footnote" id="restore-file-name" style="margin: 8px 0 12px 0;">
+                @(SelectedFileName ?? L["Restore_NoFile"].Value)
+            </p>
+
+            <label class="form-label-dark" for="input-restore-password">@L["Restore_Password"]</label>
+            <input id="input-restore-password" type="password" autocomplete="off" class="form-input-dark"
+                   @bind="Password" @bind:event="oninput" disabled="@IsBusy" />
+
+            <button id="btn-restore-check" type="button" class="btn-primary-gradient" style="margin-top: 12px;"
+                    disabled="@(IsBusy || SelectedFilePath is null || string.IsNullOrEmpty(Password))" @onclick="CheckAsync">
+                @(IsBusy ? L["Unlock_Verifying"] : L["Restore_Check"])
+            </button>
+        }
+        else
+        {
+            <p class="lock-error" id="restore-warning" role="alert">
+                @(_confirmation.Step == VaultResetStep.FirstConfirmation ? L["Restore_Confirm1"] : L["Restore_Confirm2"])
+            </p>
+            <p class="card-footnote" style="margin: 8px 0 12px 0;">@L["Restore_PinNotice"]</p>
+            <button id="btn-restore-confirm" type="button" class="btn-logout" disabled="@IsBusy" @onclick="ConfirmAsync">
+                @(IsBusy ? L["Restore_Working"] : _confirmation.Step == VaultResetStep.FirstConfirmation ? L["Restore_Start"] : L["Restore_ConfirmButton"])
+            </button>
+            <button id="btn-restore-cancel" type="button" class="btn-ghost" disabled="@IsBusy" @onclick="Cancel">
+                @L["Restore_Cancel"]
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    // Same three-tap flow as the vault reset: check, then two confirmations.
+    private readonly VaultResetConfirmation _confirmation = new();
+    private string? SelectedFilePath;
+    private string? SelectedFileName;
+    private string Password = string.Empty;
+    private string? FeedbackMessage;
+    private bool IsBusy;
+
+    private async Task PickFileAsync()
+    {
+        FeedbackMessage = null;
+        try
+        {
+            // ACTION_OPEN_DOCUMENT on Android: no storage permission needed.
+            var result = await FilePicker.Default.PickAsync();
+            if (result is null)
+            {
+                return;
+            }
+
+            SelectedFilePath = result.FullPath;
+            SelectedFileName = result.FileName;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Picking the backup file failed.");
+            FeedbackMessage = L["Restore_PickFailed"].Value;
+        }
+    }
+
+    private async Task CheckAsync()
+    {
+        if (SelectedFilePath is null)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        FeedbackMessage = null;
+        try
+        {
+            var status = await DbService.ValidatePasswordBackupAsync(SelectedFilePath, Password);
+            if (status == BackupValidationStatus.Valid)
+            {
+                FeedbackMessage = L["Restore_Valid"].Value;
+                _confirmation.Advance();
+            }
+            else
+            {
+                FeedbackMessage = MessageFor(status);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Checking the backup failed.");
+            FeedbackMessage = MessageFor(BackupValidationStatus.Unreadable);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task ConfirmAsync()
+    {
+        if (!_confirmation.Advance() || SelectedFilePath is null)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        FeedbackMessage = null;
+        try
+        {
+            await DbService.RestorePasswordBackupAsync(SelectedFilePath, Password);
+        }
+        catch (BackupRestoreException ex)
+        {
+            Logger.LogWarning(ex, "Restore refused: {Status}.", ex.Status);
+            FeedbackMessage = MessageFor(ex.Status);
+            IsBusy = false;
+            return;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Restore failed.");
+            FeedbackMessage = L["Restore_Failed"].Value;
+            IsBusy = false;
+            return;
+        }
+
+        // The restored data carries its own profile and PIN: lock and reload everything.
+        Password = string.Empty;
+        AuthService.LockApp();
+        NavManager.NavigateTo("unlock", forceLoad: true, replace: true);
+    }
+
+    private void Cancel()
+    {
+        _confirmation.Cancel();
+        FeedbackMessage = null;
+    }
+
+    private string MessageFor(BackupValidationStatus status) => status switch
+    {
+        BackupValidationStatus.TooNew => L["Restore_TooNew"].Value,
+        BackupValidationStatus.NotABackup => L["Restore_NotABackup"].Value,
+        _ => L["Restore_Unreadable"].Value
+    };
+
+    private void GoBack() => NavManager.NavigateTo("settings");
+}

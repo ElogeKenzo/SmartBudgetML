@@ -15,7 +15,7 @@
 > **État de vérification automatique :** Les comptes exacts de tests, le résultat des garde-fous et les métriques du modèle ML sont générés automatiquement par `./tools/verify.ps1` dans [`docs/generated/STATUS.md`](docs/generated/STATUS.md).
 
 ### Points Forts de la v2.0
-- **Localisation Cameroun (FR/EN, Français par défaut) :** 17 catégories préconfigurées avec clés stables (`food_market`, `transport`, `housing_rent`, `utilities`, `telecom_data`, `healthcare`, `education`, `tontine`, `family_solidarity`, `events`, `church_donations`, `entertainment`, `savings`, `other`, `salary`, `business_hustle`, `transfers_received`), 155 clés de traduction bilingues (`AppStrings.fr.resx` / `AppStrings.en.resx`) et formatage natif en `FCFA`.
+- **Localisation Cameroun (FR/EN, Français par défaut) :** 17 catégories préconfigurées avec clés stables (`food_market`, `transport`, `housing_rent`, `utilities`, `telecom_data`, `healthcare`, `education`, `tontine`, `family_solidarity`, `events`, `church_donations`, `entertainment`, `savings`, `other`, `salary`, `business_hustle`, `transfers_received`), clés de traduction bilingues (`AppStrings.fr.resx` / `AppStrings.en.resx`, nombre exact dans [`docs/generated/STATUS.md`](docs/generated/STATUS.md)) et formatage natif en `FCFA`.
 - **Pipeline ML.NET Hybride à 3 Étages (100 % sur appareil) :**
   1. **Étage 1 — Mémoire Utilisateur (`CategoryFeedback` SQLite) :** Priorité absolue aux corrections passées de l'utilisateur.
   2. **Étage 2 — Règles Mots-Clés Camerounais (`KeywordRuleCategorizer`) :** Expressions locales (*bendskin, moto, clando, ENEO, Camwater, MTN, Orange, Camtel, tontine, njangi, dîme, scolarité, marché Mokolo, Ndokoti, soya, ndolé...*).
@@ -23,6 +23,7 @@
 - **Sécurité Cryptographique :**
   - Base SQLite chiffrée au repos via **SQLCipher 256 bits** (`sqlite-net-sqlcipher`) avec clé maître CSPRNG stockée via `ISecureKeyStore` et migration automatique non destructive des bases v1.0 en clair.
   - Code PIN à 6 chiffres haché via **PBKDF2-HMAC-SHA256 à 600 000 itérations** (recommandation OWASP), colonnes séparées `PinSalt` et `PinHash`, rejet des PIN triviaux, anti-bruteforce persistant avec backoff exponentiel et protection contre le recul de l'horloge système.
+  - **Export et sauvegarde (Paramètres) :** l'export CSV et la sauvegarde passent par le menu de partage d'Android : l'utilisateur choisit où enregistrer le fichier (Drive, Fichiers, WhatsApp…). La sauvegarde `smartbudget-AAAAMMJJ.sbbackup` est chiffrée avec un **mot de passe choisi par l'utilisateur** (8 caractères minimum), pas avec la clé du téléphone : elle peut être restaurée sur un autre téléphone depuis *Paramètres → Restaurer une sauvegarde*. Le mot de passe n'est enregistré nulle part : **un mot de passe perdu rend la sauvegarde illisible**, sans aucun moyen de la récupérer.
   - Biométrie native Android (`Android.Hardware.Biometrics.BiometricPrompt`), politique de verrouillage automatique en arrière-plan (`AutoLockPolicy`) et masquage dans le multitâche (`FLAG_SECURE`).
 - **Tontines (Njangi) & Revenus Irréguliers :**
   - Calculateur de tontines (`TontineCalculator`) : pot par tour, calendrier des tours, détection des retards, gestion des retraits et solde net ($\text{Reçu} - \text{Cotisé}$).
@@ -34,12 +35,12 @@
 
 ```mermaid
 flowchart TD
-    UI["Couche UI : Blazor Hybrid (.razor) + IStringLocalizer FR/EN (155 clés)"]
+    UI["Couche UI : Blazor Hybrid (.razor) + IStringLocalizer FR/EN"]
     AUTH["Sécurité : LocalAuthService (PBKDF2 600k + AutoLock + BiometricPrompt)"]
     ML["Pipeline Hybride 3 Étages : UserMemory -> KeywordRuleCategorizer -> ML.NET SDCA"]
     FORECAST["Prévisions & Budget : BudgetForecastingService + TontineCalculator + IrregularIncomePlanner"]
     SMS["Import SMS Mobile Money : SmsParserRegistry (Orange Money CM + MTN MoMo CM, 0 permission SMS)"]
-    DB["Persistance : DatabaseService (SQLCipher 256-bit + ISecureKeyStore + Backup VACUUM INTO)"]
+    DB["Persistance : DatabaseService (SQLCipher 256-bit + ISecureKeyStore + sauvegarde chiffrée par mot de passe)"]
 
     UI --> AUTH
     UI --> ML

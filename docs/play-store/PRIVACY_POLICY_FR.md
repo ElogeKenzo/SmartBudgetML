@@ -21,7 +21,8 @@ Toutes les informations que vous saisissez restent uniquement sur votre appareil
 - **Import de SMS Mobile Money :** SmartBudget ML n'accède **jamais** automatiquement à vos SMS (`READ_SMS` n'est pas utilisée). Seuls les textes que vous choisissez explicitement de coller ou de partager dans l'application sont analysés en mémoire locale.
 
 ## 4. Export et Suppression de Vos Données
-- **Export à votre initiative :** Vous pouvez exporter vos transactions au format CSV ou sauvegarder votre base de données locale à tout moment depuis l'écran *Paramètres*.
+- **Export à votre initiative :** Depuis *Paramètres*, vous pouvez exporter vos transactions au format CSV ou créer une sauvegarde. L'application ouvre le menu de partage d'Android et c'est vous qui choisissez l'application de destination (Drive, Fichiers, messagerie…) : rien n'est envoyé sans votre choix, et le fichier quitte alors la protection de l'application. Le fichier CSV n'est pas chiffré.
+- **Sauvegarde chiffrée par mot de passe :** La sauvegarde (`.sbbackup`) est chiffrée avec un mot de passe que vous choisissez (8 caractères minimum). Ce mot de passe n'est enregistré nulle part, ni sur le téléphone ni ailleurs : **s'il est perdu, la sauvegarde est illisible et personne ne peut la récupérer**. Elle peut être restaurée sur ce téléphone ou un autre depuis *Paramètres → Restaurer une sauvegarde* ; la restauration remplace toutes les données actuelles, après une double confirmation.
 - **Droit à l'effacement immédiat :** Le bouton *« Effacer la base locale et la clé »* dans *Paramètres* supprime définitivement le fichier de base de données chiffré ainsi que la clé de chiffrement stockée sur votre téléphone.
 
 ## 5. Avertissement Légal (Absence de Conseil Financier)

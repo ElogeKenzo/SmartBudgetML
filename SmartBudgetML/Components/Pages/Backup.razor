@@ -1,0 +1,105 @@
+@page "/backup"
+@using Microsoft.Extensions.Logging
+@using SmartBudgetML.Services.Data
+@inject NavigationManager NavManager
+@inject IDatabaseService DbService
+@inject IFileExportService FileExport
+@inject IStringLocalizer<AppStrings> L
+@inject ILogger<Backup> Logger
+
+<PageTitle>@L["Backup_PageTitle"]</PageTitle>
+
+<div class="settings-container">
+    <div class="screen-header-row">
+        <div>
+            <h1 class="screen-title">@L["Backup_Title"]</h1>
+            <p class="screen-subtitle">@L["Backup_Subtitle"]</p>
+        </div>
+        <button id="btn-backup-back" class="header-action-btn" type="button" title="@L["Settings_Back"]" @onclick="GoBack">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </button>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(FeedbackMessage))
+    {
+        <div class="card-dark" role="status" style="margin-bottom: 12px; border-left: 3px solid var(--accent-cyan);">
+            <span>@FeedbackMessage</span>
+        </div>
+    }
+
+    <div class="settings-section-card" id="section-backup">
+        <label class="form-label-dark" for="input-backup-password">@L["Backup_Password"]</label>
+        <input id="input-backup-password" type="password" autocomplete="new-password" class="form-input-dark"
+               @bind="Password" @bind:event="oninput" disabled="@IsBusy" />
+
+        <label class="form-label-dark" for="input-backup-password-confirm" style="margin-top: 12px;">@L["Backup_PasswordConfirm"]</label>
+        <input id="input-backup-password-confirm" type="password" autocomplete="new-password" class="form-input-dark"
+               @bind="Confirmation" @bind:event="oninput" disabled="@IsBusy" />
+
+        <p class="card-footnote" style="margin: 12px 0;">@L["Backup_PasswordHint"]</p>
+
+        <button id="btn-backup-create" type="button" class="btn-primary-gradient" disabled="@IsBusy" @onclick="CreateBackupAsync">
+            @(IsBusy ? L["Backup_Working"] : L["Backup_Create"])
+        </button>
+    </div>
+</div>
+
+@code {
+    private string Password = string.Empty;
+    private string Confirmation = string.Empty;
+    private string? FeedbackMessage;
+    private bool IsBusy;
+
+    private async Task CreateBackupAsync()
+    {
+        FeedbackMessage = null;
+        switch (BackupPasswordPolicy.Validate(Password, Confirmation))
+        {
+            case BackupPasswordCheck.TooShort:
+                FeedbackMessage = L["Backup_TooShort"].Value;
+                return;
+            case BackupPasswordCheck.Mismatch:
+                FeedbackMessage = L["Backup_Mismatch"].Value;
+                return;
+        }
+
+        IsBusy = true;
+        string path;
+        try
+        {
+            var target = FileExport.PrepareExportPath(BackupFileNames.ForDate(DateTime.Now));
+            path = await DbService.CreatePasswordBackupAsync(target, Password);
+        }
+        catch (Exception ex)
+        {
+            // Never log the password: only the exception.
+            Logger.LogError(ex, "Password backup failed.");
+            FeedbackMessage = L["Backup_Failed"].Value;
+            return;
+        }
+        finally
+        {
+            IsBusy = false;
+            Password = string.Empty;
+            Confirmation = string.Empty;
+        }
+
+        // The share sheet gives no result: say the file is ready, never that it was saved.
+        FeedbackMessage = string.Format(L["Backup_Ready"].Value, Path.GetFileName(path));
+        StateHasChanged();
+        try
+        {
+            await FileExport.ShareFileAsync(path, L["Backup_ShareTitle"].Value);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Opening the share sheet for the backup failed.");
+            FeedbackMessage = L["Backup_Failed"].Value;
+        }
+    }
+
+    private void GoBack() => NavManager.NavigateTo("settings");
+}
