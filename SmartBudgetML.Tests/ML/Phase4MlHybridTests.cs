@@ -598,4 +598,36 @@ public class Phase4MlHybridTests
         Assert.Equal(BudgetHealthStatus.Warning, result.Status);
         Assert.Equal(ForecastReliability.High, result.Reliability);
     }
+
+    // Pins the documented rule (docs/passation.md, RAPPORT_PROJET.md, ML_EVALUATION.md) at every boundary.
+    // January 2024 starts on a Monday, so the day of month is also the ISO week day for the first week.
+    [Theory]
+    [InlineData(BudgetPeriodMode.Monthly, 1, ForecastReliability.Low)]
+    [InlineData(BudgetPeriodMode.Monthly, 6, ForecastReliability.Low)]
+    [InlineData(BudgetPeriodMode.Monthly, 7, ForecastReliability.Medium)]
+    [InlineData(BudgetPeriodMode.Monthly, 13, ForecastReliability.Medium)]
+    [InlineData(BudgetPeriodMode.Monthly, 14, ForecastReliability.High)]
+    [InlineData(BudgetPeriodMode.Monthly, 31, ForecastReliability.High)]
+    [InlineData(BudgetPeriodMode.Envelope, 6, ForecastReliability.Low)]
+    [InlineData(BudgetPeriodMode.Envelope, 7, ForecastReliability.Medium)]
+    [InlineData(BudgetPeriodMode.Envelope, 14, ForecastReliability.High)]
+    [InlineData(BudgetPeriodMode.Weekly, 1, ForecastReliability.Low)]
+    [InlineData(BudgetPeriodMode.Weekly, 2, ForecastReliability.Low)]
+    [InlineData(BudgetPeriodMode.Weekly, 3, ForecastReliability.High)]
+    [InlineData(BudgetPeriodMode.Weekly, 7, ForecastReliability.High)]
+    public void ForecastReliability_FollowsDocumentedDayThresholds(
+        BudgetPeriodMode mode, int dayOfMonth, ForecastReliability expected)
+    {
+        var forecaster = new BudgetForecastingService();
+        var asOf = new DateTime(2024, 1, dayOfMonth);
+        var expenses = new List<Expense>
+        {
+            new() { Amount = 1_000m, Date = new DateTime(2024, 1, 1), Description = "Jour 1" }
+        };
+
+        var result = forecaster.ForecastPeriod(expenses, 100_000m, mode, asOf);
+
+        Assert.Equal(dayOfMonth, result.DaysElapsed);
+        Assert.Equal(expected, result.Reliability);
+    }
 }

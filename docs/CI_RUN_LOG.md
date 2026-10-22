@@ -1,0 +1,9 @@
+# Journal des exécutions CI
+
+> Chaque ligne correspond à une exécution réelle de `.github/workflows/maui-android-ci.yml` sur GitHub Actions, avec son lien. Les statuts VÉRIFIÉ-CI et VÉRIFIÉ-ÉMULATEUR ne sont autorisés que pour une exécution notée ici, et uniquement pour ce que l'auto-test `SB_SELFTEST` couvre réellement.
+> Les mesures de l'émulateur (démarrage, mémoire) proviennent d'un émulateur x86_64 de GitHub Actions : ce ne sont pas des mesures de téléphone.
+
+| Date (UTC) | Branche | Commit | Run | Résultat | Détail |
+|---|---|---|---|---|---|
+| 2026-10-22 00:33 | `feature/phase8-b-ci` | `c30dd1d` | [39700367345](https://github.com/ElogeKenzo/SmartBudgetML/actions/runs/39700367345) | ÉCHEC | Tests + couverture, format + audit, build Android + portes : succès. Auto-test sur émulateur : échec à l'étape « Run self-test on emulator ». Cause inconnue : la seule annotation publique est « /usr/bin/sh failed with exit code 1 » et les journaux n'étaient pas accessibles. Échec non reproduit au run suivant, sans changement du code de l'application. |
+| 2026-10-22 01:25 | `feature/phase8-b-ci` | `ec4e0b4` | [39705614102](https://github.com/ElogeKenzo/SmartBudgetML/actions/runs/39705614102) | SUCCÈS | Tous les jobs sont verts, sauf l'AAB signé (ignoré : pas de secrets de signature). Émulateur API 34 x86_64 : `SB_SELFTEST|DONE|9/9`, démarrage à froid (TotalTime) 4608 ms, TOTAL PSS 825232 Ko (mesures d'émulateur). |

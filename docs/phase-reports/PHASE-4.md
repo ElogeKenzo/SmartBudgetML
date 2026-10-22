@@ -31,7 +31,7 @@
 ### 1.4 Prévision budgétaire : Charges fixes, Revenus irréguliers & Fiabilité (`A19`)
 - Ajout de `IsFixedOrRecurring` sur `Expense` et prise en charge des dépenses fixes connues/calendaires (`FixedCommittedSpend`) dans `BudgetForecastingService.ForecastPeriod` : le loyer mensuel ou l'écolage payé le 1er du mois n'est plus extrapolé linéairement sur les 30 jours restants.
 - Ajout des modes `BudgetPeriodMode.Monthly`, `BudgetPeriodMode.Weekly` (semaine ISO de 7 jours pour revenus hebdomadaires/informels) et `BudgetPeriodMode.Envelope`.
-- Ajout de l'indice de fiabilité `ForecastReliability` (`Low` lorsque `DaysElapsed < 7`, `Medium` de 7 à 13 jours, `High` ≥ 14 jours) et gestion complète des cas limites (année bissextile 29 février, budget nul, dépense future ignorée).
+- Ajout de l'indice de fiabilité `ForecastReliability` (mensuel/enveloppe : `Low` lorsque `DaysElapsed < 7`, `Medium` de 7 à 13 jours, `High` ≥ 14 jours ; hebdomadaire : `Low` lorsque `DaysElapsed < 3`, `High` ≥ 3 jours) et gestion complète des cas limites (année bissextile 29 février, budget nul, dépense future ignorée).
 
 ---
 

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The app sources (Models, Services, ...) are compiled INTO SmartBudgetML.Tests.dll
+  (see <Compile Include="..\SmartBudgetML\..."> in the csproj). Coverlet skips the
+  test assembly by default, which gave an empty (0/0) report: include it and
+  exclude the test sources themselves so only app code is measured.
+-->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <IncludeTestAssembly>true</IncludeTestAssembly>
+          <ExcludeByFile>**/SmartBudgetML.Tests/**/*.cs</ExcludeByFile>
+          <ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>
