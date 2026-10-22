@@ -7,7 +7,7 @@ Phase 8 : corriger les écarts relevés par l'audit du code `develop` (voir `doc
 - **Lot 8A terminé** (`feature/phase8-a-verite` fusionné dans `develop`) : build MAUI Android/Windows réparé, vraies métriques ML exportées (`175/176` soit `99,43 %`), script `./tools/verify.ps1` et `docs/generated/STATUS.md` en place, documents (`README.md`, `RAPPORT_PROJET.md`, `ML_EVALUATION.md`, `PHASE-6.md`, `PHASE-7.md`) et registre (`docs/AUDIT_REGISTER.md`) réalignés, identifiants SMS anonymisés (`N12`), `.gitignore` durci (`N15`).
 
 ## 2. Problématique en cours
-**Lot 8B en cours** sur `feature/phase8-b-ci`. Push de `develop` et `feature/phase8-b-ci` autorisé par l'utilisateur, uniquement quand `./tools/verify.ps1` est vert en local (annoncer « je pousse maintenant » avant).
+**Lot 8B terminé** (`feature/phase8-b-ci` fusionnée dans `develop`). Push de `develop` et `feature/phase8-b-ci` autorisé par l'utilisateur, uniquement quand `./tools/verify.ps1` est vert en local (annoncer « je pousse maintenant » avant).
 
 Ordre de travail demandé (un commit par étape) :
 1. [x] **XA0141 / 16 Ko** : la cause était `sqlite-net-sqlcipher 1.9.172`, qui tire `SQLitePCLRaw.lib.e_sqlcipher 2.1.2` : ses `libe_sqlcipher.so` ont `p_align = 4096`. `SQLitePCLRaw.bundle_e_sqlcipher 2.1.11` (existe sur nuget.org, dernière version stable au 22/10/2026) est référencé directement dans les deux `.csproj` : ses `.so` ont `p_align = 16384`. Preuves de cette session : rebuild `--no-incremental` Android Release = 2 avertissements (2 × CS1570), plus aucun XA0141 ; `python tools/check_elf_alignment.py <apk>` = 24/24 alignées ; `zipalign -c -P 16 -v 4` = « Verification successful » ; tests 139/139. Exigence Google : https://developer.android.com/guide/practices/page-sizes (apps ciblant Android 15+, 64 bits ; mises à jour bloquées à partir du 1er février 2027).
@@ -36,7 +36,7 @@ Ordre de travail demandé (un commit par étape) :
    - [x] **Run 2** (https://github.com/ElogeKenzo/SmartBudgetML/actions/runs/39705614102, `ec4e0b4`, `verify.ps1` PASS juste avant) : **SUCCÈS**, tous les jobs verts, sauf l'AAB signé, ignoré faute de secrets. Émulateur API 34 x86_64 : `SB_SELFTEST|DONE|9/9`, TotalTime 4608 ms, TOTAL PSS 825232 Ko (mesures d'émulateur). Statuts : VÉRIFIÉ-CI et VÉRIFIÉ-ÉMULATEUR ; ARM réel : NON-VÉRIFIÉ-APPAREIL. L'échec du run 1 ne s'est pas reproduit, alors que le code de l'application n'a pas changé : il faut le surveiller (possible instabilité de l'émulateur).
    - [x] `docs/CI_RUN_LOG.md` (2 runs), registre : `N9` → `FIXED`, `A16` → `PARTIEL` (émulateur x86_64, pas d'appareil ARM).
    - [x] Permission interne `com.smartbudgetml.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` (signature, AndroidX) : **acceptée par l'utilisateur**.
-   - [ ] Fusion `--no-ff` dans `develop`, tag `Phase8-8B`, push de `develop` par l'utilisateur, puis contrôle du run sur `develop` à noter dans `docs/CI_RUN_LOG.md`.
+   - [x] Fusion `--no-ff` dans `develop` (`e94708a`) et tag local `Phase8-8B`. `develop` a été poussé par l'utilisateur. Run sur `develop` : https://github.com/ElogeKenzo/SmartBudgetML/actions/runs/39708211956, **SUCCÈS**, émulateur `9/9` (TotalTime 5090 ms, PSS 1063333 Ko), noté dans `docs/CI_RUN_LOG.md`. **Lot 8B terminé.**
    - À suivre : avertissements Node.js 20 obsolète (actions `@v4`), libellé `ubuntu-latest` migrant vers Ubuntu 26 ; 2 × CS1570 (commentaires XML) dans le build Android.
 
 ## 3. Fichiers importants
@@ -54,7 +54,7 @@ Ordre de travail demandé (un commit par étape) :
   - Les tirets cadratins UTF-8 sans BOM provoquaient une erreur de parsing en Windows-1252, et `2>&1` avec `$ErrorActionPreference = "Stop"` interrompait `dotnet test` dès qu'un flux stderr était émis → corrigé en gardant `tools/verify.ps1` en ASCII pur, en encadrant les appels `dotnet` avec `$ErrorActionPreference = "Continue"`, et en passant `-- xUnit.MaxParallelThreads=1` pour éviter toute contention du pool SQLite.
 
 ## 5. Prochaine étape
-Terminer la clôture du lot 8B (fusion, tag, push de `develop`, run sur `develop`), puis lot suivant selon `docs/phase8/00-INDEX.md`.
+Lot suivant selon `docs/phase8/00-INDEX.md`. Le tag `Phase8-8B` n'existe qu'en local, sauf si l'utilisateur le pousse.
 
 ## Décisions prises
 1. Pas de réécriture de l'historique Git pour retirer les anciens identifiants SMS (les originaux restent dans les commits antérieurs, décision #3).
