@@ -141,6 +141,7 @@
   <data name="Unlock_IncorrectPin" xml:space="preserve"><value>Code PIN incorrect. Veuillez réessayer.</value></data>
   <data name="Unlock_LockedRetryIn" xml:space="preserve"><value>Application verrouillée après plusieurs échecs. Réessayez dans {0}s.</value></data>
   <data name="Unlock_BiometricFailed" xml:space="preserve"><value>Échec de l'authentification biométrique.</value></data>
+  <data name="Unlock_Verifying" xml:space="preserve"><value>Vérification…</value></data>
   <data name="Onboarding_PageTitle" xml:space="preserve"><value>Créer votre profil · SmartBudget ML</value></data>
   <data name="Onboarding_TitleStep1" xml:space="preserve"><value>Créez votre profil</value></data>
   <data name="Onboarding_TitleStep2" xml:space="preserve"><value>Protégez vos données</value></data>

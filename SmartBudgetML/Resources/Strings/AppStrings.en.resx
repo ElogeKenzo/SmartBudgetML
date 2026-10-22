@@ -141,6 +141,7 @@
   <data name="Unlock_IncorrectPin" xml:space="preserve"><value>Incorrect PIN. Please try again.</value></data>
   <data name="Unlock_LockedRetryIn" xml:space="preserve"><value>Locked due to failed attempts. Retry in {0}s.</value></data>
   <data name="Unlock_BiometricFailed" xml:space="preserve"><value>Biometric authentication failed.</value></data>
+  <data name="Unlock_Verifying" xml:space="preserve"><value>Verifying…</value></data>
   <data name="Onboarding_PageTitle" xml:space="preserve"><value>Create your account · SmartBudget ML</value></data>
   <data name="Onboarding_TitleStep1" xml:space="preserve"><value>Create your profile</value></data>
   <data name="Onboarding_TitleStep2" xml:space="preserve"><value>Secure your data</value></data>

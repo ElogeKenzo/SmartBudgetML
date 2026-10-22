@@ -171,7 +171,7 @@ public class LocalAuthService : ILocalAuthService
         }
 
         var salt = GenerateSalt();
-        var hash = HashPin(pin, salt, OwaspIterations);
+        var hash = await HashPinAsync(pin, salt, OwaspIterations);
 
         var settings = await GetSettingsAsync();
         settings.PinSalt = Convert.ToBase64String(salt);
@@ -240,7 +240,7 @@ public class LocalAuthService : ILocalAuthService
         var salt = Convert.FromBase64String(settings.PinSalt);
         var expectedHash = Convert.FromBase64String(settings.PinHash);
         int iterations = settings.PinHashVersion <= 1 ? LegacyIterations : OwaspIterations;
-        var actualHash = HashPin(pin, salt, iterations);
+        var actualHash = await HashPinAsync(pin, salt, iterations);
 
         var isValid = CryptographicOperations.FixedTimeEquals(actualHash, expectedHash);
         if (isValid)
@@ -253,7 +253,7 @@ public class LocalAuthService : ILocalAuthService
             if (settings.PinHashVersion < CurrentHashVersion)
             {
                 var newSalt = GenerateSalt();
-                var newHash = HashPin(pin, newSalt, OwaspIterations);
+                var newHash = await HashPinAsync(pin, newSalt, OwaspIterations);
                 settings.PinSalt = Convert.ToBase64String(newSalt);
                 settings.PinHash = Convert.ToBase64String(newHash);
                 settings.PinHashVersion = CurrentHashVersion;
@@ -431,13 +431,14 @@ public class LocalAuthService : ILocalAuthService
         return RandomNumberGenerator.GetBytes(SaltByteSize);
     }
 
-    private static byte[] HashPin(string pin, byte[] salt, int iterations)
+    // PBKDF2 at 600,000 iterations takes about a second: keep it off the UI thread (N8).
+    private static Task<byte[]> HashPinAsync(string pin, byte[] salt, int iterations)
     {
-        return Rfc2898DeriveBytes.Pbkdf2(
+        return Task.Run(() => Rfc2898DeriveBytes.Pbkdf2(
             pin,
             salt,
             iterations,
             HashAlgorithmName.SHA256,
-            HashByteSize);
+            HashByteSize));
     }
 }
