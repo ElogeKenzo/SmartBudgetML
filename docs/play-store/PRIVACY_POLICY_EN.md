@@ -21,7 +21,8 @@ All information you enter remains exclusively on your phone:
 - **Mobile Money SMS Import:** SmartBudget ML **never** reads your SMS inbox automatically (no `READ_SMS` permission). Only text messages you explicitly paste or share into the app are parsed locally in memory.
 
 ## 4. Data Export & Permanent Deletion
-- **User-initiated export:** You can export your transactions to CSV or back up your encrypted database file at any time from the *Settings* screen.
+- **User-initiated export:** From *Settings* you can export your transactions to CSV or create a backup. The app opens the Android share sheet and you choose the destination app (Drive, Files, messaging…): nothing is sent unless you choose to, and the file then leaves the app's protection. The CSV file is not encrypted.
+- **Password-encrypted backup:** The backup (`.sbbackup`) is encrypted with a password you choose (at least 8 characters). The password is not stored anywhere, on the phone or elsewhere: **if it is lost, the backup cannot be read and nobody can recover it**. It can be restored on this phone or another one from *Settings → Restore a backup*; restoring replaces all current data, after a double confirmation.
 - **Immediate erasure:** Tapping *"Clear Local Database & Key"* in *Settings* permanently deletes both the encrypted SQLite file and its cryptographic master key from your device.
 
 ## 5. Legal Disclaimer (Not Financial Advice)
