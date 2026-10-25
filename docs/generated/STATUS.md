@@ -5,16 +5,16 @@
 ## 1. Metadonnees et Compilation
 | Cle | Valeur |
 |---|---|
-| **Date de verification** | `2026-10-22 04:41:29 UTC` |
-| **Branche / Commit** | `feature/phase8-d-export-backup` (`3867d6a` / `3867d6aac73cffce7fd5898db182fe384a64bee2`) |
+| **Date de verification** | `2026-10-25 14:10:10 UTC` |
+| **Branche / Commit** | `feature/phase8-e-tontines` (`e738cc0` / `e738cc07a4fba546dfe0bf5f1ae8d6d75bf55840`) |
 | **Build Tests (net10.0)** | `PASS` |
 | **Build Android (net10.0-android Release)** | `PASS` |
-| **Cles de traduction (AppStrings)** | `206` FR / `206` EN |
+| **Cles de traduction (AppStrings)** | `305` FR / `305` EN |
 
 ## 2. Suite de Tests xUnit
 | Total | Reussis | Echecs | Ignores | Statut |
 |---:|---:|---:|---:|---|
-| **199** | **199** | **0** | **0** | `PASS` |
+| **231** | **231** | **0** | **0** | `PASS` |
 
 ## 3. Garde-fous d'Audit
 | Garde-fou | Resultat | Detail |
@@ -30,8 +30,8 @@
 
 ## 4. Metriques ML Reelles (issues de `artifacts/ml-eval.json`)
 - **Echantillons :** `314` entrainement (`seed_fr.csv`) / `176` validation (`holdout_fr.csv`), `11` categories dans le jeu courant.
-- **Latence d'inference (1 000 appels) :** Moyenne = `0.2897 ms`, p95 = `0.1232 ms`.
-- **Temps d'entrainement :** `1919 ms`.
+- **Latence d'inference (1 000 appels) :** Moyenne = `0.068 ms`, p95 = `0.0866 ms`.
+- **Temps d'entrainement :** `4557 ms`.
 - **Taille du modele serialise :** `111202 octets` (`108.6 Ko`).
 
 | Approche | Reussites / Total | Micro-Accuracy | Macro-Accuracy | Macro-F1 |

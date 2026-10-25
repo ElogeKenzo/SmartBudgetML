@@ -1,0 +1,176 @@
+@page "/tontines/new"
+@using Microsoft.Extensions.Logging
+@inject ITontineService TontineService
+@inject ILocalAuthService AuthService
+@inject NavigationManager NavManager
+@inject IStringLocalizer<AppStrings> L
+@inject ILogger<TontineNew> Logger
+
+<PageTitle>@L["TontineNew_PageTitle"]</PageTitle>
+
+<div class="settings-container">
+    <div class="screen-header-row">
+        <div>
+            <h1 class="screen-title">@L["TontineNew_Title"]</h1>
+            <p class="screen-subtitle">@L["TontineNew_Subtitle"]</p>
+        </div>
+        <button id="btn-tontine-new-back" class="header-action-btn" type="button" title="@L["Settings_Back"]" @onclick="GoBack">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </button>
+    </div>
+
+    <div class="settings-section-card" id="section-tontine-form">
+        <label class="form-label-dark" for="input-tontine-name">@L["TontineNew_Name"]</label>
+        <input id="input-tontine-name" class="form-input-dark" maxlength="120" @bind="Draft.Name" disabled="@IsBusy" />
+
+        <label class="form-label-dark" for="input-tontine-amount" style="margin-top: 12px;">@L["TontineNew_Amount"] (@Currency)</label>
+        <input id="input-tontine-amount" type="number" inputmode="numeric" min="1" step="1" class="form-input-dark"
+               @bind="Draft.ContributionAmount" disabled="@IsBusy" />
+
+        <label class="form-label-dark" for="input-tontine-frequency" style="margin-top: 12px;">@L["TontineNew_Frequency"]</label>
+        <select id="input-tontine-frequency" class="form-input-dark" @bind="Draft.Frequency" disabled="@IsBusy">
+            @foreach (var f in Enum.GetValues<TontineFrequency>())
+            {
+                <option value="@f">@L[$"Tontines_Frequency_{f}"]</option>
+            }
+        </select>
+
+        <label class="form-label-dark" for="input-tontine-start" style="margin-top: 12px;">@L["TontineNew_StartDate"]</label>
+        <input id="input-tontine-start" type="date" class="form-input-dark" @bind="Draft.StartDate" disabled="@IsBusy" />
+    </div>
+
+    <div class="settings-section-card" id="section-tontine-members">
+        <span class="settings-section-title">@L["TontineNew_Members"]</span>
+        <p class="card-footnote">@L["TontineNew_MembersHint"]</p>
+
+        @for (int i = 0; i < Rows.Count; i++)
+        {
+            var index = i;
+            var row = Rows[index];
+            <div class="tontine-member-row" id="@($"row-member-{index}")">
+                <input class="form-input-dark tontine-turn-input" type="number" inputmode="numeric" min="1" step="1"
+                       aria-label="@L["TontineNew_TurnOrder"]" @bind="row.TurnOrder" disabled="@IsBusy" />
+                @if (row.IsCurrentUser)
+                {
+                    <input class="form-input-dark flex-1" value="@L["Tontines_Me"]" disabled aria-label="@L["TontineNew_MemberName"]" />
+                }
+                else
+                {
+                    <input class="form-input-dark flex-1" maxlength="100" placeholder="@L["TontineNew_MemberName"]"
+                           aria-label="@L["TontineNew_MemberName"]" @bind="row.Name" disabled="@IsBusy" />
+                    <button type="button" class="btn-ghost" @onclick="() => RemoveRow(index)" disabled="@IsBusy">@L["TontineNew_RemoveMember"]</button>
+                }
+            </div>
+        }
+
+        <button id="btn-add-member" type="button" class="btn-secondary-action" @onclick="AddRow" disabled="@IsBusy">
+            @L["TontineNew_AddMember"]
+        </button>
+    </div>
+
+    @if (Errors.Count > 0)
+    {
+        <div class="form-error" role="alert" id="tontine-form-errors">
+            @foreach (var error in Errors)
+            {
+                <div>@error</div>
+            }
+        </div>
+    }
+
+    <button id="btn-create-tontine" type="button" class="btn-primary-gradient" disabled="@IsBusy" @onclick="SaveAsync">
+        @L["TontineNew_Save"]
+    </button>
+</div>
+
+@code {
+    private sealed class MemberRow
+    {
+        public string Name { get; set; } = string.Empty;
+        public int TurnOrder { get; set; }
+        public bool IsCurrentUser { get; set; }
+    }
+
+    private readonly TontineDraft Draft = new() { StartDate = DateTime.Today };
+    private readonly List<MemberRow> Rows = new()
+    {
+        new MemberRow { TurnOrder = 1, IsCurrentUser = true },
+        new MemberRow { TurnOrder = 2 }
+    };
+    private List<string> Errors = new();
+    private string Currency = "FCFA";
+    private string MyName = string.Empty;
+    private bool IsBusy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var profile = await AuthService.GetUserProfileAsync();
+            if (profile != null)
+            {
+                MyName = profile.FullName;
+                if (!string.IsNullOrWhiteSpace(profile.CurrencySymbol))
+                {
+                    Currency = profile.CurrencySymbol;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Loading the profile for a new tontine failed.");
+        }
+    }
+
+    private void AddRow() => Rows.Add(new MemberRow { TurnOrder = Rows.Count + 1 });
+
+    private void RemoveRow(int index)
+    {
+        var removed = Rows[index];
+        Rows.RemoveAt(index);
+        foreach (var row in Rows.Where(r => r.TurnOrder > removed.TurnOrder))
+        {
+            row.TurnOrder--;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        // The user's own row is stored with the profile name; the screens show "Me" for it.
+        var myName = string.IsNullOrWhiteSpace(MyName) ? L["Tontines_Me"].Value : MyName;
+        Draft.Members = Rows
+            .Select(r => new TontineMemberDraft(r.IsCurrentUser ? myName : r.Name, r.TurnOrder, r.IsCurrentUser))
+            .ToList();
+
+        Errors = TontineDraftValidator.Validate(Draft).Select(e => L[$"TontineError_{e}"].Value).ToList();
+        if (Errors.Count > 0)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            var id = await TontineService.CreateAsync(Draft);
+            NavManager.NavigateTo($"tontines/{id}");
+        }
+        catch (TontineValidationException ex)
+        {
+            Errors = ex.Errors.Select(e => L[$"TontineError_{e}"].Value).ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Creating a tontine failed.");
+            Errors = new List<string> { L["TontineNew_Failed"].Value };
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void GoBack() => NavManager.NavigateTo("tontines");
+}

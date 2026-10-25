@@ -44,25 +44,30 @@ public static class TontineCalculator
 
         for (int i = 0; i < activeMembers.Count; i++)
         {
-            var expectedDate = tontine.Frequency switch
-            {
-                TontineFrequency.Weekly => tontine.StartDate.Date.AddDays(7 * i),
-                TontineFrequency.BiWeekly => tontine.StartDate.Date.AddDays(14 * i),
-                _ => tontine.StartDate.Date.AddMonths(i)
-            };
-
             rounds.Add(new TontineRound
             {
                 TontineId = tontine.Id,
                 RoundNumber = i + 1,
                 BeneficiaryMemberId = activeMembers[i].Id,
-                ExpectedDate = expectedDate,
+                ExpectedDate = GetRoundDate(tontine, i + 1),
                 ExpectedAmount = pot,
                 IsPaidOut = false
             });
         }
 
         return rounds;
+    }
+
+    /// <summary>Date of round <paramref name="roundNumber"/> (1-based); AddMonths handles year ends and short months.</summary>
+    public static DateTime GetRoundDate(Tontine tontine, int roundNumber)
+    {
+        int offset = Math.Max(0, roundNumber - 1);
+        return tontine.Frequency switch
+        {
+            TontineFrequency.Weekly => tontine.StartDate.Date.AddDays(7 * offset),
+            TontineFrequency.BiWeekly => tontine.StartDate.Date.AddDays(14 * offset),
+            _ => tontine.StartDate.Date.AddMonths(offset)
+        };
     }
 
     public static TontineMember? GetNextBeneficiary(IReadOnlyList<TontineRound> rounds, IReadOnlyList<TontineMember> members)

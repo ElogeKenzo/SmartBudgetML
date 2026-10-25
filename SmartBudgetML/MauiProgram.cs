@@ -6,7 +6,6 @@ using SmartBudgetML.Services.Database;
 using SmartBudgetML.Services.Formatting;
 using SmartBudgetML.Services.Localization;
 using SmartBudgetML.Services.ML;
-using SmartBudgetML.Services.Notifications;
 using SmartBudgetML.Services.Security;
 using SmartBudgetML.Services.Sms;
 using SmartBudgetML.Services.Tontines;
@@ -41,7 +40,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<ICurrencyFormatter, CurrencyFormatter>();
         builder.Services.AddSingleton(typeof(IStringLocalizer<>), typeof(ResxStringLocalizer<>));
         builder.Services.AddSingleton<ISmsParserRegistry, SmsParserRegistry>();
-        builder.Services.AddSingleton<ILocalNotificationService, InMemoryLocalNotificationService>();
+        builder.Services.AddSingleton<ITontineService, TontineService>();
 
         // Security & Authentication
         builder.Services.AddSingleton<IBiometricService, BiometricService>();
@@ -53,6 +52,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IExpenseCategorizerService, ExpenseCategorizerService>();
         builder.Services.AddSingleton<IModelEvaluator, ModelEvaluator>();
         builder.Services.AddSingleton<IBudgetForecastingService, BudgetForecastingService>();
+        builder.Services.AddSingleton<IBudgetPlanService, BudgetPlanService>();
 
         return builder.Build();
     }

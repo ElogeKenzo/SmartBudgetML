@@ -79,4 +79,10 @@ public class UiFormatTests
         var hexWithAlpha = UiFormat.TileBackground("#3B82F6");
         Assert.Equal("#3B82F626", hexWithAlpha);
     }
+
+    [Fact]
+    public void Date_IsDayMonthYear_WhateverTheCulture()
+    {
+        Assert.Equal("05/01/2027", UiFormat.Date(new DateTime(2027, 1, 5, 18, 30, 0)));
+    }
 }

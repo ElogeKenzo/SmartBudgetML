@@ -56,9 +56,10 @@ public class TontineRound : IEntity
     [PrimaryKey, AutoIncrement]
     public int Id { get; set; }
 
-    [Indexed]
+    [Indexed(Name = "UX_TontineRounds_Number", Order = 1, Unique = true)]
     public int TontineId { get; set; }
 
+    [Indexed(Name = "UX_TontineRounds_Number", Order = 2, Unique = true)]
     public int RoundNumber { get; set; }
 
     public int BeneficiaryMemberId { get; set; }
@@ -76,11 +77,14 @@ public class TontineContribution : IEntity
     [PrimaryKey, AutoIncrement]
     public int Id { get; set; }
 
-    [Indexed]
+    // One contribution per tontine, round and member (lot 8E): recording it twice changes nothing.
+    [Indexed(Name = "UX_TontineContributions_Member", Order = 1, Unique = true)]
     public int TontineId { get; set; }
 
+    [Indexed(Name = "UX_TontineContributions_Member", Order = 2, Unique = true)]
     public int RoundNumber { get; set; }
 
+    [Indexed(Name = "UX_TontineContributions_Member", Order = 3, Unique = true)]
     public int MemberId { get; set; }
 
     public decimal Amount { get; set; }
