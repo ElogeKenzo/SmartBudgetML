@@ -41,6 +41,22 @@ public class Expense : IEntity
     /// </summary>
     public bool IsFixedOrRecurring { get; set; } = false;
 
+    /// <summary>
+    /// One-off income (a tontine pot, for example) left out of the income average so it does not
+    /// inflate the irregular-income envelope.
+    /// </summary>
+    public bool IsExceptional { get; set; } = false;
+
+    /// <summary>
+    /// What created this row when the user did not type it (see <see cref="ExpenseSources"/>).
+    /// Unique with <see cref="SourceId"/>, so the same tontine contribution cannot be booked twice.
+    /// </summary>
+    [MaxLength(40), Indexed(Name = "UX_Expenses_Source", Order = 1, Unique = true)]
+    public string? SourceType { get; set; }
+
+    [Indexed(Name = "UX_Expenses_Source", Order = 2, Unique = true)]
+    public int? SourceId { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     // Non-persisted UI helpers
@@ -52,4 +68,14 @@ public class Expense : IEntity
 
     [Ignore]
     public string? CategoryIcon { get; set; }
+}
+
+/// <summary>Stable values of <see cref="Expense.SourceType"/>.</summary>
+public static class ExpenseSources
+{
+    /// <summary>SourceId = TontineContribution.Id.</summary>
+    public const string TontineContribution = "tontine_contribution";
+
+    /// <summary>SourceId = TontineRound.Id.</summary>
+    public const string TontinePayout = "tontine_payout";
 }

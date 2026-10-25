@@ -57,6 +57,36 @@
         </div>
     </div>
 
+    @* Income profile (lot 8E, N14): drives the budget period on Home and Analytics *@
+    <div class="profile-card" id="card-income-profile">
+        <span class="profile-card-title">@L["Profile_IncomeSection"]</span>
+
+        <div class="currency-selector-row">
+            <span class="switch-title">@L["Profile_IncomeType"]</span>
+            <div class="currency-pills">
+                @foreach (var type in Enum.GetValues<IncomeProfileType>())
+                {
+                    <button type="button" id="@($"btn-income-{type.ToString().ToLowerInvariant()}")"
+                            class="currency-pill-btn @(IncomeType == type ? "active" : "")"
+                            @onclick="() => IncomeType = type">
+                        @L[$"Profile_IncomeType_{type}"]
+                    </button>
+                }
+            </div>
+        </div>
+        <p class="card-footnote">@L["Profile_IncomeTypeHint"]</p>
+
+        <label class="form-label-dark" for="input-vital-minimum" style="margin-top: 12px;">@L["Profile_VitalMinimum"] (@User.CurrencySymbol)</label>
+        <input id="input-vital-minimum" type="number" inputmode="numeric" min="0" step="1" class="form-input-dark" @bind="VitalMinimum" />
+
+        <label class="form-label-dark" for="input-solidarity-target" style="margin-top: 12px;">@L["Profile_SolidarityTarget"] (@User.CurrencySymbol)</label>
+        <input id="input-solidarity-target" type="number" inputmode="numeric" min="0" step="1" class="form-input-dark" @bind="SolidarityTarget" />
+
+        <button id="btn-save-income-profile" type="button" class="btn-secondary-action" style="margin-top: 12px;" @onclick="SaveIncomeProfileAsync">
+            @L["Profile_SaveIncome"]
+        </button>
+    </div>
+
     @* Account Status & PBKDF2 PIN Card *@
     <div class="profile-card" id="card-security-status">
         <span class="profile-card-title">@L["Profile_SecurityCredentials"]</span>
@@ -127,6 +157,17 @@
         }
     </div>
 
+    @* Link to Tontines *@
+    <a class="profile-nav-row" id="link-goto-tontines" href="tontines">
+        <div class="profile-nav-left">
+            <span aria-hidden="true">🤝</span>
+            <span>@L["Profile_TontinesLink"]</span>
+        </div>
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+    </a>
+
     @* Link to Settings *@
     <div class="profile-nav-row" id="link-goto-settings" @onclick="GoToSettings">
         <div class="profile-nav-left">
@@ -166,6 +207,9 @@
         IsOnboardingCompleted = true
     };
 
+    private IncomeProfileType IncomeType = IncomeProfileType.Fixed;
+    private decimal VitalMinimum;
+    private decimal SolidarityTarget;
     private bool BiometricsEnabled = false;
     private bool BiometricsAvailable = false;
     private string? StatusMessage;
@@ -179,6 +223,9 @@
             {
                 User = profile;
             }
+            IncomeType = User.IncomeProfile;
+            VitalMinimum = User.VitalMinimumSpend;
+            SolidarityTarget = User.MonthlySolidarityTarget;
             BiometricsEnabled = await AuthService.IsBiometricEnabledAsync();
             BiometricsAvailable = await AuthService.IsBiometricAvailableAsync();
         }
@@ -233,6 +280,29 @@
         {
             Logger.LogError(ex, "Failed to update biometric preference.");
             StatusMessage = $"Failed to update biometric setting: {ex.Message}";
+        }
+    }
+
+    private async Task SaveIncomeProfileAsync()
+    {
+        if (!IncomeProfileInput.IsValidAmount(VitalMinimum) || !IncomeProfileInput.IsValidAmount(SolidarityTarget))
+        {
+            StatusMessage = L["Profile_IncomeInvalid"].Value;
+            return;
+        }
+
+        User.IncomeProfile = IncomeType;
+        User.VitalMinimumSpend = VitalMinimum;
+        User.MonthlySolidarityTarget = SolidarityTarget;
+        try
+        {
+            await AuthService.UpdateUserProfileAsync(User);
+            StatusMessage = L["Profile_IncomeSaved"].Value;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Saving the income profile failed.");
+            StatusMessage = L["Profile_SaveFailed"].Value;
         }
     }
 

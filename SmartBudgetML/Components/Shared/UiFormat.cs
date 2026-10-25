@@ -50,6 +50,9 @@ public static class UiFormat
     public static string Percent(double value, int decimals = 0) =>
         value.ToString("N" + decimals, Inv) + "%";
 
+    /// <summary>Day/month/year, the order used in Cameroon in both French and English ("05/11/2026").</summary>
+    public static string Date(DateTime date) => date.ToString("dd/MM/yyyy", Inv);
+
     /// <summary>Two-letter initials for avatars ("Abel Kenzo" -> "AK").</summary>
     public static string Initials(string? fullName)
     {

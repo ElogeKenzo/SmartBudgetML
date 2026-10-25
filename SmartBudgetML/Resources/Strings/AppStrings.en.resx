@@ -198,7 +198,7 @@
   <data name="Onboarding_SubtitleStep1" xml:space="preserve"><value>Your profile never leaves this device. No cloud, no tracking.</value></data>
   <data name="Onboarding_SubtitleStep2" xml:space="preserve"><value>Set a local 6-digit PIN. Fingerprint unlock can also be enabled.</value></data>
   <data name="Onboarding_FullName" xml:space="preserve"><value>Full name</value></data>
-  <data name="Onboarding_FullNamePlaceholder" xml:space="preserve"><value>e.g. Jean-Paul Mbarga</value></data>
+  <data name="Onboarding_FullNamePlaceholder" xml:space="preserve"><value>e.g. your full name</value></data>
   <data name="Onboarding_EmailOptional" xml:space="preserve"><value>Email (optional)</value></data>
   <data name="Onboarding_Continue" xml:space="preserve"><value>Continue</value></data>
   <data name="Onboarding_PinLabel" xml:space="preserve"><value>6-digit PIN</value></data>
@@ -233,4 +233,103 @@
   <data name="Tontines_SmsSectionTitle" xml:space="preserve"><value>Mobile Money SMS Import (No READ_SMS permission)</value></data>
   <data name="Tontines_SmsPlaceholder" xml:space="preserve"><value>Paste one or more Orange Money / MTN MoMo SMS messages here...</value></data>
   <data name="Tontines_SmsAnalyzeBtn" xml:space="preserve"><value>Parse pasted SMS</value></data>
+  <data name="Tontines_Empty" xml:space="preserve"><value>No tontine yet. Create your first one to track contributions and rounds.</value></data>
+  <data name="Tontines_CreateBtn" xml:space="preserve"><value>+ New tontine</value></data>
+  <data name="Tontines_ListItemMeta" xml:space="preserve"><value>{0} · {1} members · {2} per round</value></data>
+  <data name="Tontines_Finished" xml:space="preserve"><value>Finished</value></data>
+  <data name="Tontines_Active" xml:space="preserve"><value>Running</value></data>
+  <data name="Tontines_Frequency_Weekly" xml:space="preserve"><value>Weekly</value></data>
+  <data name="Tontines_Frequency_BiWeekly" xml:space="preserve"><value>Every 2 weeks</value></data>
+  <data name="Tontines_Frequency_Monthly" xml:space="preserve"><value>Monthly</value></data>
+  <data name="Tontines_Me" xml:space="preserve"><value>Me</value></data>
+  <data name="Tontines_CurrentBeneficiary" xml:space="preserve"><value>Beneficiary of this round:</value></data>
+  <data name="Tontines_ContributeBtn" xml:space="preserve"><value>I have paid ({0})</value></data>
+  <data name="Tontines_ReceivedPotBtn" xml:space="preserve"><value>I received the pot ({0})</value></data>
+  <data name="Tontines_ContributionExpense" xml:space="preserve"><value>Contribution {0} (round {1})</value></data>
+  <data name="Tontines_PayoutIncome" xml:space="preserve"><value>Tontine pot {0} (round {1})</value></data>
+  <data name="Tontines_LoadFailed" xml:space="preserve"><value>The tontines could not be loaded.</value></data>
+  <data name="TontineNew_PageTitle" xml:space="preserve"><value>New tontine · SmartBudget ML</value></data>
+  <data name="TontineNew_Title" xml:space="preserve"><value>New tontine</value></data>
+  <data name="TontineNew_Subtitle" xml:space="preserve"><value>Everything stays on this phone.</value></data>
+  <data name="TontineNew_Name" xml:space="preserve"><value>Tontine name</value></data>
+  <data name="TontineNew_Amount" xml:space="preserve"><value>Contribution per round</value></data>
+  <data name="TontineNew_Frequency" xml:space="preserve"><value>Frequency</value></data>
+  <data name="TontineNew_StartDate" xml:space="preserve"><value>Date of the first round</value></data>
+  <data name="TontineNew_Members" xml:space="preserve"><value>Members and turn order</value></data>
+  <data name="TontineNew_MembersHint" xml:space="preserve"><value>The turn says who receives the pot, from round 1 to the last. Your row is "Me".</value></data>
+  <data name="TontineNew_MemberName" xml:space="preserve"><value>Member name</value></data>
+  <data name="TontineNew_TurnOrder" xml:space="preserve"><value>Turn</value></data>
+  <data name="TontineNew_AddMember" xml:space="preserve"><value>+ Add a member</value></data>
+  <data name="TontineNew_RemoveMember" xml:space="preserve"><value>Remove</value></data>
+  <data name="TontineNew_Save" xml:space="preserve"><value>Create tontine</value></data>
+  <data name="TontineNew_Failed" xml:space="preserve"><value>The tontine could not be saved.</value></data>
+  <data name="TontineError_NameRequired" xml:space="preserve"><value>Enter the tontine name.</value></data>
+  <data name="TontineError_AmountNotPositive" xml:space="preserve"><value>The contribution must be greater than 0.</value></data>
+  <data name="TontineError_AmountNotWhole" xml:space="preserve"><value>The contribution must be a whole amount, without cents.</value></data>
+  <data name="TontineError_TooFewMembers" xml:space="preserve"><value>At least 2 members are needed.</value></data>
+  <data name="TontineError_MemberNameRequired" xml:space="preserve"><value>Every member needs a name.</value></data>
+  <data name="TontineError_TurnOrdersNotUnique" xml:space="preserve"><value>Two members have the same turn.</value></data>
+  <data name="TontineError_TurnOrderOutOfRange" xml:space="preserve"><value>Each turn must be between 1 and the number of members.</value></data>
+  <data name="TontineError_CurrentUserMissing" xml:space="preserve"><value>Your "Me" row is required.</value></data>
+  <data name="TontineDetail_PageTitle" xml:space="preserve"><value>Tontine · SmartBudget ML</value></data>
+  <data name="TontineDetail_NotFound" xml:space="preserve"><value>This tontine no longer exists.</value></data>
+  <data name="TontineDetail_CurrentRound" xml:space="preserve"><value>Round {0} of {1} · {2}</value></data>
+  <data name="TontineDetail_WhoPaid" xml:space="preserve"><value>Contributions this round</value></data>
+  <data name="TontineDetail_Paid" xml:space="preserve"><value>Paid</value></data>
+  <data name="TontineDetail_NotPaid" xml:space="preserve"><value>Not paid yet</value></data>
+  <data name="TontineDetail_MarkPaid" xml:space="preserve"><value>Mark as paid</value></data>
+  <data name="TontineDetail_MarkPotPaid" xml:space="preserve"><value>Pot paid to {0}</value></data>
+  <data name="TontineDetail_Late" xml:space="preserve"><value>Late contributions</value></data>
+  <data name="TontineDetail_NoLate" xml:space="preserve"><value>No late contribution.</value></data>
+  <data name="TontineDetail_LateItem" xml:space="preserve"><value>{0} · round {1} (due {2})</value></data>
+  <data name="TontineDetail_MyContributions" xml:space="preserve"><value>My contributions</value></data>
+  <data name="TontineDetail_Received" xml:space="preserve"><value>Received</value></data>
+  <data name="TontineDetail_ContributionSaved" xml:space="preserve"><value>Contribution for round {0} saved.</value></data>
+  <data name="TontineDetail_AlreadySaved" xml:space="preserve"><value>This was already saved.</value></data>
+  <data name="TontineDetail_PayoutSaved" xml:space="preserve"><value>Pot of round {0} saved.</value></data>
+  <data name="TontineDetail_Finished" xml:space="preserve"><value>All rounds are finished.</value></data>
+  <data name="TontineDetail_Members" xml:space="preserve"><value>Members</value></data>
+  <data name="TontineDetail_Withdraw" xml:space="preserve"><value>Leaves the tontine</value></data>
+  <data name="TontineDetail_WithdrawConfirm" xml:space="preserve"><value>Confirm: {0} leaves the tontine</value></data>
+  <data name="TontineDetail_Withdrawn" xml:space="preserve"><value>Left the tontine</value></data>
+  <data name="TontineDetail_Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="TontineDetail_SaveChanges" xml:space="preserve"><value>Save</value></data>
+  <data name="TontineDetail_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="TontineDetail_Updated" xml:space="preserve"><value>Tontine updated.</value></data>
+  <data name="TontineDetail_Delete" xml:space="preserve"><value>Delete tontine</value></data>
+  <data name="TontineDetail_DeleteConfirm" xml:space="preserve"><value>Confirm deletion (expenses already saved are kept)</value></data>
+  <data name="TontineDetail_ActionFailed" xml:space="preserve"><value>The action could not be saved.</value></data>
+  <data name="Home_TontinesCard" xml:space="preserve"><value>My tontines</value></data>
+  <data name="Home_TontinesCount" xml:space="preserve"><value>{0} running tontine(s)</value></data>
+  <data name="Home_TontinesNextDue" xml:space="preserve"><value>Next contribution: {0}</value></data>
+  <data name="Home_TontinesNone" xml:space="preserve"><value>No tontine. Tap to create one.</value></data>
+  <data name="Home_DueBannerTitle" xml:space="preserve"><value>To pay</value></data>
+  <data name="Home_DueItem" xml:space="preserve"><value>{0} · round {1}: {2} by {3}</value></data>
+  <data name="Home_DueItemLate" xml:space="preserve"><value>{0} · round {1}: {2}, late since {3}</value></data>
+  <data name="Home_RemainingThisWeek" xml:space="preserve"><value>Left this week</value></data>
+  <data name="Profile_TontinesLink" xml:space="preserve"><value>My tontines</value></data>
+  <data name="Profile_IncomeSection" xml:space="preserve"><value>Income profile</value></data>
+  <data name="Profile_IncomeType" xml:space="preserve"><value>Income type</value></data>
+  <data name="Profile_IncomeType_Fixed" xml:space="preserve"><value>Fixed</value></data>
+  <data name="Profile_IncomeType_Irregular" xml:space="preserve"><value>Irregular</value></data>
+  <data name="Profile_IncomeType_Mixed" xml:space="preserve"><value>Mixed</value></data>
+  <data name="Profile_IncomeTypeHint" xml:space="preserve"><value>Irregular: weekly envelope budget, based on the income recorded over the last 3 months minus the vital minimum. Mixed: same calculation, over the month.</value></data>
+  <data name="Profile_VitalMinimum" xml:space="preserve"><value>Monthly vital minimum</value></data>
+  <data name="Profile_SolidarityTarget" xml:space="preserve"><value>Monthly family solidarity target</value></data>
+  <data name="Profile_SaveIncome" xml:space="preserve"><value>Save income profile</value></data>
+  <data name="Profile_IncomeSaved" xml:space="preserve"><value>Income profile saved.</value></data>
+  <data name="Profile_IncomeInvalid" xml:space="preserve"><value>Amounts must be whole numbers, zero or more.</value></data>
+  <data name="Profile_SaveFailed" xml:space="preserve"><value>Saving failed.</value></data>
+  <data name="Budget_EnvelopeTitle" xml:space="preserve"><value>This week's envelope</value></data>
+  <data name="Budget_EnvelopeBody" xml:space="preserve"><value>{0} spent of {1}</value></data>
+  <data name="Budget_EnvelopeRemaining" xml:space="preserve"><value>Left: {0}</value></data>
+  <data name="Budget_AfterVital" xml:space="preserve"><value>Left this month after the vital minimum: {0}</value></data>
+  <data name="Budget_RollingIncome" xml:space="preserve"><value>Average income of the last months: {0}</value></data>
+  <data name="Budget_NoIncomeData" xml:space="preserve"><value>No income recorded over the last 3 months: the profile income is used. Add your income to refine it.</value></data>
+  <data name="Budget_Reliability_Low" xml:space="preserve"><value>Forecast reliability: low (few days of data)</value></data>
+  <data name="Budget_Reliability_Medium" xml:space="preserve"><value>Forecast reliability: medium</value></data>
+  <data name="Budget_Reliability_High" xml:space="preserve"><value>Forecast reliability: high</value></data>
+  <data name="Budget_Solidarity" xml:space="preserve"><value>Family solidarity this month: {0} of a {1} target</value></data>
+  <data name="Analytics_ForecastWeekEnd" xml:space="preserve"><value>End-of-week forecast</value></data>
+  <data name="Home_MlForecastBodyWeek" xml:space="preserve"><value>you will spend about {0} by the end of the week ({1} of the envelope).</value></data>
 </root>
