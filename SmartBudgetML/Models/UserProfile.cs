@@ -19,13 +19,19 @@ public class UserProfile : IEntity
     public string? Email { get; set; }
 
     [MaxLength(10)]
-    public string CurrencySymbol { get; set; } = "$";
+    public string CurrencySymbol { get; set; } = "FCFA";
 
     public decimal MonthlyIncome { get; set; } = 0m;
 
     public decimal MonthlySavingsGoal { get; set; } = 0m;
 
     public double TargetSavingsRate { get; set; } = 20.0; // 20% default
+
+    public IncomeProfileType IncomeProfile { get; set; } = IncomeProfileType.Fixed;
+
+    public decimal VitalMinimumSpend { get; set; } = 0m;
+
+    public decimal MonthlySolidarityTarget { get; set; } = 0m;
 
     public bool IsOnboardingCompleted { get; set; } = false;
 

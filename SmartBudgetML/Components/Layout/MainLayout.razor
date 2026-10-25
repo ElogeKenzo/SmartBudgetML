@@ -1,9 +1,12 @@
 @inherits LayoutComponentBase
 @implements IDisposable
+@using Microsoft.Extensions.Logging
 @inject NavigationManager NavManager
 @inject IDatabaseService DbService
 @inject ILocalAuthService AuthService
 @inject IExpenseCategorizerService Categorizer
+@inject IStringLocalizer<AppStrings> L
+@inject ILogger<MainLayout> Logger
 
 <div class="app-container">
     @if (_isInitializing)
@@ -11,7 +14,7 @@
         <div class="app-loading-screen">
             <div class="spinner-glow"></div>
             <div class="loading-title">SmartBudget <span>ML</span></div>
-            <div class="loading-subtitle">Initializing Local Vault</div>
+            <div class="loading-subtitle">@L["Layout_InitializingVault"]</div>
         </div>
     }
     else
@@ -26,7 +29,7 @@
                     <div class="brand-subtitle">@GreetingText</div>
                 </div>
 
-                <button id="btn-notifications" class="header-action-btn" type="button" title="Lock App" @onclick="LockApp">
+                <button id="btn-notifications" class="header-action-btn" type="button" title="@L["Layout_LockApp"]" @onclick="LockApp">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
@@ -55,12 +58,14 @@
         get
         {
             var hour = DateTime.Now.Hour;
-            var salutation = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+            var salutation = hour < 12 ? L["Layout_GoodMorning"].Value : hour < 18 ? L["Layout_GoodAfternoon"].Value : L["Layout_GoodEvening"].Value;
             return string.IsNullOrWhiteSpace(UserDisplayName) ? salutation : $"{salutation}, {UserDisplayName}";
         }
     }
 
-    private static readonly string[] ChromelessRoutes = { "onboarding", "unlock" };
+    private static readonly string[] ChromelessRoutes = { "onboarding", "unlock", "vault-error" };
+
+    private bool _isRegistered;
 
     private bool IsChromeless
     {
@@ -74,25 +79,42 @@
     protected override async Task OnInitializedAsync()
     {
         NavManager.LocationChanged += OnLocationChanged;
+        L.OnLanguageChanged += OnLanguageChanged;
+        AuthService.LockStateChanged += OnLockStateChanged;
 
         try
         {
-            // 1. Initialize SQLite Database & tables
             await DbService.InitializeAsync();
             await DbService.SeedDefaultDataAsync();
 
-            // 2. Ensure ML categorizer is trained on-device in background
+            var settings = await AuthService.GetSettingsAsync();
+            if (!string.IsNullOrWhiteSpace(settings.Language))
+            {
+                L.SetLanguage(settings.Language);
+            }
+
             _ = Task.Run(async () =>
             {
-                try { await Categorizer.EnsureTrainedAsync(); } catch { }
+                try
+                {
+                    await Categorizer.EnsureTrainedAsync();
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning(ex, "Background ML categorizer initialization failed.");
+                }
             });
 
-            // 3. Check registration & lock state
             await CheckAuthRouteAsync();
+        }
+        catch (VaultUnavailableException ex)
+        {
+            Logger.LogError(ex, "Database vault unavailable: {State}.", ex.State);
+            NavManager.NavigateTo("vault-error", replace: true);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[MainLayout] Init error: {ex.Message}");
+            Logger.LogError(ex, "Error initializing MainLayout.");
         }
         finally
         {
@@ -104,6 +126,7 @@
     {
         var relative = NavManager.ToBaseRelativePath(NavManager.Uri).Split('?', '#')[0].Trim('/');
         var isRegistered = await AuthService.IsUserRegisteredAsync();
+        _isRegistered = isRegistered;
 
         if (!isRegistered)
         {
@@ -132,15 +155,41 @@
 
     private void LockApp()
     {
+        // Navigation to /unlock is done by OnLockStateChanged.
         AuthService.LockApp();
-        NavManager.NavigateTo("unlock");
+    }
+
+    private void OnLockStateChanged(object? sender, EventArgs e)
+        => InvokeAsync(RedirectIfLocked);
+
+    // Also runs on every navigation, so Back cannot reach a page while the app is locked.
+    private void RedirectIfLocked()
+    {
+        var relative = NavManager.ToBaseRelativePath(NavManager.Uri);
+        var target = LockNavigationCoordinator.GetRedirect(relative, AuthService.IsAppUnlocked);
+        if (target != null)
+        {
+            NavManager.NavigateTo(target, replace: true);
+        }
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+        => InvokeAsync(() =>
+        {
+            if (_isRegistered)
+            {
+                RedirectIfLocked();
+            }
+            StateHasChanged();
+        });
+
+    private void OnLanguageChanged()
         => InvokeAsync(StateHasChanged);
 
     public void Dispose()
     {
         NavManager.LocationChanged -= OnLocationChanged;
+        L.OnLanguageChanged -= OnLanguageChanged;
+        AuthService.LockStateChanged -= OnLockStateChanged;
     }
 }

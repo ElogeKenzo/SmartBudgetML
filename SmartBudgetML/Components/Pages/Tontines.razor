@@ -1,0 +1,79 @@
+@page "/tontines"
+@using Microsoft.Extensions.Logging
+@inject ITontineService TontineService
+@inject ILocalAuthService AuthService
+@inject NavigationManager NavManager
+@inject IStringLocalizer<AppStrings> L
+@inject ILogger<Tontines> Logger
+
+<PageTitle>@L["Tontines_PageTitle"]</PageTitle>
+
+<div class="settings-container">
+    <div class="screen-header-row">
+        <div>
+            <h1 class="screen-title">@L["Tontines_Title"]</h1>
+            <p class="screen-subtitle">@L["Tontines_Subtitle"]</p>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(StatusMessage))
+    {
+        <div class="card-dark" role="status" style="margin-bottom: 12px; border-left: 3px solid var(--accent-cyan);">
+            <span>@StatusMessage</span>
+        </div>
+    }
+
+    @if (Items.Count == 0)
+    {
+        <div class="settings-section-card" id="card-tontines-empty">
+            <p class="card-footnote">@L["Tontines_Empty"]</p>
+        </div>
+    }
+    else
+    {
+        <div class="transaction-list" id="list-tontines">
+            @foreach (var t in Items)
+            {
+                <a class="transaction-card" id="@($"tontine-{t.Id}")" href="@($"tontines/{t.Id}")">
+                    <div class="transaction-meta">
+                        <span class="transaction-desc">🤝 @t.Name</span>
+                        <span class="transaction-cat-name">
+                            @L["Tontines_ListItemMeta", FrequencyLabel(t.Frequency), t.TotalMembers, UiFormat.Money(t.ContributionAmount, Currency, 0)]
+                        </span>
+                    </div>
+                    <span class="status-badge-live">@(t.IsActive ? L["Tontines_Active"] : L["Tontines_Finished"])</span>
+                </a>
+            }
+        </div>
+    }
+
+    <a id="btn-new-tontine" class="btn-primary-gradient" href="tontines/new" style="margin-top: 16px; text-align: center; display: block;">
+        @L["Tontines_CreateBtn"]
+    </a>
+</div>
+
+@code {
+    private string Currency = "FCFA";
+    private IReadOnlyList<Tontine> Items = Array.Empty<Tontine>();
+    private string? StatusMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var profile = await AuthService.GetUserProfileAsync();
+            if (profile != null && !string.IsNullOrWhiteSpace(profile.CurrencySymbol))
+            {
+                Currency = profile.CurrencySymbol;
+            }
+            Items = await TontineService.GetTontinesAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Loading tontines failed.");
+            StatusMessage = L["Tontines_LoadFailed"].Value;
+        }
+    }
+
+    private string FrequencyLabel(TontineFrequency frequency) => L[$"Tontines_Frequency_{frequency}"].Value;
+}

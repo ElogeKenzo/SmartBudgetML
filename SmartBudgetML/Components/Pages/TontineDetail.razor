@@ -1,0 +1,338 @@
+@page "/tontines/{TontineId:int}"
+@using Microsoft.Extensions.Logging
+@inject ITontineService TontineService
+@inject ILocalAuthService AuthService
+@inject NavigationManager NavManager
+@inject IStringLocalizer<AppStrings> L
+@inject ILogger<TontineDetail> Logger
+
+<PageTitle>@L["TontineDetail_PageTitle"]</PageTitle>
+
+<div class="settings-container">
+    <div class="screen-header-row">
+        <div>
+            <h1 class="screen-title">@(Details?.Tontine.Name ?? L["Tontines_Title"])</h1>
+            @if (Details != null)
+            {
+                <p class="screen-subtitle">@L["Tontines_ListItemMeta", L[$"Tontines_Frequency_{Details.Tontine.Frequency}"], Details.Tontine.TotalMembers, UiFormat.Money(Details.Tontine.ContributionAmount, Currency, 0)]</p>
+            }
+        </div>
+        <button id="btn-tontine-back" class="header-action-btn" type="button" title="@L["Settings_Back"]" @onclick="GoBack">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </button>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(StatusMessage))
+    {
+        <div class="card-dark" role="status" style="margin-bottom: 12px; border-left: 3px solid var(--accent-emerald);">
+            <span>@StatusMessage</span>
+        </div>
+    }
+
+    @if (Loaded && Details == null)
+    {
+        <div class="settings-section-card"><p class="card-footnote">@L["TontineDetail_NotFound"]</p></div>
+    }
+    else if (Details != null)
+    {
+        <div class="analytics-stat-grid">
+            <div class="analytics-stat-tile primary" id="tile-tontine-pot">
+                <span class="analytics-stat-label">@L["Tontines_PotLabel"]</span>
+                <span class="analytics-stat-value">@UiFormat.Money(Details.Summary.PotAmount, Currency, 0)</span>
+            </div>
+            <div class="analytics-stat-tile cyan" id="tile-tontine-net">
+                <span class="analytics-stat-label">@L["Tontines_NetBalanceLabel"]</span>
+                <span class="analytics-stat-value">@UiFormat.Money(Details.Summary.NetUserBalance, Currency, 0)</span>
+            </div>
+            <div class="analytics-stat-tile" id="tile-tontine-mine">
+                <span class="analytics-stat-label">@L["TontineDetail_MyContributions"]</span>
+                <span class="analytics-stat-value">@UiFormat.Money(Details.Summary.TotalContributedByUser, Currency, 0)</span>
+            </div>
+            <div class="analytics-stat-tile" id="tile-tontine-received">
+                <span class="analytics-stat-label">@L["TontineDetail_Received"]</span>
+                <span class="analytics-stat-value">@UiFormat.Money(Details.Summary.TotalReceivedByUser, Currency, 0)</span>
+            </div>
+        </div>
+
+        <div class="settings-section-card" id="card-current-round">
+            @if (Details.CurrentRound is { } round)
+            {
+                <span class="settings-section-title">@L["TontineDetail_CurrentRound", round.RoundNumber, Details.Rounds.Count, UiFormat.Date(round.ExpectedDate)]</span>
+                @if (Details.CurrentBeneficiary != null)
+                {
+                    <p class="card-footnote">
+                        @L["Tontines_CurrentBeneficiary"] <strong style="color:var(--accent-cyan)">@MemberName(Details.CurrentBeneficiary)</strong>
+                    </p>
+                }
+
+                @if (Details.CurrentUser is { IsWithdrawn: false } me && !Details.HasUserPaidCurrentRound)
+                {
+                    <button id="btn-i-contributed" type="button" class="retrain-action-btn" disabled="@IsBusy"
+                            @onclick="() => ContributeAsync(round.RoundNumber, me.Id)">
+                        @L["Tontines_ContributeBtn", UiFormat.Money(Details.Tontine.ContributionAmount, Currency, 0)]
+                    </button>
+                }
+
+                @if (Details.IsUserCurrentBeneficiary)
+                {
+                    <button id="btn-i-received-pot" type="button" class="btn-primary-gradient" disabled="@IsBusy"
+                            @onclick="() => PayoutAsync(round.RoundNumber)">
+                        @L["Tontines_ReceivedPotBtn", UiFormat.Money(round.ExpectedAmount, Currency, 0)]
+                    </button>
+                }
+                else if (Details.CurrentBeneficiary != null)
+                {
+                    <button id="btn-pot-paid" type="button" class="btn-secondary-action" disabled="@IsBusy"
+                            @onclick="() => PayoutAsync(round.RoundNumber)">
+                        @L["TontineDetail_MarkPotPaid", MemberName(Details.CurrentBeneficiary)]
+                    </button>
+                }
+
+                <span class="profile-card-title" style="margin-top: 12px;">@L["TontineDetail_WhoPaid"]</span>
+                <div class="transaction-list" id="list-round-payments">
+                    @foreach (var status in Details.CurrentRoundStatuses)
+                    {
+                        <div class="transaction-card">
+                            <div class="transaction-meta">
+                                <span class="transaction-desc">@MemberName(status.Member)</span>
+                                <span class="transaction-cat-name">@(status.HasPaidCurrentRound ? L["TontineDetail_Paid"] : L["TontineDetail_NotPaid"])</span>
+                            </div>
+                            @if (!status.HasPaidCurrentRound && !status.Member.IsCurrentUser)
+                            {
+                                <button type="button" class="btn-ghost" disabled="@IsBusy"
+                                        @onclick="() => ContributeAsync(round.RoundNumber, status.Member.Id)">
+                                    @L["TontineDetail_MarkPaid"]
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <span class="settings-section-title">@L["TontineDetail_Finished"]</span>
+            }
+        </div>
+
+        <div class="settings-section-card" id="card-late">
+            <span class="settings-section-title">@L["TontineDetail_Late"]</span>
+            @if (Details.LateContributions.Count == 0)
+            {
+                <p class="card-footnote">@L["TontineDetail_NoLate"]</p>
+            }
+            else
+            {
+                @foreach (var late in Details.LateContributions)
+                {
+                    <p class="card-footnote">@L["TontineDetail_LateItem", MemberName(late.Member), late.RoundNumber, UiFormat.Date(late.DueDate)]</p>
+                }
+            }
+        </div>
+
+        <div class="settings-section-card" id="card-members">
+            <span class="settings-section-title">@L["TontineDetail_Members"]</span>
+            @foreach (var member in Details.Members)
+            {
+                <div class="transaction-card">
+                    <div class="transaction-meta">
+                        <span class="transaction-desc">@(member.TurnOrder). @MemberName(member)</span>
+                        @if (member.IsWithdrawn)
+                        {
+                            <span class="transaction-cat-name">@L["TontineDetail_Withdrawn"]</span>
+                        }
+                    </div>
+                    @if (!member.IsWithdrawn && Details.CurrentRound != null)
+                    {
+                        <button type="button" class="btn-ghost" disabled="@IsBusy" @onclick="() => WithdrawAsync(member)">
+                            @(PendingWithdrawId == member.Id ? L["TontineDetail_WithdrawConfirm", MemberName(member)] : L["TontineDetail_Withdraw"])
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="settings-section-card" id="card-edit-tontine">
+            @if (IsEditing)
+            {
+                <label class="form-label-dark" for="input-edit-name">@L["TontineNew_Name"]</label>
+                <input id="input-edit-name" class="form-input-dark" maxlength="120" @bind="EditName" disabled="@IsBusy" />
+                <label class="form-label-dark" for="input-edit-amount" style="margin-top: 12px;">@L["TontineNew_Amount"] (@Currency)</label>
+                <input id="input-edit-amount" type="number" inputmode="numeric" min="1" step="1" class="form-input-dark"
+                       @bind="EditAmount" disabled="@IsBusy" />
+                <div class="btn-row-2" style="margin-top: 12px;">
+                    <button type="button" class="btn-secondary-action" disabled="@IsBusy" @onclick="CancelEdit">@L["TontineDetail_Cancel"]</button>
+                    <button id="btn-save-tontine" type="button" class="btn-primary-gradient" disabled="@IsBusy" @onclick="SaveEditAsync">@L["TontineDetail_SaveChanges"]</button>
+                </div>
+            }
+            else
+            {
+                <div class="btn-row-2">
+                    <button id="btn-edit-tontine" type="button" class="btn-secondary-action" disabled="@IsBusy" @onclick="StartEdit">@L["TontineDetail_Edit"]</button>
+                    <button id="btn-delete-tontine" type="button" class="btn-logout" disabled="@IsBusy" @onclick="DeleteAsync">
+                        @(DeleteArmed ? L["TontineDetail_DeleteConfirm"] : L["TontineDetail_Delete"])
+                    </button>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int TontineId { get; set; }
+
+    private TontineDetails? Details;
+    private bool Loaded;
+    private bool IsBusy;
+    private string Currency = "FCFA";
+    private string? StatusMessage;
+    private int? PendingWithdrawId;
+    private bool DeleteArmed;
+    private bool IsEditing;
+    private string EditName = string.Empty;
+    private decimal EditAmount;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            var profile = await AuthService.GetUserProfileAsync();
+            if (profile != null && !string.IsNullOrWhiteSpace(profile.CurrencySymbol))
+            {
+                Currency = profile.CurrencySymbol;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Loading the profile for the tontine screen failed.");
+        }
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        try
+        {
+            Details = await TontineService.GetDetailsAsync(TontineId, DateTime.Today);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Loading tontine {TontineId} failed.", TontineId);
+            StatusMessage = L["Tontines_LoadFailed"].Value;
+        }
+        Loaded = true;
+    }
+
+    private string MemberName(TontineMember member) => member.IsCurrentUser ? L["Tontines_Me"].Value : member.Name;
+
+    private async Task ContributeAsync(int roundNumber, int memberId)
+    {
+        await RunAsync(async () =>
+        {
+            var outcome = await TontineService.RecordContributionAsync(TontineId, roundNumber, memberId, DateTime.Today);
+            StatusMessage = outcome == TontineRecordOutcome.Recorded
+                ? L["TontineDetail_ContributionSaved", roundNumber].Value
+                : L["TontineDetail_AlreadySaved"].Value;
+        });
+    }
+
+    private async Task PayoutAsync(int roundNumber)
+    {
+        await RunAsync(async () =>
+        {
+            var outcome = await TontineService.RecordPayoutAsync(TontineId, roundNumber, DateTime.Today);
+            StatusMessage = outcome == TontineRecordOutcome.Recorded
+                ? L["TontineDetail_PayoutSaved", roundNumber].Value
+                : L["TontineDetail_AlreadySaved"].Value;
+        });
+    }
+
+    // Two taps: the first arms the button, the second confirms.
+    private async Task WithdrawAsync(TontineMember member)
+    {
+        if (PendingWithdrawId != member.Id)
+        {
+            PendingWithdrawId = member.Id;
+            return;
+        }
+
+        PendingWithdrawId = null;
+        await RunAsync(() => TontineService.WithdrawMemberAsync(TontineId, member.Id));
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (!DeleteArmed)
+        {
+            DeleteArmed = true;
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            await TontineService.DeleteAsync(TontineId);
+            NavManager.NavigateTo("tontines");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Deleting tontine {TontineId} failed.", TontineId);
+            StatusMessage = L["TontineDetail_ActionFailed"].Value;
+        }
+        finally
+        {
+            IsBusy = false;
+            DeleteArmed = false;
+        }
+    }
+
+    private void StartEdit()
+    {
+        if (Details == null) return;
+        EditName = Details.Tontine.Name;
+        EditAmount = Details.Tontine.ContributionAmount;
+        IsEditing = true;
+    }
+
+    private void CancelEdit() => IsEditing = false;
+
+    private async Task SaveEditAsync()
+    {
+        await RunAsync(async () =>
+        {
+            try
+            {
+                await TontineService.UpdateAsync(TontineId, EditName, EditAmount);
+                IsEditing = false;
+                StatusMessage = L["TontineDetail_Updated"].Value;
+            }
+            catch (TontineValidationException ex)
+            {
+                StatusMessage = string.Join(" ", ex.Errors.Select(e => L[$"TontineError_{e}"].Value));
+            }
+        });
+    }
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        IsBusy = true;
+        try
+        {
+            await action();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Tontine action failed for tontine {TontineId}.", TontineId);
+            StatusMessage = L["TontineDetail_ActionFailed"].Value;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+        await ReloadAsync();
+    }
+
+    private void GoBack() => NavManager.NavigateTo("tontines");
+}

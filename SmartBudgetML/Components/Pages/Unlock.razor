@@ -1,46 +1,81 @@
 @page "/unlock"
+@using Microsoft.Extensions.Logging
 @inject NavigationManager NavManager
 @inject ILocalAuthService AuthService
+@inject IStringLocalizer<AppStrings> L
+@inject ILogger<Unlock> Logger
 
-<PageTitle>Unlock · SmartBudget ML</PageTitle>
+<PageTitle>@L["Unlock_PageTitle"]</PageTitle>
 
-<LockScreen Subtitle="Enter your 4-digit PIN to access your vault"
+<LockScreen Subtitle="@L["Unlock_Subtitle", PinLength].Value"
+            PinLength="@PinLength"
+            IsLockedOut="@IsLockedOut"
             ErrorMessage="@ErrorMessage"
-            ShowBiometric="true"
+            IsVerifying="@IsVerifying"
+            VerifyingText="@L["Unlock_Verifying"].Value"
+            ShowBiometric="@ShowBiometric"
             OnPinComplete="HandlePinComplete"
             OnBiometricRequested="HandleBiometricUnlock" />
 
 @code {
     private string? ErrorMessage;
+    private int PinLength = 6;
+    private bool IsLockedOut = false;
+    private bool IsVerifying = false;
+    private bool ShowBiometric = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var settings = await AuthService.GetSettingsAsync();
+            PinLength = settings.PinLength == 4 ? 4 : 6;
+            ShowBiometric = settings.IsBiometricEnabled && await AuthService.IsBiometricAvailableAsync();
+
+            var remaining = await AuthService.GetRemainingLockoutTimeAsync();
+            if (remaining.HasValue && remaining.Value > TimeSpan.Zero)
+            {
+                IsLockedOut = true;
+                ErrorMessage = L["Unlock_LockedRetryIn", Math.Ceiling(remaining.Value.TotalSeconds)].Value;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error initializing Unlock screen.");
+        }
+    }
 
     private async Task HandlePinComplete(string pin)
     {
         ErrorMessage = null;
+        IsVerifying = true;
         try
         {
-            var isValid = await AuthService.VerifyPinAsync(pin);
-            if (isValid)
+            // PBKDF2 runs off the UI thread; yield once so "Verifying…" renders first.
+            await Task.Yield();
+            var result = await AuthService.VerifyPinWithStatusAsync(pin);
+            if (result.IsValid)
             {
+                IsLockedOut = false;
                 AuthService.MarkAppUnlocked();
                 NavManager.NavigateTo("");
             }
             else
             {
-                ErrorMessage = "Incorrect PIN. Please try again.";
+                IsLockedOut = result.IsLockedOut;
+                ErrorMessage = result.IsLockedOut
+                    ? L["Unlock_LockedRetryIn", Math.Ceiling(result.RemainingLockout.TotalSeconds)].Value
+                    : L["Unlock_IncorrectPin"].Value;
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // For initial preview fallback if no PIN was registered
-            if (pin == "1234")
-            {
-                AuthService.MarkAppUnlocked();
-                NavManager.NavigateTo("");
-            }
-            else
-            {
-                ErrorMessage = "Incorrect PIN.";
-            }
+            Logger.LogError(ex, "Error verifying PIN during unlock.");
+            ErrorMessage = L["Unlock_IncorrectPin"].Value;
+        }
+        finally
+        {
+            IsVerifying = false;
         }
     }
 
@@ -48,7 +83,7 @@
     {
         try
         {
-            var authenticated = await AuthService.AuthenticateWithBiometricsAsync("Unlock SmartBudget ML");
+            var authenticated = await AuthService.AuthenticateWithBiometricsAsync(L["Shared_UseBiometrics"].Value);
             if (authenticated)
             {
                 AuthService.MarkAppUnlocked();
@@ -56,12 +91,13 @@
             }
             else
             {
-                ErrorMessage = "Biometric authentication failed.";
+                ErrorMessage = L["Unlock_BiometricFailed"].Value;
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Handled
+            Logger.LogWarning(ex, "Biometric unlock failed with exception.");
+            ErrorMessage = L["Unlock_BiometricFailed"].Value;
         }
     }
 }

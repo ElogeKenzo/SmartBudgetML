@@ -11,41 +11,45 @@ public class AppSettings : IEntity
     [PrimaryKey, AutoIncrement]
     public int Id { get; set; }
 
-    /// <summary>
-    /// Whether FaceID / TouchID biometric unlock is active.
-    /// Configurable toggle in App Settings per system prompt.
-    /// </summary>
     public bool IsBiometricEnabled { get; set; } = false;
 
-    /// <summary>
-    /// Whether PIN unlock is required on app launch.
-    /// </summary>
     public bool IsPinAuthEnabled { get; set; } = true;
 
-    /// <summary>
-    /// PBKDF2/SHA256 salted hash of the user's PIN.
-    /// </summary>
     [MaxLength(256)]
     public string? PinHash { get; set; }
 
-    /// <summary>
-    /// Cryptographic salt used for PIN hashing.
-    /// </summary>
     [MaxLength(128)]
     public string? PinSalt { get; set; }
 
-    /// <summary>
-    /// UI Theme preference (Dark theme default: Deep Indigo / Cyan).
-    /// </summary>
+    public int PinHashVersion { get; set; } = 1;
+
+    public int FailedPinAttempts { get; set; } = 0;
+
+    public DateTime? LockoutUntilUtc { get; set; }
+
+    public DateTime? LastFailedAttemptUtc { get; set; }
+
+    public int PinLength { get; set; } = 6;
+
+    public bool IsScreenProtectionEnabled { get; set; } = true;
+
     public bool DarkMode { get; set; } = true;
 
     [MaxLength(10)]
-    public string CurrencyCode { get; set; } = "USD";
+    public string CurrencyCode { get; set; } = "XAF";
 
-    /// <summary>
-    /// Seconds of inactivity before locking the app. 0 = immediately on background.
-    /// </summary>
+    [MaxLength(10)]
+    public string Language { get; set; } = "fr";
+
     public int AutoLockTimeoutSeconds { get; set; } = 300;
+
+    public float MlConfidenceThreshold { get; set; } = 0.70f;
+
+    public bool AutoCategorizeEnabled { get; set; } = true;
+
+    public bool OverBudgetAlertsEnabled { get; set; } = true;
+
+    public bool DailyRemindersEnabled { get; set; } = false;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

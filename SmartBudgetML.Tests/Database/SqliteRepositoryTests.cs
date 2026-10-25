@@ -4,7 +4,7 @@ using Xunit;
 
 namespace SmartBudgetML.Tests.Database;
 
-public class SqliteRepositoryTests : IDisposable
+public class SqliteRepositoryTests : IAsyncLifetime
 {
     private readonly string _testDbPath;
     private readonly DatabaseService _databaseService;
@@ -16,19 +16,25 @@ public class SqliteRepositoryTests : IDisposable
         _databaseService = new DatabaseService(_testDbPath);
     }
 
-    public void Dispose()
+    public Task InitializeAsync() => Task.CompletedTask;
+
+    public async Task DisposeAsync()
     {
-        try
+        // Close this test's pooled connection first, otherwise Windows keeps the file locked.
+        var connection = await _databaseService.GetConnectionAsync();
+        await connection.CloseAsync();
+
+        // Teardown must really remove the database: a failure here means a connection leaked.
+        foreach (var suffix in new[] { "", "-wal", "-shm", "-journal" })
         {
-            if (File.Exists(_testDbPath))
+            var target = _testDbPath + suffix;
+            if (File.Exists(target))
             {
-                File.Delete(_testDbPath);
+                File.Delete(target);
             }
         }
-        catch
-        {
-            // Ignore file lock cleanup on test teardown
-        }
+
+        Assert.False(File.Exists(_testDbPath), $"Test database was not deleted: {_testDbPath}");
     }
 
     [Fact]
@@ -41,13 +47,15 @@ public class SqliteRepositoryTests : IDisposable
 
         // Assert
         Assert.NotEmpty(categories);
-        Assert.True(categories.Count >= 10, "Should have seeded default categories.");
-        Assert.Contains(categories, c => c.Name == "Food & Dining");
-        Assert.Contains(categories, c => c.Name == "Transportation");
-        Assert.Contains(categories, c => c.Name == "Salary / Income" && c.IsIncome);
+        Assert.True(categories.Count >= 17, "Should have seeded 17 Cameroonian default categories.");
+        Assert.Contains(categories, c => c.Key == "food_market" && c.Name == "Alimentation / Marché");
+        Assert.Contains(categories, c => c.Key == "transport" && c.Name == "Transport (Taxi / Moto / Car)");
+        Assert.Contains(categories, c => c.Key == "salary" && c.IsIncome);
 
         Assert.Single(settings);
         Assert.True(settings[0].DarkMode, "Default theme should be dark mode.");
+        Assert.Equal("XAF", settings[0].CurrencyCode);
+        Assert.Equal("fr", settings[0].Language);
     }
 
     [Fact]

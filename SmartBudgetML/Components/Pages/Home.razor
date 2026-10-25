@@ -1,28 +1,50 @@
 @page "/"
+@inject IDatabaseService DbService
+@inject ILocalAuthService AuthService
+@inject IBudgetPlanService BudgetPlan
+@inject ITontineService TontineService
+@inject IStringLocalizer<AppStrings> L
+@inject NavigationManager NavManager
 
-<PageTitle>Dashboard · SmartBudget ML</PageTitle>
-<h1 class="visually-hidden">Dashboard</h1>
+<PageTitle>@L["Home_PageTitle"]</PageTitle>
+<h1 class="visually-hidden">@L["Nav_Home"]</h1>
+
+@* ---------- "To pay" banner, computed when the screen opens (no notification permission) ---------- *@
+@if (TontineOverview.Dues.Count > 0)
+{
+    <a class="card-dark due-banner" id="banner-tontine-due" role="status" href="tontines">
+        <strong>@L["Home_DueBannerTitle"]</strong>
+        @foreach (var due in TontineOverview.Dues)
+        {
+            <span class="due-banner-item @(due.IsOverdue ? "late" : "")">
+                @(due.IsOverdue
+                    ? L["Home_DueItemLate", due.TontineName, due.RoundNumber, UiFormat.Money(due.Amount, Currency, 0), UiFormat.Date(due.DueDate)]
+                    : L["Home_DueItem", due.TontineName, due.RoundNumber, UiFormat.Money(due.Amount, Currency, 0), UiFormat.Date(due.DueDate)])
+            </span>
+        }
+    </a>
+}
 
 @* ---------- Hero: remaining budget ---------- *@
 <section class="card-hero-gradient" id="card-remaining-budget">
     <div class="hero-top-row">
-        <span class="hero-label">Remaining this month</span>
+        <span class="hero-label">@(Overview?.PeriodMode == BudgetPeriodMode.Weekly ? L["Home_RemainingThisWeek"] : L["Home_RemainingThisMonth"])</span>
         <span class="hero-change-pill @(Forecast.ProjectedSurplusOrDeficit >= 0 ? "positive" : "negative")">
-            @(Forecast.ProjectedSurplusOrDeficit >= 0 ? "▲ On track" : "▼ Over pace")
+            @(Forecast.ProjectedSurplusOrDeficit >= 0 ? L["Home_OnTrack"] : L["Home_OverPace"])
         </span>
     </div>
     <div class="hero-amount">@UiFormat.Money(Remaining, Currency)</div>
     <div class="hero-meta-row">
-        <span>Spent <strong>@UiFormat.Money(Forecast.CurrentTotalSpend, Currency)</strong></span>
-        <span>of @UiFormat.Money(Forecast.MonthlyBudget, Currency, 0)</span>
+        <span>@L["Home_Spent"] <strong>@UiFormat.Money(Forecast.CurrentTotalSpend, Currency)</strong></span>
+        <span>@L["Home_Of"] @UiFormat.Money(Forecast.MonthlyBudget, Currency, 0)</span>
     </div>
 
     <div class="budget-progress-track" role="progressbar" aria-valuenow="@((int)SpentPercent)" aria-valuemin="0" aria-valuemax="100">
         <div class="budget-progress-fill @ProgressClass" style="width:@UiFormat.Num(Math.Min(SpentPercent, 100))%"></div>
     </div>
     <div class="hero-meta-row muted">
-        <span>@Forecast.DaysRemaining days left</span>
-        <span>Safe daily limit <strong class="cyan">@UiFormat.Money(Forecast.RecommendedDailyLimit, Currency)</strong></span>
+        <span>@L["Home_DaysLeft", Forecast.DaysRemaining]</span>
+        <span>@L["Home_SafeDailyLimit"] <strong class="cyan">@UiFormat.Money(Forecast.RecommendedDailyLimit, Currency)</strong></span>
     </div>
 </section>
 
@@ -32,36 +54,84 @@
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3l1.9 5.8L20 10l-6.1 1.2L12 17l-1.9-5.8L4 10l6.1-1.2z"></path></svg>
     </div>
     <div class="ml-insight-text">
-        <strong>ML forecast:</strong> you'll spend about
-        <strong>@UiFormat.Money(Forecast.ProjectedEndMonthSpend, Currency, 0)</strong> by month-end
-        (@UiFormat.Percent(Forecast.ProjectedBudgetUtilizationPercentage) of budget).
+        <strong>@L["Home_MlForecastLabel"]</strong>
+        @L[Overview?.PeriodMode == BudgetPeriodMode.Weekly ? "Home_MlForecastBodyWeek" : "Home_MlForecastBody", UiFormat.Money(Forecast.ProjectedEndMonthSpend, Currency, 0), UiFormat.Percent(Forecast.ProjectedBudgetUtilizationPercentage)]
+        <br /><small>@L[$"Budget_Reliability_{Forecast.Reliability}"]</small>
     </div>
 </section>
+
+@* ---------- Irregular / mixed income: envelope ---------- *@
+@if (Overview?.Plan is { } plan)
+{
+    <section class="settings-section-card" id="card-envelope">
+        @if (Overview.CurrentWeek is { } week)
+        {
+            <span class="settings-section-title">@L["Budget_EnvelopeTitle"]</span>
+            <p class="card-footnote">@L["Budget_EnvelopeBody", UiFormat.Money(week.Spent, Currency, 0), UiFormat.Money(week.Allocated, Currency, 0)]</p>
+            <p class="card-footnote"><strong>@L["Budget_EnvelopeRemaining", UiFormat.Money(week.Remaining, Currency, 0)]</strong></p>
+        }
+        <p class="card-footnote">@L["Budget_RollingIncome", UiFormat.Money(plan.RollingMonthlyIncome, Currency, 0)]</p>
+        <p class="card-footnote">@L["Budget_AfterVital", UiFormat.Money(plan.DiscretionaryPool, Currency, 0)]</p>
+        @if (!Overview.HasIncomeHistory)
+        {
+            <p class="card-footnote">@L["Budget_NoIncomeData"]</p>
+        }
+    </section>
+}
+
+@if (Overview?.Solidarity is { } solidarity)
+{
+    <section class="settings-section-card" id="card-solidarity">
+        <p class="card-footnote">@L["Budget_Solidarity", UiFormat.Money(solidarity.TotalSolidaritySpend, Currency, 0), UiFormat.Money(solidarity.MonthlySolidarityTarget, Currency, 0)]</p>
+    </section>
+}
 
 @* ---------- Quick stats ---------- *@
 <section class="stat-grid">
     <div class="stat-tile" id="stat-daily-average">
-        <span class="stat-label">Daily average</span>
+        <span class="stat-label">@L["Home_DailyAverage"]</span>
         <span class="stat-value">@UiFormat.Money(Forecast.AverageDailySpend, Currency)</span>
     </div>
     <div class="stat-tile" id="stat-burn-rate">
-        <span class="stat-label">Burn-rate trend</span>
-        <span class="stat-value">@UiFormat.Money(Forecast.DailyBurnRateSlope, Currency)<small>/day</small></span>
+        <span class="stat-label">@L["Home_BurnRateTrend"]</span>
+        <span class="stat-value">@UiFormat.Money(Forecast.DailyBurnRateSlope, Currency)<small>@L["Home_PerDay"]</small></span>
     </div>
 </section>
+
+@* ---------- Tontines ---------- *@
+<a class="settings-action-row" id="card-home-tontines" href="tontines">
+    <span>
+        🤝 <strong>@L["Home_TontinesCard"]</strong><br />
+        <small>
+            @if (TontineOverview.ActiveCount == 0)
+            {
+                @L["Home_TontinesNone"]
+            }
+            else
+            {
+                @L["Home_TontinesCount", TontineOverview.ActiveCount]
+                @if (TontineOverview.NextDueDate is { } next)
+                {
+                    <text> · </text>@L["Home_TontinesNextDue", UiFormat.Date(next)]
+                }
+            }
+        </small>
+    </span>
+    <span aria-hidden="true">›</span>
+</a>
 
 @* ---------- Recent transactions ---------- *@
 <section>
     <div class="section-header">
-        <h2 class="section-title">Recent transactions</h2>
-        <a class="section-link" href="analytics" id="link-see-all">See all</a>
+        <h2 class="section-title">@L["Home_RecentTransactions"]</h2>
+        <a class="section-link" href="analytics" id="link-see-all">@L["Home_SeeAll"]</a>
     </div>
 
     @if (RecentTransactions.Count == 0)
     {
         <div class="empty-state">
             <span class="empty-emoji">🧾</span>
-            <p>No expenses yet. Tap <strong>+</strong> to add your first one.</p>
+            <p>@L["Home_NoExpensesYet"]</p>
         </div>
     }
     else
@@ -75,14 +145,11 @@
     }
 </section>
 
-@inject IDatabaseService DbService
-@inject ILocalAuthService AuthService
-@inject IBudgetForecastingService Forecaster
-@inject NavigationManager NavManager
-
 @code {
-    private string Currency = "$";
+    private string Currency = "FCFA";
     private BudgetForecastResult Forecast = new();
+    private BudgetOverview? Overview;
+    private TontineOverview TontineOverview = new(0, null, Array.Empty<TontineDue>());
     private List<Expense> RecentTransactions = new();
 
     private decimal Remaining => Forecast.MonthlyBudget - Forecast.CurrentTotalSpend;
@@ -108,14 +175,15 @@
         try
         {
             var profile = await AuthService.GetUserProfileAsync();
-            if (profile != null)
+            if (profile != null && !string.IsNullOrWhiteSpace(profile.CurrencySymbol))
             {
                 Currency = profile.CurrencySymbol;
             }
 
-            decimal monthlyBudget = (profile != null && profile.MonthlyIncome > 0)
-                ? Math.Max(100m, profile.MonthlyIncome - profile.MonthlySavingsGoal)
-                : 3000m;
+            var today = DateTime.Today;
+            Overview = await BudgetPlan.GetOverviewAsync(today, Currency);
+            Forecast = Overview.Forecast;
+            TontineOverview = await TontineService.GetOverviewAsync(today);
 
             var allExpenses = await DbService.Expenses.GetAllAsync();
             var allCategories = await DbService.Categories.GetAllAsync();
@@ -125,21 +193,12 @@
             {
                 if (catDict.TryGetValue(exp.CategoryId, out var cat))
                 {
-                    exp.CategoryName = cat.Name;
+                    exp.CategoryName = CategoryCatalog.GetDisplayName(cat, L.CurrentLanguage);
                     exp.CategoryColor = cat.ColorHex;
                     exp.CategoryIcon = cat.Icon;
                 }
             }
 
-            var today = DateTime.Today;
-            var monthExpenses = allExpenses
-                .Where(e => e.Date.Month == today.Month && e.Date.Year == today.Year)
-                .ToList();
-
-            // Run on-device Linear Regression forecasting
-            Forecast = Forecaster.ForecastMonthEnd(monthExpenses, monthlyBudget, today);
-
-            // Latest 5 transactions
             RecentTransactions = allExpenses
                 .OrderByDescending(e => e.Date)
                 .ThenByDescending(e => e.Id)

@@ -1,16 +1,16 @@
 @page "/onboarding"
 @inject NavigationManager NavManager
+@inject ILocalAuthService AuthService
+@inject IStringLocalizer<AppStrings> L
 
-<PageTitle>Create your account · SmartBudget ML</PageTitle>
+<PageTitle>@L["Onboarding_PageTitle"]</PageTitle>
 
 <section class="onboarding">
     <div class="onboarding-hero">
         <div class="brand-title brand-title-lg">SmartBudget <span class="brand-ml-tag">ML</span></div>
-        <h1 class="page-title">@(_step == 1 ? "Create your account" : "Secure your data")</h1>
+        <h1 class="page-title">@(_step == 1 ? L["Onboarding_TitleStep1"] : L["Onboarding_TitleStep2"])</h1>
         <p class="page-subtitle">
-            @(_step == 1
-                ? "Your profile never leaves this device. No cloud, no tracking."
-                : "Set a local PIN. Biometrics can replace it on supported devices.")
+            @(_step == 1 ? L["Onboarding_SubtitleStep1"] : L["Onboarding_SubtitleStep2"])
         </p>
 
         <div class="stepper" aria-label="Onboarding progress">
@@ -24,20 +24,20 @@
     {
         <div class="card-dark form-card">
             <div class="form-group-dark">
-                <label class="form-label-dark" for="input-fullname">Full name</label>
-                <input id="input-fullname" class="form-input-dark" placeholder="Enter your full name"
+                <label class="form-label-dark" for="input-fullname">@L["Onboarding_FullName"]</label>
+                <input id="input-fullname" class="form-input-dark" placeholder="@L["Onboarding_FullNamePlaceholder"]"
                        @bind="_model.FullName" @bind:event="oninput" autocomplete="name" />
             </div>
 
             <div class="form-group-dark">
-                <label class="form-label-dark" for="input-email">Email <span class="optional">(optional)</span></label>
-                <input id="input-email" type="email" class="form-input-dark" placeholder="you@example.com"
+                <label class="form-label-dark" for="input-email">@L["Onboarding_EmailOptional"]</label>
+                <input id="input-email" type="email" class="form-input-dark" placeholder="jean.mbarga@exemple.cm"
                        @bind="_model.Email" autocomplete="email" />
             </div>
 
             <div class="form-row">
                 <div class="form-group-dark currency-field">
-                    <label class="form-label-dark" for="select-currency">Currency</label>
+                    <label class="form-label-dark" for="select-currency">@L["Profile_Currency"]</label>
                     <select id="select-currency" class="form-input-dark" @bind="_model.CurrencySymbol">
                         @foreach (var c in Currencies)
                         {
@@ -46,16 +46,16 @@
                     </select>
                 </div>
                 <div class="form-group-dark flex-1">
-                    <label class="form-label-dark" for="input-income">Monthly income</label>
-                    <input id="input-income" type="number" inputmode="decimal" min="0" step="50" class="form-input-dark"
-                           placeholder="3500" @bind="_model.MonthlyIncome" />
+                    <label class="form-label-dark" for="input-income">@L["Profile_MonthlyIncome"]</label>
+                    <input id="input-income" type="number" inputmode="decimal" min="0" step="1000" class="form-input-dark"
+                           placeholder="150000" @bind="_model.MonthlyIncome" />
                 </div>
             </div>
 
             <div class="form-group-dark">
-                <label class="form-label-dark" for="input-savings">Monthly savings goal</label>
-                <input id="input-savings" type="number" inputmode="decimal" min="0" step="50" class="form-input-dark"
-                       placeholder="500" @bind="_model.MonthlySavingsGoal" />
+                <label class="form-label-dark" for="input-savings">@L["Profile_SavingsGoal"]</label>
+                <input id="input-savings" type="number" inputmode="decimal" min="0" step="1000" class="form-input-dark"
+                       placeholder="25000" @bind="_model.MonthlySavingsGoal" />
             </div>
 
             @if (_error is not null)
@@ -64,7 +64,7 @@
             }
 
             <button id="btn-onboarding-next" type="button" class="btn-primary-gradient" @onclick="GoToSecurity">
-                Continue
+                @L["Onboarding_Continue"]
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"></path></svg>
             </button>
         </div>
@@ -73,24 +73,27 @@
     {
         <div class="card-dark form-card">
             <div class="form-group-dark">
-                <label class="form-label-dark" for="input-pin">4-digit PIN</label>
-                <input id="input-pin" type="password" inputmode="numeric" maxlength="4" class="form-input-dark pin-input"
-                       placeholder="••••" @bind="_model.Pin" @bind:event="oninput" autocomplete="new-password" />
+                <label class="form-label-dark" for="input-pin">@L["Onboarding_PinLabel"]</label>
+                <input id="input-pin" type="password" inputmode="numeric" maxlength="6" class="form-input-dark pin-input"
+                       placeholder="••••••" @bind="_model.Pin" @bind:event="oninput" autocomplete="new-password" />
             </div>
 
             <div class="form-group-dark">
-                <label class="form-label-dark" for="input-pin-confirm">Confirm PIN</label>
-                <input id="input-pin-confirm" type="password" inputmode="numeric" maxlength="4" class="form-input-dark pin-input"
-                       placeholder="••••" @bind="_model.PinConfirm" @bind:event="oninput" autocomplete="new-password" />
+                <label class="form-label-dark" for="input-pin-confirm">@L["Onboarding_ConfirmPinLabel"]</label>
+                <input id="input-pin-confirm" type="password" inputmode="numeric" maxlength="6" class="form-input-dark pin-input"
+                       placeholder="••••••" @bind="_model.PinConfirm" @bind:event="oninput" autocomplete="new-password" />
             </div>
 
-            <div class="switch-container bordered-top">
-                <div class="switch-label-group">
-                    <span class="switch-title">Unlock with biometrics</span>
-                    <span class="switch-desc">Fingerprint or Face ID, processed by your OS</span>
+            @if (_biometricsAvailable)
+            {
+                <div class="switch-container bordered-top">
+                    <div class="switch-label-group">
+                        <span class="switch-title">@L["Profile_BiometricUnlock"]</span>
+                        <span class="switch-desc">@L["Profile_BiometricDesc"]</span>
+                    </div>
+                    <ToggleSwitch Id="toggle-onboarding-biometric" @bind-Value="_model.EnableBiometrics" />
                 </div>
-                <ToggleSwitch Id="toggle-onboarding-biometric" @bind-Value="_model.EnableBiometrics" />
-            </div>
+            }
 
             @if (_error is not null)
             {
@@ -98,27 +101,32 @@
             }
 
             <button id="btn-register" type="button" class="btn-primary-gradient" disabled="@_busy" @onclick="Register">
-                @(_busy ? "Creating your vault…" : "Register")
+                @(_busy ? L["Onboarding_CreatingVault"] : L["Onboarding_Register"])
             </button>
             <button id="btn-onboarding-back" type="button" class="btn-ghost" @onclick="() => { _step = 1; _error = null; }">
-                Back
+                @L["Settings_Back"]
             </button>
         </div>
     }
 
     <p class="privacy-footnote">
-        🔒 Data encrypted at rest with a PBKDF2-hashed PIN · ML runs 100% on-device
+        @L["Settings_FooterNote"]
     </p>
 </section>
 
-@inject ILocalAuthService AuthService
-
 @code {
-    private static readonly string[] Currencies = { "$", "€", "£", "FCFA", "MAD", "¥" };
+    private static readonly string[] Currencies = { "FCFA", "€", "$", "£", "₦" };
 
     private int _step = 1;
     private bool _busy;
     private string? _error;
+    private bool _biometricsAvailable;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Biometric availability does not touch the database, so it works before onboarding.
+        _biometricsAvailable = await AuthService.IsBiometricAvailableAsync();
+    }
     private readonly OnboardingForm _model = new();
 
     private void GoToSecurity()
@@ -126,12 +134,12 @@
         _error = null;
         if (string.IsNullOrWhiteSpace(_model.FullName))
         {
-            _error = "Please enter your name.";
+            _error = L["Onboarding_ErrNameRequired"].Value;
             return;
         }
         if (_model.MonthlyIncome < 0 || _model.MonthlySavingsGoal < 0)
         {
-            _error = "Amounts cannot be negative.";
+            _error = L["Onboarding_ErrNegativeAmount"].Value;
             return;
         }
         _step = 2;
@@ -140,14 +148,14 @@
     private async Task Register()
     {
         _error = null;
-        if (_model.Pin.Length != 4 || !_model.Pin.All(char.IsDigit))
+        if (!AuthService.ValidatePinComplexity(_model.Pin, out var complexityError))
         {
-            _error = "PIN must be exactly 4 digits.";
+            _error = complexityError;
             return;
         }
         if (_model.Pin != _model.PinConfirm)
         {
-            _error = "PINs do not match.";
+            _error = L["Onboarding_ErrPinMismatch"].Value;
             return;
         }
 
@@ -162,12 +170,13 @@
                 _model.EnableBiometrics,
                 _model.MonthlySavingsGoal);
 
+            await AuthService.SetPinAsync(_model.Pin, enforceComplexity: true);
             AuthService.MarkAppUnlocked();
             NavManager.NavigateTo("");
         }
         catch (Exception ex)
         {
-            _error = $"Registration failed: {ex.Message}";
+            _error = ex.Message;
         }
         finally
         {
@@ -180,7 +189,7 @@
     {
         public string FullName { get; set; } = string.Empty;
         public string? Email { get; set; }
-        public string CurrencySymbol { get; set; } = "$";
+        public string CurrencySymbol { get; set; } = "FCFA";
         public decimal MonthlyIncome { get; set; }
         public decimal MonthlySavingsGoal { get; set; }
         public string Pin { get; set; } = string.Empty;

@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <!-- Navigation & Layout -->
+  <data name="Nav_Home" xml:space="preserve"><value>Tableau de bord</value></data>
+  <data name="Nav_Analytics" xml:space="preserve"><value>Analyses</value></data>
+  <data name="Nav_AddExpense" xml:space="preserve"><value>Ajouter une dépense</value></data>
+  <data name="Nav_Profile" xml:space="preserve"><value>Profil</value></data>
+  <data name="Nav_Settings" xml:space="preserve"><value>Paramètres</value></data>
+  <data name="Layout_InitializingVault" xml:space="preserve"><value>Initialisation du coffre-fort local</value></data>
+  <data name="Layout_GoodMorning" xml:space="preserve"><value>Bonjour</value></data>
+  <data name="Layout_GoodAfternoon" xml:space="preserve"><value>Bon après-midi</value></data>
+  <data name="Layout_GoodEvening" xml:space="preserve"><value>Bonsoir</value></data>
+  <data name="Layout_LockApp" xml:space="preserve"><value>Verrouiller l'application</value></data>
+
+  <!-- Home / Dashboard -->
+  <data name="Home_PageTitle" xml:space="preserve"><value>Tableau de bord · SmartBudget ML</value></data>
+  <data name="Home_RemainingThisMonth" xml:space="preserve"><value>Reste ce mois-ci</value></data>
+  <data name="Home_OnTrack" xml:space="preserve"><value>▲ Dans le budget</value></data>
+  <data name="Home_OverPace" xml:space="preserve"><value>▼ Rythme élevé</value></data>
+  <data name="Home_Spent" xml:space="preserve"><value>Dépensé</value></data>
+  <data name="Home_Of" xml:space="preserve"><value>sur</value></data>
+  <data name="Home_DaysLeft" xml:space="preserve"><value>{0} jours restants</value></data>
+  <data name="Home_SafeDailyLimit" xml:space="preserve"><value>Plafond conseillé/jour</value></data>
+  <data name="Home_MlForecastLabel" xml:space="preserve"><value>Prévision ML :</value></data>
+  <data name="Home_MlForecastBody" xml:space="preserve"><value>vous dépenserez environ {0} d'ici la fin du mois ({1} du budget).</value></data>
+  <data name="Home_DailyAverage" xml:space="preserve"><value>Moyenne par jour</value></data>
+  <data name="Home_BurnRateTrend" xml:space="preserve"><value>Tendance journalière</value></data>
+  <data name="Home_PerDay" xml:space="preserve"><value>/jour</value></data>
+  <data name="Home_RecentTransactions" xml:space="preserve"><value>Transactions récentes</value></data>
+  <data name="Home_SeeAll" xml:space="preserve"><value>Tout voir</value></data>
+  <data name="Home_NoExpensesYet" xml:space="preserve"><value>Aucune dépense enregistrée. Appuyez sur + pour ajouter la première.</value></data>
+
+  <!-- Analytics -->
+  <data name="Analytics_PageTitle" xml:space="preserve"><value>Analyses · SmartBudget ML</value></data>
+  <data name="Analytics_Title" xml:space="preserve"><value>Analyses</value></data>
+  <data name="Analytics_Subtitle" xml:space="preserve"><value>Visualisez et maîtrisez vos dépenses</value></data>
+  <data name="Analytics_SpentSoFar" xml:space="preserve"><value>Dépensé jusqu'ici</value></data>
+  <data name="Analytics_DaysRecorded" xml:space="preserve"><value>{0} jours écoulés</value></data>
+  <data name="Analytics_ForecastMonthEnd" xml:space="preserve"><value>Projection fin de mois</value></data>
+  <data name="Analytics_Surplus" xml:space="preserve"><value>d'excédent</value></data>
+  <data name="Analytics_Over" xml:space="preserve"><value>de dépassement</value></data>
+  <data name="Analytics_SpendingOutlook" xml:space="preserve"><value>Trajectoire des dépenses</value></data>
+  <data name="Analytics_PastDays" xml:space="preserve"><value>Jours passés</value></data>
+  <data name="Analytics_MlForecast" xml:space="preserve"><value>Projection ML</value></data>
+  <data name="Analytics_Limit" xml:space="preserve"><value>Plafond : {0}</value></data>
+  <data name="Analytics_DayN" xml:space="preserve"><value>Jour {0}</value></data>
+  <data name="Analytics_ByCategory" xml:space="preserve"><value>Par catégorie</value></data>
+  <data name="Analytics_CategoriesCount" xml:space="preserve"><value>{0} catégories</value></data>
+  <data name="Analytics_Total" xml:space="preserve"><value>Total</value></data>
+  <data name="Analytics_NoExpensesThisMonth" xml:space="preserve"><value>Aucune dépense enregistrée pour ce mois.</value></data>
+  <data name="Analytics_MlInsightLabel" xml:space="preserve"><value>Conseil ML :</value></data>
+  <data name="Analytics_KeepDailySpendUnder" xml:space="preserve"><value>Gardez vos dépenses quotidiennes sous</value></data>
+
+  <!-- AddExpense -->
+  <data name="AddExpense_PageTitle" xml:space="preserve"><value>Nouvelle transaction · SmartBudget ML</value></data>
+  <data name="AddExpense_Title" xml:space="preserve"><value>Nouvelle transaction</value></data>
+  <data name="AddExpense_Subtitle" xml:space="preserve"><value>Catégorisation intelligente hors-ligne</value></data>
+  <data name="AddExpense_Cancel" xml:space="preserve"><value>Annuler</value></data>
+  <data name="AddExpense_AmountLabel" xml:space="preserve"><value>Montant ({0})</value></data>
+  <data name="AddExpense_Expense" xml:space="preserve"><value>Dépense</value></data>
+  <data name="AddExpense_Income" xml:space="preserve"><value>Revenu</value></data>
+  <data name="AddExpense_Description" xml:space="preserve"><value>Description</value></data>
+  <data name="AddExpense_DescriptionPlaceholder" xml:space="preserve"><value>ex. Moto bendskin, Facture ENEO, Marché Mokolo</value></data>
+  <data name="AddExpense_SuggestionLabel" xml:space="preserve"><value>Suggestion :</value></data>
+  <data name="AddExpense_Apply" xml:space="preserve"><value>Appliquer</value></data>
+  <data name="AddExpense_Category" xml:space="preserve"><value>Catégorie</value></data>
+  <data name="AddExpense_Selected" xml:space="preserve"><value>Sélection :</value></data>
+  <data name="AddExpense_Date" xml:space="preserve"><value>Date</value></data>
+  <data name="AddExpense_FixedExpenseCheck" xml:space="preserve"><value>Charge fixe / calendaire (loyer, scolarité, abonnement)</value></data>
+  <data name="AddExpense_Saving" xml:space="preserve"><value>Enregistrement...</value></data>
+  <data name="AddExpense_SubmitIncome" xml:space="preserve"><value>+ Ajouter le revenu</value></data>
+  <data name="AddExpense_SubmitExpense" xml:space="preserve"><value>+ Ajouter la dépense</value></data>
+  <data name="AddExpense_ErrAmount" xml:space="preserve"><value>Veuillez saisir un montant supérieur à 0.</value></data>
+  <data name="AddExpense_ErrDescription" xml:space="preserve"><value>Veuillez saisir une description.</value></data>
+  <data name="AddExpense_ErrCategory" xml:space="preserve"><value>Veuillez sélectionner une catégorie.</value></data>
+
+  <!-- Profile -->
+  <data name="Profile_PageTitle" xml:space="preserve"><value>Votre profil · SmartBudget ML</value></data>
+  <data name="Profile_Title" xml:space="preserve"><value>Votre profil</value></data>
+  <data name="Profile_Subtitle" xml:space="preserve"><value>Compte 100 % local et confidentiel</value></data>
+  <data name="Profile_LocalAccount" xml:space="preserve"><value>Compte local</value></data>
+  <data name="Profile_LocalVault" xml:space="preserve"><value>🔒 Coffre local #{0}</value></data>
+  <data name="Profile_MonthlyIncome" xml:space="preserve"><value>Revenu mensuel</value></data>
+  <data name="Profile_BaseBudgetInput" xml:space="preserve"><value>Base budgétaire</value></data>
+  <data name="Profile_SavingsGoal" xml:space="preserve"><value>Objectif d'épargne</value></data>
+  <data name="Profile_TargetSavingsMo" xml:space="preserve"><value>Épargne cible/mois</value></data>
+  <data name="Profile_SecurityCredentials" xml:space="preserve"><value>Sécurité et accès</value></data>
+  <data name="Profile_ResetPin" xml:space="preserve"><value>Changer le PIN</value></data>
+  <data name="Profile_TestBiometrics" xml:space="preserve"><value>Tester la biométrie</value></data>
+  <data name="Profile_SecurityFootnote" xml:space="preserve"><value>🔒 Votre code PIN est haché localement via PBKDF2-SHA256 (600 000 itérations) et la base est chiffrée par SQLCipher 256 bits. Aucune donnée ne quitte cet appareil.</value></data>
+  <data name="Profile_Preferences" xml:space="preserve"><value>Préférences</value></data>
+  <data name="Profile_Currency" xml:space="preserve"><value>Devise</value></data>
+  <data name="Profile_Language" xml:space="preserve"><value>Langue</value></data>
+  <data name="Profile_BiometricUnlock" xml:space="preserve"><value>Déverrouillage biométrique</value></data>
+  <data name="Profile_BiometricDesc" xml:space="preserve"><value>Autoriser l'empreinte digitale pour déverrouiller</value></data>
+  <data name="Profile_SettingsLink" xml:space="preserve"><value>Paramètres et configuration ML</value></data>
+
+  <!-- Settings -->
+  <data name="Settings_PageTitle" xml:space="preserve"><value>Paramètres · SmartBudget ML</value></data>
+  <data name="Settings_Title" xml:space="preserve"><value>Paramètres</value></data>
+  <data name="Settings_Subtitle" xml:space="preserve"><value>Configuration IA, sécurité et stockage local</value></data>
+  <data name="Settings_Back" xml:space="preserve"><value>Retour</value></data>
+  <data name="Settings_AiSectionTitle" xml:space="preserve"><value>IA et Modèle Hybride</value></data>
+  <data name="Settings_OnDeviceMlBadge" xml:space="preserve"><value>● ML sur appareil</value></data>
+  <data name="Settings_AutoCategorize" xml:space="preserve"><value>Catégorisation automatique</value></data>
+  <data name="Settings_AutoCategorizeDesc" xml:space="preserve"><value>Prédire la catégorie via mémoire, règles locales et ML.NET</value></data>
+  <data name="Settings_ThresholdLabel" xml:space="preserve"><value>Seuil de confiance ML</value></data>
+  <data name="Settings_ThresholdFootnote" xml:space="preserve"><value>Pré-sélectionner uniquement si la confiance dépasse ce seuil.</value></data>
+  <data name="Settings_RetrainingInProgress" xml:space="preserve"><value>Réentraînement et évaluation du modèle en cours...</value></data>
+  <data name="Settings_RetrainBtn" xml:space="preserve"><value>Réentraîner et évaluer avec mes données</value></data>
+  <data name="Settings_ValidationScore" xml:space="preserve"><value>Score de validation :</value></data>
+  <data name="Settings_TrainingSamplesCount" xml:space="preserve"><value>{0} exemples d'entraînement</value></data>
+  <data name="Settings_BudgetSectionTitle" xml:space="preserve"><value>Budget et Alertes</value></data>
+  <data name="Settings_MonthlyBudgetLimit" xml:space="preserve"><value>Plafond budgétaire mensuel</value></data>
+  <data name="Settings_OverBudgetAlerts" xml:space="preserve"><value>Alertes de dépassement</value></data>
+  <data name="Settings_OverBudgetAlertsDesc" xml:space="preserve"><value>Avertir lorsque la projection dépasse le budget</value></data>
+  <data name="Settings_DailyReminders" xml:space="preserve"><value>Rappels quotidiens</value></data>
+  <data name="Settings_DailyRemindersDesc" xml:space="preserve"><value>Rappel discret pour noter vos dépenses du jour</value></data>
+  <data name="Settings_DataSectionTitle" xml:space="preserve"><value>Données et Stockage Chiffré</value></data>
+  <data name="Settings_ExportCsv" xml:space="preserve"><value>Exporter les dépenses (CSV)</value></data>
+  <data name="Settings_BackupDb" xml:space="preserve"><value>Sauvegarde chiffrée (mot de passe)</value></data>
+  <data name="Settings_ClearDb" xml:space="preserve"><value>Effacer la base locale et la clé</value></data>
+  <data name="Settings_RestoreDb" xml:space="preserve"><value>Restaurer une sauvegarde</value></data>
+  <data name="Settings_ExportShareTitle" xml:space="preserve"><value>Dépenses SmartBudget</value></data>
+  <data name="Settings_ExportFailed" xml:space="preserve"><value>L'export n'a pas pu être préparé. Réessayez.</value></data>
+  <data name="Share_ChooseApp" xml:space="preserve"><value>Choisissez une application pour enregistrer le fichier.</value></data>
+  <data name="Backup_PageTitle" xml:space="preserve"><value>Sauvegarde · SmartBudget ML</value></data>
+  <data name="Backup_Title" xml:space="preserve"><value>Sauvegarde chiffrée</value></data>
+  <data name="Backup_Subtitle" xml:space="preserve"><value>Protégée par un mot de passe que vous choisissez : elle peut être restaurée sur un autre téléphone.</value></data>
+  <data name="Backup_Password" xml:space="preserve"><value>Mot de passe de la sauvegarde</value></data>
+  <data name="Backup_PasswordConfirm" xml:space="preserve"><value>Confirmez le mot de passe</value></data>
+  <data name="Backup_PasswordHint" xml:space="preserve"><value>8 caractères minimum. Il n'est enregistré nulle part : s'il est perdu, la sauvegarde est illisible et personne ne peut la récupérer.</value></data>
+  <data name="Backup_TooShort" xml:space="preserve"><value>Le mot de passe doit contenir au moins 8 caractères.</value></data>
+  <data name="Backup_Mismatch" xml:space="preserve"><value>Les deux mots de passe ne correspondent pas.</value></data>
+  <data name="Backup_Create" xml:space="preserve"><value>Créer et partager la sauvegarde</value></data>
+  <data name="Backup_Working" xml:space="preserve"><value>Préparation…</value></data>
+  <data name="Backup_Ready" xml:space="preserve"><value>Sauvegarde {0} créée et vérifiée. Choisissez une application pour l'enregistrer.</value></data>
+  <data name="Backup_Failed" xml:space="preserve"><value>La sauvegarde n'a pas pu être créée. Réessayez.</value></data>
+  <data name="Backup_ShareTitle" xml:space="preserve"><value>Sauvegarde SmartBudget</value></data>
+  <data name="Restore_PageTitle" xml:space="preserve"><value>Restauration · SmartBudget ML</value></data>
+  <data name="Restore_Title" xml:space="preserve"><value>Restaurer une sauvegarde</value></data>
+  <data name="Restore_Subtitle" xml:space="preserve"><value>Choisissez un fichier .sbbackup et saisissez son mot de passe.</value></data>
+  <data name="Restore_PickFile" xml:space="preserve"><value>Choisir le fichier</value></data>
+  <data name="Restore_NoFile" xml:space="preserve"><value>Aucun fichier choisi</value></data>
+  <data name="Restore_PickFailed" xml:space="preserve"><value>Le fichier n'a pas pu être ouvert. Réessayez.</value></data>
+  <data name="Restore_Password" xml:space="preserve"><value>Mot de passe de la sauvegarde</value></data>
+  <data name="Restore_Check" xml:space="preserve"><value>Vérifier la sauvegarde</value></data>
+  <data name="Restore_Unreadable" xml:space="preserve"><value>Mot de passe incorrect ou fichier endommagé. Vos données actuelles n'ont pas été modifiées.</value></data>
+  <data name="Restore_NotABackup" xml:space="preserve"><value>Ce fichier n'est pas une sauvegarde SmartBudget. Vos données actuelles n'ont pas été modifiées.</value></data>
+  <data name="Restore_TooNew" xml:space="preserve"><value>Cette sauvegarde vient d'une version plus récente de l'application. Mettez l'application à jour, puis réessayez.</value></data>
+  <data name="Restore_Valid" xml:space="preserve"><value>Sauvegarde vérifiée.</value></data>
+  <data name="Restore_Confirm1" xml:space="preserve"><value>Cette action remplace toutes les données actuelles. Continuer ?</value></data>
+  <data name="Restore_Confirm2" xml:space="preserve"><value>Dernière confirmation : les données actuelles seront remplacées par celles de la sauvegarde.</value></data>
+  <data name="Restore_PinNotice" xml:space="preserve"><value>Après la restauration, l'application se verrouille : déverrouillez-la avec le code PIN utilisé au moment de la sauvegarde.</value></data>
+  <data name="Restore_Start" xml:space="preserve"><value>Restaurer</value></data>
+  <data name="Restore_ConfirmButton" xml:space="preserve"><value>Remplacer mes données</value></data>
+  <data name="Restore_Cancel" xml:space="preserve"><value>Annuler</value></data>
+  <data name="Restore_Working" xml:space="preserve"><value>Restauration…</value></data>
+  <data name="Restore_Failed" xml:space="preserve"><value>La restauration a échoué. Redémarrez l'application et vérifiez vos données.</value></data>
+  <data name="Settings_ConfirmPurge" xml:space="preserve"><value>⚠️ Appuyez à nouveau pour supprimer définitivement le coffre</value></data>
+  <data name="Settings_FooterNote" xml:space="preserve"><value>SmartBudget ML · SQLCipher 256 bits · PBKDF2 600k · 100 % Hors-Ligne</value></data>
+
+  <!-- Unlock & Onboarding -->
+  <data name="Unlock_PageTitle" xml:space="preserve"><value>Déverrouillage · SmartBudget ML</value></data>
+  <data name="Unlock_Subtitle" xml:space="preserve"><value>Saisissez votre code PIN à {0} chiffres pour déverrouiller</value></data>
+  <data name="Unlock_IncorrectPin" xml:space="preserve"><value>Code PIN incorrect. Veuillez réessayer.</value></data>
+  <data name="Unlock_LockedRetryIn" xml:space="preserve"><value>Application verrouillée après plusieurs échecs. Réessayez dans {0}s.</value></data>
+  <data name="Unlock_BiometricFailed" xml:space="preserve"><value>Échec de l'authentification biométrique.</value></data>
+  <data name="Unlock_Verifying" xml:space="preserve"><value>Vérification…</value></data>
+  <data name="VaultError_PageTitle" xml:space="preserve"><value>Données inaccessibles · SmartBudget ML</value></data>
+  <data name="VaultError_Title" xml:space="preserve"><value>Données inaccessibles</value></data>
+  <data name="VaultError_KeyUnavailable" xml:space="preserve"><value>Le stockage sécurisé du téléphone ne répond pas. Aucune donnée n'a été modifiée. Réessayez dans un instant.</value></data>
+  <data name="VaultError_KeyLost" xml:space="preserve"><value>La clé de chiffrement de vos données est introuvable sur ce téléphone. Le fichier de données n'a pas été modifié.</value></data>
+  <data name="VaultError_Retry" xml:space="preserve"><value>Réessayer</value></data>
+  <data name="VaultError_Reset" xml:space="preserve"><value>Réinitialiser le coffre (efface les données)</value></data>
+  <data name="VaultError_ResetConfirm1" xml:space="preserve"><value>Toutes les données de l'application sur ce téléphone seront effacées. Continuer ?</value></data>
+  <data name="VaultError_ResetConfirm2" xml:space="preserve"><value>Dernière confirmation : l'effacement est définitif.</value></data>
+  <data name="VaultError_ResetConfirmButton" xml:space="preserve"><value>Confirmer l'effacement</value></data>
+  <data name="VaultError_Cancel" xml:space="preserve"><value>Annuler</value></data>
+  <data name="VaultError_RetryFailed" xml:space="preserve"><value>Toujours inaccessible. Réessayez plus tard.</value></data>
+  <data name="VaultError_ResetFailed" xml:space="preserve"><value>La réinitialisation a échoué. Redémarrez l'application et réessayez.</value></data>
+  <data name="VaultError_RestoreHint" xml:space="preserve"><value>Si vous avez une sauvegarde (.sbbackup) et son mot de passe, vous pourrez la restaurer depuis Paramètres après la réinitialisation.</value></data>
+  <data name="Onboarding_PageTitle" xml:space="preserve"><value>Créer votre profil · SmartBudget ML</value></data>
+  <data name="Onboarding_TitleStep1" xml:space="preserve"><value>Créez votre profil</value></data>
+  <data name="Onboarding_TitleStep2" xml:space="preserve"><value>Protégez vos données</value></data>
+  <data name="Onboarding_SubtitleStep1" xml:space="preserve"><value>Votre profil ne quitte jamais ce téléphone. Sans cloud, sans pistage.</value></data>
+  <data name="Onboarding_SubtitleStep2" xml:space="preserve"><value>Choisissez un code PIN local à 6 chiffres. L'empreinte digitale peut aussi être activée.</value></data>
+  <data name="Onboarding_FullName" xml:space="preserve"><value>Nom complet</value></data>
+  <data name="Onboarding_FullNamePlaceholder" xml:space="preserve"><value>Ex. votre nom complet</value></data>
+  <data name="Onboarding_EmailOptional" xml:space="preserve"><value>E-mail (optionnel)</value></data>
+  <data name="Onboarding_Continue" xml:space="preserve"><value>Continuer</value></data>
+  <data name="Onboarding_PinLabel" xml:space="preserve"><value>Code PIN à 6 chiffres</value></data>
+  <data name="Onboarding_ConfirmPinLabel" xml:space="preserve"><value>Confirmer le code PIN</value></data>
+  <data name="Onboarding_Register" xml:space="preserve"><value>Créer mon coffre</value></data>
+  <data name="Onboarding_CreatingVault" xml:space="preserve"><value>Création du coffre chiffré…</value></data>
+
+  <!-- Shared Components -->
+  <data name="Shared_Uncategorized" xml:space="preserve"><value>Non classé</value></data>
+  <data name="Shared_AiBadge" xml:space="preserve"><value>IA</value></data>
+  <data name="Shared_UseBiometrics" xml:space="preserve"><value>Utiliser la biométrie</value></data>
+  <data name="Shared_Delete" xml:space="preserve"><value>Effacer</value></data>
+  <data name="Settings_SecuritySectionTitle" xml:space="preserve"><value>Sécurité et Protection du Coffre</value></data>
+  <data name="Settings_AutoLockLabel" xml:space="preserve"><value>Verrouillage automatique en arrière-plan</value></data>
+  <data name="Settings_AutoLock0" xml:space="preserve"><value>Immédiatement (0s)</value></data>
+  <data name="Settings_AutoLock30" xml:space="preserve"><value>Après 30 secondes</value></data>
+  <data name="Settings_AutoLock60" xml:space="preserve"><value>Après 1 minute</value></data>
+  <data name="Settings_AutoLock300" xml:space="preserve"><value>Après 5 minutes</value></data>
+  <data name="Settings_ScreenProtectionTitle" xml:space="preserve"><value>Protéger l'écran (FLAG_SECURE)</value></data>
+  <data name="Settings_ScreenProtectionDesc" xml:space="preserve"><value>Masquer l'aperçu dans le multitâche et bloquer les captures d'écran</value></data>
+  <data name="Onboarding_ErrNameRequired" xml:space="preserve"><value>Veuillez saisir votre nom.</value></data>
+  <data name="Onboarding_ErrNegativeAmount" xml:space="preserve"><value>Les montants ne peuvent pas être négatifs.</value></data>
+  <data name="Onboarding_ErrPinMismatch" xml:space="preserve"><value>Les codes PIN ne correspondent pas.</value></data>
+  <data name="Nav_Tontines" xml:space="preserve"><value>Tontines</value></data>
+  <data name="Tontines_PageTitle" xml:space="preserve"><value>Tontines &amp; Njangi · SmartBudget ML</value></data>
+  <data name="Tontines_Title" xml:space="preserve"><value>Tontines &amp; Njangi</value></data>
+  <data name="Tontines_Subtitle" xml:space="preserve"><value>Suivi des cotisations, tours de pot et solde net</value></data>
+  <data name="Tontines_PotLabel" xml:space="preserve"><value>Pot par tour</value></data>
+  <data name="Tontines_NetBalanceLabel" xml:space="preserve"><value>Mon solde net (Reçu - Cotisé)</value></data>
+  <data name="Tontines_NextBeneficiary" xml:space="preserve"><value>Prochain bénéficiaire :</value></data>
+  <data name="Tontines_ContributeQuickBtn" xml:space="preserve"><value>✓ J'ai cotisé ce tour</value></data>
+  <data name="Tontines_SmsSectionTitle" xml:space="preserve"><value>Import SMS Mobile Money (Sans permission READ_SMS)</value></data>
+  <data name="Tontines_SmsPlaceholder" xml:space="preserve"><value>Collez ici un ou plusieurs SMS Orange Money / MTN MoMo...</value></data>
+  <data name="Tontines_SmsAnalyzeBtn" xml:space="preserve"><value>Analyser les SMS collés</value></data>
+  <data name="Tontines_Empty" xml:space="preserve"><value>Aucune tontine pour l'instant. Créez la première pour suivre vos cotisations et vos tours.</value></data>
+  <data name="Tontines_CreateBtn" xml:space="preserve"><value>+ Nouvelle tontine</value></data>
+  <data name="Tontines_ListItemMeta" xml:space="preserve"><value>{0} · {1} membres · {2} par tour</value></data>
+  <data name="Tontines_Finished" xml:space="preserve"><value>Terminée</value></data>
+  <data name="Tontines_Active" xml:space="preserve"><value>En cours</value></data>
+  <data name="Tontines_Frequency_Weekly" xml:space="preserve"><value>Hebdomadaire</value></data>
+  <data name="Tontines_Frequency_BiWeekly" xml:space="preserve"><value>Toutes les 2 semaines</value></data>
+  <data name="Tontines_Frequency_Monthly" xml:space="preserve"><value>Mensuelle</value></data>
+  <data name="Tontines_Me" xml:space="preserve"><value>Moi</value></data>
+  <data name="Tontines_CurrentBeneficiary" xml:space="preserve"><value>Bénéficiaire du tour :</value></data>
+  <data name="Tontines_ContributeBtn" xml:space="preserve"><value>J'ai cotisé ({0})</value></data>
+  <data name="Tontines_ReceivedPotBtn" xml:space="preserve"><value>J'ai reçu le pot ({0})</value></data>
+  <data name="Tontines_ContributionExpense" xml:space="preserve"><value>Cotisation {0} (tour {1})</value></data>
+  <data name="Tontines_PayoutIncome" xml:space="preserve"><value>Pot de tontine {0} (tour {1})</value></data>
+  <data name="Tontines_LoadFailed" xml:space="preserve"><value>Les tontines n'ont pas pu être chargées.</value></data>
+  <data name="TontineNew_PageTitle" xml:space="preserve"><value>Nouvelle tontine · SmartBudget ML</value></data>
+  <data name="TontineNew_Title" xml:space="preserve"><value>Nouvelle tontine</value></data>
+  <data name="TontineNew_Subtitle" xml:space="preserve"><value>Tout reste enregistré sur ce téléphone.</value></data>
+  <data name="TontineNew_Name" xml:space="preserve"><value>Nom de la tontine</value></data>
+  <data name="TontineNew_Amount" xml:space="preserve"><value>Cotisation par tour</value></data>
+  <data name="TontineNew_Frequency" xml:space="preserve"><value>Fréquence</value></data>
+  <data name="TontineNew_StartDate" xml:space="preserve"><value>Date du premier tour</value></data>
+  <data name="TontineNew_Members" xml:space="preserve"><value>Membres et ordre de passage</value></data>
+  <data name="TontineNew_MembersHint" xml:space="preserve"><value>Le tour indique qui reçoit le pot, du tour 1 au dernier. Votre ligne est « Moi ».</value></data>
+  <data name="TontineNew_MemberName" xml:space="preserve"><value>Nom du membre</value></data>
+  <data name="TontineNew_TurnOrder" xml:space="preserve"><value>Tour</value></data>
+  <data name="TontineNew_AddMember" xml:space="preserve"><value>+ Ajouter un membre</value></data>
+  <data name="TontineNew_RemoveMember" xml:space="preserve"><value>Retirer</value></data>
+  <data name="TontineNew_Save" xml:space="preserve"><value>Créer la tontine</value></data>
+  <data name="TontineNew_Failed" xml:space="preserve"><value>La tontine n'a pas pu être enregistrée.</value></data>
+  <data name="TontineError_NameRequired" xml:space="preserve"><value>Indiquez le nom de la tontine.</value></data>
+  <data name="TontineError_AmountNotPositive" xml:space="preserve"><value>La cotisation doit être supérieure à 0.</value></data>
+  <data name="TontineError_AmountNotWhole" xml:space="preserve"><value>La cotisation doit être un montant entier, sans centimes.</value></data>
+  <data name="TontineError_TooFewMembers" xml:space="preserve"><value>Il faut au moins 2 membres.</value></data>
+  <data name="TontineError_MemberNameRequired" xml:space="preserve"><value>Chaque membre doit avoir un nom.</value></data>
+  <data name="TontineError_TurnOrdersNotUnique" xml:space="preserve"><value>Deux membres ont le même tour.</value></data>
+  <data name="TontineError_TurnOrderOutOfRange" xml:space="preserve"><value>Chaque tour doit être compris entre 1 et le nombre de membres.</value></data>
+  <data name="TontineError_CurrentUserMissing" xml:space="preserve"><value>Votre ligne « Moi » est obligatoire.</value></data>
+  <data name="TontineDetail_PageTitle" xml:space="preserve"><value>Tontine · SmartBudget ML</value></data>
+  <data name="TontineDetail_NotFound" xml:space="preserve"><value>Cette tontine n'existe plus.</value></data>
+  <data name="TontineDetail_CurrentRound" xml:space="preserve"><value>Tour {0} sur {1} · {2}</value></data>
+  <data name="TontineDetail_WhoPaid" xml:space="preserve"><value>Cotisations du tour</value></data>
+  <data name="TontineDetail_Paid" xml:space="preserve"><value>Payé</value></data>
+  <data name="TontineDetail_NotPaid" xml:space="preserve"><value>Pas encore payé</value></data>
+  <data name="TontineDetail_MarkPaid" xml:space="preserve"><value>Marquer payé</value></data>
+  <data name="TontineDetail_MarkPotPaid" xml:space="preserve"><value>Pot versé à {0}</value></data>
+  <data name="TontineDetail_Late" xml:space="preserve"><value>Retards</value></data>
+  <data name="TontineDetail_NoLate" xml:space="preserve"><value>Aucun retard.</value></data>
+  <data name="TontineDetail_LateItem" xml:space="preserve"><value>{0} · tour {1} (prévu le {2})</value></data>
+  <data name="TontineDetail_MyContributions" xml:space="preserve"><value>Mes cotisations</value></data>
+  <data name="TontineDetail_Received" xml:space="preserve"><value>Reçu</value></data>
+  <data name="TontineDetail_ContributionSaved" xml:space="preserve"><value>Cotisation du tour {0} enregistrée.</value></data>
+  <data name="TontineDetail_AlreadySaved" xml:space="preserve"><value>Cette opération était déjà enregistrée.</value></data>
+  <data name="TontineDetail_PayoutSaved" xml:space="preserve"><value>Pot du tour {0} enregistré.</value></data>
+  <data name="TontineDetail_Finished" xml:space="preserve"><value>Tous les tours sont terminés.</value></data>
+  <data name="TontineDetail_Members" xml:space="preserve"><value>Membres</value></data>
+  <data name="TontineDetail_Withdraw" xml:space="preserve"><value>Quitte la tontine</value></data>
+  <data name="TontineDetail_WithdrawConfirm" xml:space="preserve"><value>Confirmer : {0} quitte la tontine</value></data>
+  <data name="TontineDetail_Withdrawn" xml:space="preserve"><value>A quitté la tontine</value></data>
+  <data name="TontineDetail_Edit" xml:space="preserve"><value>Modifier</value></data>
+  <data name="TontineDetail_SaveChanges" xml:space="preserve"><value>Enregistrer</value></data>
+  <data name="TontineDetail_Cancel" xml:space="preserve"><value>Annuler</value></data>
+  <data name="TontineDetail_Updated" xml:space="preserve"><value>Tontine modifiée.</value></data>
+  <data name="TontineDetail_Delete" xml:space="preserve"><value>Supprimer la tontine</value></data>
+  <data name="TontineDetail_DeleteConfirm" xml:space="preserve"><value>Confirmer la suppression (les dépenses déjà enregistrées restent)</value></data>
+  <data name="TontineDetail_ActionFailed" xml:space="preserve"><value>L'opération n'a pas pu être enregistrée.</value></data>
+  <data name="Home_TontinesCard" xml:space="preserve"><value>Mes tontines</value></data>
+  <data name="Home_TontinesCount" xml:space="preserve"><value>{0} tontine(s) en cours</value></data>
+  <data name="Home_TontinesNextDue" xml:space="preserve"><value>Prochaine cotisation : {0}</value></data>
+  <data name="Home_TontinesNone" xml:space="preserve"><value>Aucune tontine. Appuyez pour en créer une.</value></data>
+  <data name="Home_DueBannerTitle" xml:space="preserve"><value>À cotiser</value></data>
+  <data name="Home_DueItem" xml:space="preserve"><value>{0} · tour {1} : {2} avant le {3}</value></data>
+  <data name="Home_DueItemLate" xml:space="preserve"><value>{0} · tour {1} : {2}, en retard depuis le {3}</value></data>
+  <data name="Home_RemainingThisWeek" xml:space="preserve"><value>Reste cette semaine</value></data>
+  <data name="Profile_TontinesLink" xml:space="preserve"><value>Mes tontines</value></data>
+  <data name="Profile_IncomeSection" xml:space="preserve"><value>Profil de revenu</value></data>
+  <data name="Profile_IncomeType" xml:space="preserve"><value>Type de revenu</value></data>
+  <data name="Profile_IncomeType_Fixed" xml:space="preserve"><value>Fixe</value></data>
+  <data name="Profile_IncomeType_Irregular" xml:space="preserve"><value>Irrégulier</value></data>
+  <data name="Profile_IncomeType_Mixed" xml:space="preserve"><value>Mixte</value></data>
+  <data name="Profile_IncomeTypeHint" xml:space="preserve"><value>Irrégulier : budget par enveloppe hebdomadaire, calculée sur vos revenus enregistrés des 3 derniers mois moins le minimum vital. Mixte : même calcul, sur le mois.</value></data>
+  <data name="Profile_VitalMinimum" xml:space="preserve"><value>Minimum vital par mois</value></data>
+  <data name="Profile_SolidarityTarget" xml:space="preserve"><value>Objectif de solidarité familiale par mois</value></data>
+  <data name="Profile_SaveIncome" xml:space="preserve"><value>Enregistrer le profil de revenu</value></data>
+  <data name="Profile_IncomeSaved" xml:space="preserve"><value>Profil de revenu enregistré.</value></data>
+  <data name="Profile_IncomeInvalid" xml:space="preserve"><value>Les montants doivent être des nombres entiers positifs ou nuls.</value></data>
+  <data name="Profile_SaveFailed" xml:space="preserve"><value>L'enregistrement a échoué.</value></data>
+  <data name="Budget_EnvelopeTitle" xml:space="preserve"><value>Enveloppe de la semaine</value></data>
+  <data name="Budget_EnvelopeBody" xml:space="preserve"><value>{0} dépensés sur {1}</value></data>
+  <data name="Budget_EnvelopeRemaining" xml:space="preserve"><value>Reste : {0}</value></data>
+  <data name="Budget_AfterVital" xml:space="preserve"><value>Reste du mois après minimum vital : {0}</value></data>
+  <data name="Budget_RollingIncome" xml:space="preserve"><value>Revenu moyen des derniers mois : {0}</value></data>
+  <data name="Budget_NoIncomeData" xml:space="preserve"><value>Aucun revenu enregistré sur les 3 derniers mois : le calcul utilise le revenu du profil. Ajoutez vos revenus pour l'affiner.</value></data>
+  <data name="Budget_Reliability_Low" xml:space="preserve"><value>Fiabilité de la prévision : faible (peu de jours de données)</value></data>
+  <data name="Budget_Reliability_Medium" xml:space="preserve"><value>Fiabilité de la prévision : moyenne</value></data>
+  <data name="Budget_Reliability_High" xml:space="preserve"><value>Fiabilité de la prévision : élevée</value></data>
+  <data name="Budget_Solidarity" xml:space="preserve"><value>Solidarité familiale ce mois : {0} sur un objectif de {1}</value></data>
+  <data name="Analytics_ForecastWeekEnd" xml:space="preserve"><value>Prévision fin de semaine</value></data>
+  <data name="Home_MlForecastBodyWeek" xml:space="preserve"><value>vous dépenserez environ {0} d'ici la fin de la semaine ({1} de l'enveloppe).</value></data>
+</root>

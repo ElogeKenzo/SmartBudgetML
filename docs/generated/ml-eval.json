@@ -1,0 +1,47 @@
+﻿{
+  "evaluatedAtUtc": "2026-10-25T14:10:46Z",
+  "trainingSampleCount": 314,
+  "holdoutSampleCount": 176,
+  "categoryCount": 11,
+  "categories": [
+    "Entertainment",
+    "Food \u0026 Dining",
+    "Groceries",
+    "Healthcare",
+    "Housing \u0026 Rent",
+    "Investments",
+    "Other",
+    "Salary / Income",
+    "Shopping",
+    "Transportation",
+    "Utilities"
+  ],
+  "rulesOnly": {
+    "correctCount": 143,
+    "totalCount": 176,
+    "microAccuracy": 0.8125,
+    "macroAccuracy": 0.8125,
+    "macroF1": 0.824912
+  },
+  "mlOnly": {
+    "correctCount": 161,
+    "totalCount": 176,
+    "microAccuracy": 0.914773,
+    "macroAccuracy": 0.914773,
+    "macroF1": 0.911526
+  },
+  "hybrid": {
+    "correctCount": 175,
+    "totalCount": 176,
+    "microAccuracy": 0.994318,
+    "macroAccuracy": 0.994318,
+    "macroF1": 0.994313
+  },
+  "benchmark": {
+    "trainTimeMs": 4557,
+    "avgInferenceMs": 0.068,
+    "p95InferenceMs": 0.0866,
+    "modelSizeBytes": 111202,
+    "modelSizeKb": 108.6
+  }
+}

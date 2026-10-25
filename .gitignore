@@ -15,6 +15,7 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+artifacts/
 
 ## NuGet Packages
 *.nupkg
@@ -48,11 +49,16 @@ Desktop.ini
 ## .NET publish output
 publish/
 
-## MAUI / Android specific
+## MAUI / Android specific & signing keys
 *.apk
 *.aab
 *.ipa
 *.keystore
+*.jks
+*.pfx
+*.p12
+.sb_vault_key
+local.properties
 google-services.json
 
 ## ML.NET trained models (will be regenerated)

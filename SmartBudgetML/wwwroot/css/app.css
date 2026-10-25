@@ -1557,3 +1557,73 @@ input:checked + .toggle-slider:before {
     font-size: 13px;
     font-weight: 600;
 }
+
+
+/* ==========================================================================
+   Phase 5: Low-End Android Ergonomics, >= 48px Touch Targets & Accessibility
+   ========================================================================== */
+.header-action-btn,
+.nav-item,
+.nav-fab-btn,
+.keypad-btn,
+.btn-primary-gradient,
+.btn-secondary-action,
+.btn-logout,
+.btn-ghost,
+.retrain-action-btn,
+.settings-action-row,
+.currency-pill-btn,
+.segmented-btn,
+.category-chip {
+    min-height: 48px;
+    min-width: 48px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+}
+
+/* Lot 8E: tontines, "to pay" banner, forms */
+.due-banner {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+    border-left: 3px solid var(--accent-amber);
+    color: inherit;
+    text-decoration: none;
+}
+.due-banner-item.late {
+    color: var(--accent-rose);
+}
+.tontine-member-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.tontine-turn-input {
+    width: 64px;
+    flex: 0 0 64px;
+}
+.flex-1 {
+    flex: 1;
+    min-width: 0;
+}
+.form-error {
+    color: var(--accent-rose);
+    margin: 10px 0;
+}
+a.transaction-card, a.settings-action-row, a.profile-nav-row {
+    color: inherit;
+    text-decoration: none;
+}

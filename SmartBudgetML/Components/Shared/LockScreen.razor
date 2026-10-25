@@ -16,32 +16,45 @@
             }
         </div>
 
-        <div class="lock-error" role="alert">@ErrorMessage</div>
+        @if (IsVerifying)
+        {
+            <div class="lock-sub" id="lock-verifying" role="status">@VerifyingText</div>
+        }
+        else
+        {
+            <div class="lock-error" role="alert">@ErrorMessage</div>
+        }
 
         <div class="lock-keypad">
-            <NumericKeypad IdPrefix="lock" LeftKey="@(ShowBiometric ? KeypadLeftKey.Biometric : KeypadLeftKey.None)" OnKey="HandleKey" />
+            <NumericKeypad IdPrefix="lock" Disabled="@IsVerifying" LeftKey="@(ShowBiometric ? KeypadLeftKey.Biometric : KeypadLeftKey.None)" OnKey="HandleKey" />
         </div>
     </div>
 </div>
 
 @code {
-    private const int PinLength = 4;
     private string _pin = string.Empty;
 
-    [Parameter] public string Subtitle { get; set; } = "Enter your 4-digit PIN to unlock";
+    [Parameter] public int PinLength { get; set; } = 6;
+    [Parameter] public bool IsLockedOut { get; set; } = false;
+    [Parameter] public string Subtitle { get; set; } = "Enter your PIN to unlock";
     [Parameter] public string? ErrorMessage { get; set; }
     [Parameter] public bool ShowBiometric { get; set; } = true;
+    [Parameter] public bool IsVerifying { get; set; }
+    [Parameter] public string? VerifyingText { get; set; }
 
-    /// <summary>Raised with the full PIN once 4 digits are entered.</summary>
     [Parameter] public EventCallback<string> OnPinComplete { get; set; }
-
-    /// <summary>Raised when the fingerprint / Face ID key is pressed.</summary>
     [Parameter] public EventCallback OnBiometricRequested { get; set; }
 
     private bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
     private async Task HandleKey(string key)
     {
+        if (IsLockedOut || IsVerifying)
+        {
+            _pin = string.Empty;
+            return;
+        }
+
         switch (key)
         {
             case "bio":
@@ -54,13 +67,14 @@
                 return;
         }
 
-        if (_pin.Length >= PinLength) return;
+        var targetLen = PinLength == 4 ? 4 : 6;
+        if (_pin.Length >= targetLen) return;
         _pin += key;
 
-        if (_pin.Length == PinLength)
+        if (_pin.Length == targetLen)
         {
             var completed = _pin;
-            _pin = string.Empty; // never keep the PIN in component state
+            _pin = string.Empty;
             await OnPinComplete.InvokeAsync(completed);
         }
     }

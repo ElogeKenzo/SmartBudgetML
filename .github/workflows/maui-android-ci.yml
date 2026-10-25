@@ -1,88 +1,391 @@
-# ============================================================
-# SmartBudgetML — Android CI/CD Pipeline
-# Triggers on PRs to develop and main
-# Builds the .NET MAUI Android project and uploads APK artifact
-# ============================================================
+# ==============================================================================
+# SmartBudget ML - CI (.NET 10, MAUI Android)
+# Every gate fails the run for real: no "|| echo", no "|| true".
+#   1. test          - xUnit + coverage measured on app code (gate: tools/check_coverage.py)
+#   2. analyze       - dotnet format (both projects) + NuGet vulnerability audit (both projects)
+#   3. build-android - Release APK: no SB_SELFTEST, targetSdk >= 36, allowed permissions,
+#                      16 KB native alignment; plus the separate SB_SELFTEST APK for the emulator
+#   4. emulator-test - installs the SB_SELFTEST APK, waits for SB_SELFTEST|DONE (script below)
+#   5. release       - signed AAB from GitHub secrets (workflow_dispatch / tags v*), skipped
+#                      with a warning when the secrets are missing; never uses SB_SELFTEST
+# ==============================================================================
 
 name: MAUI Android CI
 
 on:
+  push:
+    branches:
+      - develop
+      - main
+      - 'feature/**'
+    tags:
+      - 'v*'
   pull_request:
     branches:
       - develop
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
-  DOTNET_VERSION: '8.0.x'
+  DOTNET_VERSION: '10.0.x'
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
   PROJECT_PATH: 'SmartBudgetML/SmartBudgetML.csproj'
   TEST_PROJECT_PATH: 'SmartBudgetML.Tests/SmartBudgetML.Tests.csproj'
+  APP_PACKAGE_ID: 'com.smartbudgetml.app'
+  # Lot 8B: measured 88.71 % of lines (1509/1701) minus 2 points. See docs/passation.md.
+  COVERAGE_MIN_LINES: '86.7'
+  APP_IL_DLL: 'SmartBudgetML/obj/Release/net10.0-android/SmartBudgetML.dll'
 
 jobs:
-  # ─────────────────────────────────────────────
-  # Job 1: Run Unit Tests
-  # ─────────────────────────────────────────────
+  # ----------------------------------------------------------------------------
   test:
-    name: 🧪 Run Unit Tests
+    name: Unit tests & coverage
     runs-on: ubuntu-latest
-
     steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: 🔧 Setup .NET SDK
-        uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: 📦 Restore test dependencies
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Restore
         run: dotnet restore ${{ env.TEST_PROJECT_PATH }}
 
-      - name: 🧪 Run xUnit tests
-        run: dotnet test ${{ env.TEST_PROJECT_PATH }} --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
+      - name: Run tests with coverage
+        run: >
+          dotnet test ${{ env.TEST_PROJECT_PATH }}
+          --no-restore
+          -c Release
+          --collect:"XPlat Code Coverage"
+          --settings SmartBudgetML.Tests/coverage.runsettings
+          --results-directory ./TestResults
+          --logger "trx;LogFileName=test-results.trx"
+          --logger "console;verbosity=minimal"
 
-      - name: 📊 Upload test results
+      - name: Coverage gate
+        run: |
+          COV="$(find ./TestResults -name coverage.cobertura.xml | head -n 1)"
+          if [ -z "$COV" ]; then
+            echo "::error::No coverage.cobertura.xml produced"
+            exit 1
+          fi
+          python3 tools/check_coverage.py "$COV" "$COVERAGE_MIN_LINES" --summary "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload test & coverage results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
-          path: '**/test-results.trx'
+          name: test-and-coverage-results
+          path: ./TestResults/**
 
-  # ─────────────────────────────────────────────
-  # Job 2: Build Android APK
-  # ─────────────────────────────────────────────
-  build-android:
-    name: 🤖 Build Android APK
+  # ----------------------------------------------------------------------------
+  analyze:
+    name: Format & vulnerability audit
     runs-on: windows-latest
-    needs: test
-
     steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: 🔧 Setup .NET SDK
-        uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: 📱 Install MAUI Workload
-        run: dotnet workload install maui
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
 
-      - name: 📦 Restore dependencies
-        run: dotnet restore ${{ env.PROJECT_PATH }}
+      - name: Install MAUI workloads
+        run: dotnet workload install maui-android maui-windows
 
-      - name: 🏗️ Build Android APK
+      - name: Restore
+        run: |
+          dotnet restore ${{ env.TEST_PROJECT_PATH }}
+          dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Verify formatting (both projects)
+        run: |
+          dotnet format ${{ env.TEST_PROJECT_PATH }} --verify-no-changes --no-restore
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet format ${{ env.PROJECT_PATH }} --verify-no-changes --no-restore
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Audit vulnerable packages (both projects, transitive)
+        shell: pwsh
+        run: |
+          Add-Content $env:GITHUB_STEP_SUMMARY "## Audit NuGet (vulnerabilites, dependances transitives incluses)"
+          $found = @()
+          foreach ($p in @($env:TEST_PROJECT_PATH, $env:PROJECT_PATH)) {
+            $json = dotnet list $p package --vulnerable --include-transitive --format json | Out-String
+            if ($LASTEXITCODE -ne 0) { throw "dotnet list package failed for $p" }
+            $data = $json | ConvertFrom-Json
+            $errors = @($data.problems | Where-Object { $_.level -eq 'error' })
+            if ($errors.Count -gt 0) { throw "Audit incomplete for ${p}: $($errors | ConvertTo-Json -Compress)" }
+            foreach ($proj in @($data.projects)) {
+              foreach ($fw in @($proj.frameworks)) {
+                if (-not $fw) { continue }
+                foreach ($pkg in @($fw.topLevelPackages) + @($fw.transitivePackages)) {
+                  if ($pkg -and $pkg.vulnerabilities) {
+                    $sev = ($pkg.vulnerabilities | ForEach-Object { $_.severity }) -join ','
+                    $found += "$p [$($fw.framework)] $($pkg.id) $($pkg.resolvedVersion) ($sev)"
+                  }
+                }
+              }
+            }
+            Add-Content $env:GITHUB_STEP_SUMMARY "- ``$p`` : analyse"
+          }
+          if ($found.Count -gt 0) {
+            $found | ForEach-Object { Add-Content $env:GITHUB_STEP_SUMMARY "- VULNERABLE : $_"; Write-Output "::error::$_" }
+            exit 1
+          }
+          Add-Content $env:GITHUB_STEP_SUMMARY "- **Aucun paquet vulnerable.**"
+
+  # ----------------------------------------------------------------------------
+  build-android:
+    name: Build & inspect Android APK
+    runs-on: windows-latest
+    needs: [test, analyze]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Install MAUI workloads
+        run: dotnet workload install maui-android maui-windows
+
+      - name: Locate Android build-tools
+        shell: pwsh
+        run: |
+          $bt = Get-ChildItem "$env:ANDROID_HOME\build-tools" -Directory |
+            Where-Object { Test-Path (Join-Path $_.FullName 'aapt2.exe') } |
+            Sort-Object { [version]($_.Name -replace '[^0-9.]', '') } | Select-Object -Last 1
+          if (-not $bt) { throw "No Android build-tools with aapt2 under $env:ANDROID_HOME" }
+          Write-Output "Using build-tools $($bt.Name)"
+          "BUILD_TOOLS=$($bt.FullName)" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+
+      - name: Publish Release APK (Play configuration, no SB_SELFTEST)
         run: >
           dotnet publish ${{ env.PROJECT_PATH }}
           -c Release
-          -f net8.0-android
+          -f net10.0-android
           -p:AndroidPackageFormat=apk
-          -o ./artifacts/android
+          -p:EnableSelfTest=false
+          -o ./out/apk-release
 
-      - name: 📤 Upload APK artifact
+      - name: Gate - no self-test code in the Release build
+        run: python tools/check_selftest_absent.py ${{ env.APP_IL_DLL }}
+
+      - name: Gate - targetSdk and permissions (aapt2)
+        shell: pwsh
+        run: |
+          $apk = Get-ChildItem ./out/apk-release -Filter *-Signed.apk | Select-Object -First 1
+          if (-not $apk) { throw "Release APK not found" }
+          python tools/inspect_apk.py "$env:BUILD_TOOLS\aapt2.exe" $apk.FullName --summary $env:GITHUB_STEP_SUMMARY
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Gate - 16 KB page alignment of native libraries
+        shell: pwsh
+        run: |
+          $apk = (Get-ChildItem ./out/apk-release -Filter *-Signed.apk | Select-Object -First 1).FullName
+          python tools/check_elf_alignment.py $apk
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & "$env:BUILD_TOOLS\zipalign.exe" -c -P 16 -v 4 $apk | Select-Object -Last 1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Add-Content $env:GITHUB_STEP_SUMMARY "- Alignement 16 Ko des bibliotheques natives : **OK** (ELF p_align et zipalign -P 16)"
+
+      - name: Publish SB_SELFTEST APK (CI emulator only)
+        run: >
+          dotnet publish ${{ env.PROJECT_PATH }}
+          -c Release
+          -f net10.0-android
+          -p:AndroidPackageFormat=apk
+          -p:EnableSelfTest=true
+          -o ./out/apk-selftest
+
+      - name: Positive control - the self-test build does contain SB_SELFTEST
+        run: python tools/check_selftest_absent.py --expect-present ${{ env.APP_IL_DLL }}
+
+      - name: Report package sizes
+        shell: pwsh
+        run: |
+          Add-Content $env:GITHUB_STEP_SUMMARY "## Tailles des APK"
+          Get-ChildItem ./out -Recurse -Filter *-Signed.apk | ForEach-Object {
+            $mb = [math]::Round($_.Length / 1MB, 2)
+            Add-Content $env:GITHUB_STEP_SUMMARY "- $($_.Directory.Name)/$($_.Name) : $mb Mo"
+          }
+
+      - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: SmartBudgetML-Android-APK
-          path: ./artifacts/android/**/*.apk
+          name: SmartBudgetML-Android-Release-APK
+          path: ./out/apk-release/*-Signed.apk
           retention-days: 14
+          if-no-files-found: error
+
+      - name: Upload SB_SELFTEST APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartBudgetML-Android-SelfTest-APK
+          path: ./out/apk-selftest/*-Signed.apk
+          retention-days: 7
+          if-no-files-found: error
+
+  # ----------------------------------------------------------------------------
+  emulator-test:
+    name: Emulator self-test
+    runs-on: ubuntu-latest
+    needs: build-android
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download SB_SELFTEST APK
+        uses: actions/download-artifact@v4
+        with:
+          name: SmartBudgetML-Android-SelfTest-APK
+          path: ./apk-selftest
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run self-test on emulator (API 34, 3 GB RAM)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          ram-size: 3072M
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
+          script: bash .github/scripts/emulator-smoke.sh ./apk-selftest ./emulator-results
+
+      - name: Upload logcat & self-test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: emulator-results
+          path: ./emulator-results/**
+          if-no-files-found: warn
+
+  # ----------------------------------------------------------------------------
+  release:
+    name: Signed AAB (release)
+    runs-on: windows-latest
+    needs: [build-android, emulator-test]
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - name: Check signing secrets
+        id: secrets
+        shell: pwsh
+        run: |
+          $ok = $env:ANDROID_KEYSTORE_BASE64 -and $env:ANDROID_KEYSTORE_PASSWORD -and $env:ANDROID_KEY_ALIAS -and $env:ANDROID_KEY_PASSWORD
+          if ($ok) {
+            "available=true" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
+          } else {
+            Write-Output "::warning title=Release ignoree::Secrets de signature absents (ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD) : aucun AAB signe n'est produit."
+            "available=false" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
+          }
+
+      - uses: actions/checkout@v4
+        if: steps.secrets.outputs.available == 'true'
+
+      - uses: actions/setup-dotnet@v4
+        if: steps.secrets.outputs.available == 'true'
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        if: steps.secrets.outputs.available == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Install MAUI workloads
+        if: steps.secrets.outputs.available == 'true'
+        run: dotnet workload install maui-android maui-windows
+
+      - name: Decode keystore
+        if: steps.secrets.outputs.available == 'true'
+        shell: pwsh
+        run: |
+          $path = Join-Path $env:RUNNER_TEMP 'upload.keystore'
+          [IO.File]::WriteAllBytes($path, [Convert]::FromBase64String($env:ANDROID_KEYSTORE_BASE64))
+          "KEYSTORE_PATH=$path" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+
+      - name: Publish signed AAB (no SB_SELFTEST)
+        if: steps.secrets.outputs.available == 'true'
+        shell: pwsh
+        run: |
+          dotnet publish $env:PROJECT_PATH `
+            -c Release `
+            -f net10.0-android `
+            -p:AndroidPackageFormat=aab `
+            -p:EnableSelfTest=false `
+            -p:ApplicationVersion=${{ github.run_number }} `
+            -p:AndroidKeyStore=true `
+            -p:AndroidSigningKeyStore="$env:KEYSTORE_PATH" `
+            -p:AndroidSigningKeyAlias="$env:ANDROID_KEY_ALIAS" `
+            -p:AndroidSigningStorePass=env:ANDROID_KEYSTORE_PASSWORD `
+            -p:AndroidSigningKeyPass=env:ANDROID_KEY_PASSWORD `
+            -o ./out/aab
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Gate - no self-test code, 16 KB alignment
+        if: steps.secrets.outputs.available == 'true'
+        shell: pwsh
+        run: |
+          python tools/check_selftest_absent.py $env:APP_IL_DLL
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $aab = (Get-ChildItem ./out/aab -Filter *-Signed.aab | Select-Object -First 1).FullName
+          if (-not $aab) { throw "Signed AAB not found" }
+          python tools/check_elf_alignment.py $aab
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Remove keystore
+        if: always() && steps.secrets.outputs.available == 'true'
+        shell: pwsh
+        run: Remove-Item -Force -ErrorAction SilentlyContinue (Join-Path $env:RUNNER_TEMP 'upload.keystore')
+
+      - name: Upload signed AAB
+        if: steps.secrets.outputs.available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartBudgetML-Android-Signed-AAB
+          path: ./out/aab/*-Signed.aab
+          retention-days: 30
           if-no-files-found: error

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>SmartBudget ML - Rapport de projet</title>
+<style>
+  @page { size: A4; margin: 14mm 15mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Arial, sans-serif; font-size: 10.2pt; line-height: 1.38; color: #1f2933; margin: 0; }
+  h1 { font-size: 18pt; margin: 0 0 2px; color: #0f3d56; }
+  .sub { color: #52606d; margin: 0 0 8px; font-size: 9.5pt; }
+  h2 { font-size: 12pt; color: #0f3d56; border-bottom: 2px solid #10b981; padding-bottom: 2px; margin: 12px 0 6px; }
+  p { margin: 0 0 6px; }
+  ul { margin: 0 0 6px; padding-left: 18px; }
+  li { margin-bottom: 2px; }
+  table { border-collapse: collapse; width: 100%; margin: 4px 0 8px; font-size: 9.4pt; }
+  th, td { border: 1px solid #cbd2d9; padding: 3px 6px; text-align: left; vertical-align: top; }
+  th { background: #e6f6f0; }
+  td.n { text-align: right; white-space: nowrap; }
+  .meta { display: flex; gap: 18px; flex-wrap: wrap; font-size: 9.3pt; background: #f5f7fa; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px; }
+  .note { font-size: 8.6pt; color: #52606d; }
+  .page2 { break-before: page; }
+  code { font-family: Consolas, monospace; font-size: 9pt; }
+</style>
+</head>
+<body>
+
+<h1>SmartBudget ML</h1>
+<p class="sub">Application mobile de budget personnel 100 % locale pour le Cameroun (FCFA, français / anglais) — Rapport de clôture, Activité 8</p>
+<div class="meta">
+  <span><b>Auteur :</b> LISSOM ELOGE DEKENZO ABEL</span>
+  <span><b>Dépôt GitHub :</b> https://github.com/ElogeKenzo/SmartBudgetML</span>
+  <span><b>Date :</b> octobre 2026</span>
+</div>
+
+<h2>1. Objectifs du projet</h2>
+<p>Construire une application Android de gestion de budget adaptée au contexte camerounais, qui fonctionne <b>sans connexion Internet</b> et sans envoyer aucune donnée hors du téléphone.</p>
+<ul>
+  <li><b>Suivi des dépenses et revenus</b> en FCFA, avec 17 catégories camerounaises (marché, transport moto/taxi, ENEO/Camwater, tontine, solidarité familiale, transferts MoMo/OM…).</li>
+  <li><b>Catégorisation automatique</b> des dépenses par apprentissage automatique embarqué (ML.NET) : mémoire des corrections de l'utilisateur, puis règles par mots-clés, puis modèle.</li>
+  <li><b>Prévision de fin de période</b> (régression linéaire) avec indice de fiabilité, et budget par <b>enveloppe hebdomadaire</b> pour les revenus irréguliers.</li>
+  <li><b>Tontines / njangi</b> : membres, ordre de passage, cotisations, pot reçu, retards, rappel « À cotiser ».</li>
+  <li><b>Sécurité</b> : base chiffrée SQLCipher, clé dans le coffre du système, code PIN à 6 chiffres (PBKDF2), verrouillage automatique, biométrie.</li>
+  <li><b>Données</b> : export CSV, sauvegarde chiffrée par mot de passe et restauration sur un autre téléphone.</li>
+</ul>
+<p><b>Technologies :</b> .NET 10 MAUI Blazor Hybrid (C#), SQLite chiffré (SQLCipher), ML.NET, xUnit, GitHub Actions avec test automatique sur émulateur Android. Seule permission Android : <code>USE_BIOMETRIC</code> (pas d'accès aux SMS ni à Internet).</p>
+
+<h2>2. Démarche</h2>
+<p>Le projet a avancé par phases (0 à 7) puis par une <b>phase 8 de correction</b>, après un audit du code qui a montré que certaines fonctions affichées n'étaient pas réelles (maquettes, valeurs codées en dur). Règle adoptée : une fonction n'est annoncée que si elle est atteignable depuis l'écran, enregistrée en base et prouvée par un test. Chaque lot suit GitFlow (<code>feature/…</code> depuis <code>develop</code>, fusion et étiquette <code>Phase8-…</code>), et un script unique (<code>tools/verify.ps1</code>) lance les tests, le build Android et des garde-fous automatiques.</p>
+
+<h2>3. Taux de réalisation</h2>
+<p>Mesuré sur le registre d'audit (<code>docs/AUDIT_REGISTER.md</code>), qui recense 41 constats : 24 de l'audit initial (A1–A24) et 17 de l'audit de phase 8 (N1–N17).</p>
+<table>
+  <tr><th>Statut des constats</th><th class="n">Nombre</th><th class="n">Part</th></tr>
+  <tr><td>Corrigés et prouvés (FIXED)</td><td class="n">33</td><td class="n">80,5 %</td></tr>
+  <tr><td>Partiels (PARTIEL)</td><td class="n">4</td><td class="n">9,8 %</td></tr>
+  <tr><td>Restant à traiter (OUVERT)</td><td class="n">4</td><td class="n">9,8 %</td></tr>
+</table>
+<table>
+  <tr><th>Lots de la phase 8</th><th>État</th></tr>
+  <tr><td>8A Build réel et vérification · 8B CI et test sur émulateur · 8C Sécurité (verrou, clé, PIN) · 8D Export, sauvegarde, restauration · 8E Tontines et revenus irréguliers</td><td><b>Terminés (5 / 8, soit 62,5 %)</b></td></tr>
+  <tr><td>8F Import des SMS Mobile Money · 8G Modèle ML sur les 17 catégories · 8H Textes, écran « À propos », dossier Google Play</td><td>À faire</td></tr>
+</table>
+
+<div class="page2"></div>
+<h2>4. Résultats mesurés</h2>
+<p class="note">Chiffres issus de <code>docs/generated/STATUS.md</code>, fichier généré par <code>tools/verify.ps1</code> lors de la dernière vérification (aucun chiffre recopié à la main).</p>
+<table>
+  <tr><th>Indicateur</th><th class="n">Valeur</th></tr>
+  <tr><td>Tests automatisés (xUnit)</td><td class="n">231 / 231 réussis</td></tr>
+  <tr><td>Build Android Release</td><td class="n">Réussi</td></tr>
+  <tr><td>Garde-fous (aucun <code>catch {}</code> vide, aucun appel bloquant, permissions, aucun secret suivi par Git)</td><td class="n">Tous réussis</td></tr>
+  <tr><td>Catégorisation : règles seules (176 dépenses de validation)</td><td class="n">143 / 176 (81,25 %)</td></tr>
+  <tr><td>Catégorisation : modèle ML.NET seul</td><td class="n">161 / 176 (91,48 %)</td></tr>
+  <tr><td>Catégorisation : pipeline hybride (mémoire + règles + ML)</td><td class="n">175 / 176 (99,43 %)</td></tr>
+  <tr><td>Taille du modèle embarqué</td><td class="n">108,6 Ko</td></tr>
+  <tr><td>Test automatique sur émulateur Android (CI, lot 8D)</td><td class="n">14 / 14 étapes</td></tr>
+</table>
+<p class="note">Limite honnête : le jeu de validation est étiqueté sur 11 anciennes catégories et non sur les 17 actuelles ; le chiffre de 99,43 % sera recalculé au lot 8G. Le test sur émulateur couvre le lot 8D ; le lot 8E n'est pas encore passé en CI.</p>
+
+<h2>5. Difficultés rencontrées</h2>
+<ul>
+  <li><b>Écart entre l'interface et le code réel.</b> L'audit a trouvé des écrans de démonstration : tontines avec des membres fictifs codés en dur, précision du modèle affichée en dur, export qui n'écrivait aucun fichier. Il a fallu tout reconstruire sur la base de données et ajouter un test qui vérifie que chaque écran est réellement accessible par un lien.</li>
+  <li><b>Chiffrement et clé.</b> Une clé de secours était écrite en clair si le coffre du système échouait, et la base devenait illisible si la clé changeait. Solution : plus aucun repli en clair, et un écran dédié qui laisse l'utilisateur décider en cas de problème.</li>
+  <li><b>Performance du code PIN.</b> Le hachage PBKDF2 à 600 000 itérations bloquait l'interface ; il a été déplacé hors du fil de l'interface.</li>
+  <li><b>Intégration continue.</b> La CI n'avait jamais tourné et le script d'émulateur était invalide. Elle a été réécrite avec un auto-test embarqué qui ne s'exécute que dans la version de test.</li>
+  <li><b>Sauvegarde portable.</b> Une sauvegarde chiffrée avec la clé du téléphone était inutilisable sur un autre appareil. Elle est désormais chiffrée par un mot de passe choisi par l'utilisateur, avec double confirmation et retour arrière automatique avant toute restauration.</li>
+  <li><b>Contexte camerounais.</b> Données d'entraînement d'abord américaines, revenus irréguliers non gérés, et choix de ne jamais lire les SMS (règle Google Play) : l'import SMS se fera par copier-coller ou partage.</li>
+  <li><b>Environnement de travail.</b> Migration de .NET 8 (plus supporté) vers .NET 10, problèmes d'encodage des fichiers sous PowerShell 5.1, et installation de l'application Windows impossible sans le mode développeur.</li>
+</ul>
+
+<h2>6. Reste à faire</h2>
+<ul>
+  <li>Lots 8F (import SMS réel), 8G (modèle sur les 17 catégories, jeu anglais) et 8H (textes restants, écran « À propos », avertissement « pas un conseil financier », dossier Google Play).</li>
+  <li>Tests sur un vrai téléphone Android (ARM) selon <code>docs/DEVICE_TEST_CHECKLIST.md</code>, clé de signature et publication.</li>
+</ul>
+
+</body>
+</html>

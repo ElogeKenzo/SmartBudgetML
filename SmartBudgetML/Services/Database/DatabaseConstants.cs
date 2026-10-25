@@ -1,19 +1,27 @@
+using System.Diagnostics;
 using SQLite;
 
 namespace SmartBudgetML.Services.Database;
 
 /// <summary>
-/// Centralized database configuration and flags for local SQLite.
-/// Works cross-platform on Android, iOS, Windows, Mac, and in unit test environments.
+/// Centralized database configuration and flags for local SQLite / SQLCipher.
+/// Works cross-platform on Android, Windows, and in unit test environments.
+/// Does not use SharedCache so SQLCipher key verification is enforced per connection.
 /// </summary>
 public static class DatabaseConstants
 {
     public const string DatabaseFilename = "smartbudget.db3";
 
+    /// <summary>
+    /// Written to PRAGMA user_version of every backup. A backup with a higher value comes from a
+    /// newer app and is refused. Increase it when a change to the tables cannot be read by older code.
+    /// </summary>
+    public const int SchemaVersion = 1;
+
     public const SQLiteOpenFlags Flags =
         SQLiteOpenFlags.ReadWrite |
         SQLiteOpenFlags.Create |
-        SQLiteOpenFlags.SharedCache;
+        SQLiteOpenFlags.FullMutex;
 
     /// <summary>
     /// Gets the platform-appropriate local application data path.
@@ -32,8 +40,9 @@ public static class DatabaseConstants
                 }
                 return Path.Combine(basePath, DatabaseFilename);
             }
-            catch
+            catch (Exception ex)
             {
+                Trace.TraceWarning($"[DatabaseConstants] Fallback to BaseDirectory: {ex.Message}");
                 var basePath = AppDomain.CurrentDomain.BaseDirectory;
                 return Path.Combine(basePath, DatabaseFilename);
             }
