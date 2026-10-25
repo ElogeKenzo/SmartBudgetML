@@ -1,7 +1,7 @@
 @page "/analytics"
 @using Microsoft.Extensions.Logging
 @inject IDatabaseService DbService
-@inject IBudgetForecastingService Forecaster
+@inject IBudgetPlanService BudgetPlan
 @inject ILocalAuthService AuthService
 @inject IStringLocalizer<AppStrings> L
 @inject ILogger<Analytics> Logger
@@ -30,7 +30,7 @@
             <span class="analytics-stat-caption">@L["Analytics_DaysRecorded", Forecast.DaysElapsed]</span>
         </div>
         <div class="analytics-stat-tile cyan" id="tile-projected-end">
-            <span class="analytics-stat-label">@L["Analytics_ForecastMonthEnd"]</span>
+            <span class="analytics-stat-label">@(Overview?.PeriodMode == BudgetPeriodMode.Weekly ? L["Analytics_ForecastWeekEnd"] : L["Analytics_ForecastMonthEnd"])</span>
             <span class="analytics-stat-value">@UiFormat.Money(Forecast.ProjectedEndMonthSpend, Currency, 0)</span>
             <span class="analytics-stat-caption">
                 @(Forecast.ProjectedSurplusOrDeficit >= 0
@@ -163,6 +163,15 @@
             <strong>@L["Analytics_MlInsightLabel"]</strong> @Forecast.StatusMessage
             @L["Analytics_KeepDailySpendUnder"]
             <strong>@UiFormat.Money(Forecast.RecommendedDailyLimit, Currency)</strong>.
+            <br /><small>@L[$"Budget_Reliability_{Forecast.Reliability}"]</small>
+            @if (Overview?.CurrentWeek is { } week)
+            {
+                <br /><small>@L["Budget_EnvelopeTitle"] : @L["Budget_EnvelopeBody", UiFormat.Money(week.Spent, Currency, 0), UiFormat.Money(week.Allocated, Currency, 0)]</small>
+            }
+            @if (Overview?.Plan is { } plan)
+            {
+                <br /><small>@L["Budget_AfterVital", UiFormat.Money(plan.DiscretionaryPool, Currency, 0)]</small>
+            }
         </div>
     </div>
 </div>
@@ -174,6 +183,7 @@
             ? System.Globalization.CultureInfo.GetCultureInfo("en-US")
             : System.Globalization.CultureInfo.GetCultureInfo("fr-FR"));
     private BudgetForecastResult Forecast = new();
+    private BudgetOverview? Overview;
     private List<CategoryStatItem> CategoryBreakdown = new();
 
     private double TodayX
@@ -221,19 +231,16 @@
                 Currency = profile.CurrencySymbol;
             }
 
-            decimal monthlyBudget = (profile != null && profile.MonthlyIncome > 0)
-                ? Math.Max(100m, profile.MonthlyIncome - profile.MonthlySavingsGoal)
-                : 150_000m;
+            var today = DateTime.Today;
+            Overview = await BudgetPlan.GetOverviewAsync(today, Currency);
+            Forecast = Overview.Forecast;
 
             var allExpenses = await DbService.Expenses.GetAllAsync();
             var allCategories = await DbService.Categories.GetAllAsync();
-            var today = DateTime.Today;
 
             var monthExpenses = allExpenses
                 .Where(e => e.Date.Month == today.Month && e.Date.Year == today.Year)
                 .ToList();
-
-            Forecast = Forecaster.ForecastMonthEnd(monthExpenses, monthlyBudget, today, Currency);
 
             var nonIncome = monthExpenses.Where(e => !e.IsIncome).ToList();
             var totalSpent = nonIncome.Sum(e => e.Amount);
