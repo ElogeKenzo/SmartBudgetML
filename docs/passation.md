@@ -9,6 +9,22 @@ Phase 8 : corriger les écarts relevés par l'audit du code `develop` (voir `doc
 - **Lot 8C terminé** (`feature/phase8-c-securite`, tag `Phase8-8C`, poussé, CI verte notée dans `docs/CI_RUN_LOG.md`).
 - **Lot 8D terminé** (`feature/phase8-d-export-backup`, fusionnée dans `develop`, tag `Phase8-8D`). Branche, `develop` et tag sont sur `origin` ; runs CI verts notés dans `docs/CI_RUN_LOG.md` (`SB_SELFTEST|DONE|14/14` sur l'émulateur).
 
+- **Lot 8E terminé** (`feature/phase8-e-tontines`, fusionnée dans `develop` en local, tag `Phase8-8E`). **Pas encore poussé** : CI non exécutée pour ce lot.
+
+## 2bis. Lot 8E : ce qui a été fait
+1. **Modèles** : `Expense` gagne `IsExceptional`, `SourceType`, `SourceId` (index unique `UX_Expenses_Source`, constantes `ExpenseSources`). Index uniques `UX_TontineContributions_Member` (tontine, tour, membre) et `UX_TontineRounds_Number`. Migration par `CreateTableAsync` (ajout de colonnes, sans perte : test `ExistingDatabase_WithoutSourceColumns_IsMigratedWithoutLoss`). `SchemaVersion` inchangé (1) : l'ancien code lit une base 8E en ignorant les colonnes nouvelles.
+2. **`ITontineService` / `TontineService`** (`Services/Tontines/`) : créer (`TontineDraftValidator` : nom, montant > 0 et entier, au moins 2 membres, tours uniques et compris entre 1 et N, une ligne « Moi »), lire, modifier (nom et montant des tours non versés), supprimer (les dépenses déjà passées restent), membre qui quitte (tours non versés reconstruits), `RecordContributionAsync` idempotent (dépense `tontine` liée seulement pour l'utilisateur), `RecordPayoutAsync` (revenu `transfers_received`, `IsExceptional = true`, seulement si l'utilisateur est le bénéficiaire ; la tontine passe inactive au dernier tour), `GetOverviewAsync` (échéances à 7 jours et retards). Écritures dans `RunInTransactionAsync`.
+3. **Écrans** : `/tontines` (liste ou invitation à créer), `/tontines/new`, `/tontines/{id}` (tour en cours, bénéficiaire, qui a payé, retards, mes cotisations, reçu, solde net, « J'ai cotisé », « J'ai reçu le pot » ou « Pot versé à … », membre qui quitte et suppression en deux appuis, modification). L'ancienne maquette (Paul, Chantal…) et la zone SMS sont retirées de `Tontines.razor` (l'import SMS revient en 8F ; les clés `Tontines_Sms*` sont gardées pour lui).
+4. **Accès** : carte « Mes tontines » sur l'accueil (nombre en cours, prochaine cotisation), lien dans Profil. Garde `PageReachabilityTests.AllPagesAreReachable` (a échoué sur `/tontines` avant les liens, vérifié).
+5. **Rappels (N13)** : `ILocalNotificationService` et `InMemoryLocalNotificationService` supprimés (aucun test ne les utilisait). Bandeau « À cotiser » sur l'accueil, aucune permission.
+6. **Revenus irréguliers (N14)** : `BudgetPlanService` (injecté) appelle `IrregularIncomePlanner` (classe statique, donc non injectable elle-même). Fixe : mensuel (revenu − épargne, plus de 150 000 par défaut inventé) ; Irrégulier : `BudgetPeriodMode.Weekly`, enveloppe = (moyenne des revenus non exceptionnels des 3 derniers mois complets, jamais avant le premier enregistrement, sinon revenu du profil − minimum vital) / 4 ; Mixte : `Envelope`. Profil : type de revenu, minimum vital, objectif de solidarité. Accueil et Analyses : enveloppe, reste après minimum vital, solidarité, fiabilité (clés `Budget_Reliability_*`).
+7. **Auto-test** : étapes `tontine_contribution` et `irregular_envelope` (16 étapes).
+8. `UiFormat.Date` (jj/mm/aaaa). Exemple de nom de l'accueil remplacé par « votre nom complet » (porte « Paul »).
+
+Tests : `TontineServiceTests` (18), `BudgetPlanServiceTests` (11), `PageReachabilityTests` (2), `UiFormatTests.Date_*`. Preuves de cette session : `./tools/verify.ps1` **PASS** (231/231, build Android PASS, garde-fous PASS). Statuts : VÉRIFIÉ-TESTS, VÉRIFIÉ-BUILD ; CI et émulateur : pas encore (branche non poussée) ; NON-VÉRIFIÉ-APPAREIL.
+
+Démo Windows (présentation) : le paquet MSIX ne s'installe pas sans le mode développeur de Windows (non activé, réglage système laissé à l'utilisateur). Une copie non empaquetée est construite avec `dotnet build SmartBudgetML.csproj -f net10.0-windows10.0.19041.0 -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true -o <dossier>` (projet inchangé).
+
 ## 2. Lot 8D : ce qui a été fait
 1. **Partage** (`65a7b0f`) : `IFileExportService` gagne `ExportDirectory`, `PrepareExportPath` (ne garde que le dernier fichier exporté : données personnelles) et `ShareFileAsync`. `MauiFileExportService` (exclu du projet de tests) écrit dans `FileSystem.CacheDirectory/exports` puis appelle `Share.Default.RequestAsync(ShareFileRequest)`. Aucune permission. L'écran dit « Choisissez une application pour enregistrer le fichier », jamais « exporté ».
 2. **Export CSV** : format inchangé (RFC 4180, BOM UTF-8), branché sur le partage. `ex.Message` retiré des deux gestionnaires concernés de `Settings.razor` (les autres restent pour 8H).
@@ -36,8 +52,8 @@ Limite connue : la mémoire des corrections ML (`ExpenseCategorizerService._user
 - Pièges hérités (lots 8A et 8B) : `tools/verify.ps1` doit rester en ASCII pur ; encadrer les appels `dotnet` avec `$ErrorActionPreference = "Continue"`.
 
 ## 5. Prochaine étape
-1. Le commit du journal CI de 8D est sur `develop` en local : le pousser si l'utilisateur le demande. Tester les points 13 à 18 de la checklist sur le téléphone.
-2. Lot suivant selon `docs/phase8/00-INDEX.md`.
+1. Pousser `develop`, `feature/phase8-e-tontines` et le tag `Phase8-8E` si l'utilisateur le demande, puis noter les runs CI dans `docs/CI_RUN_LOG.md`. Tester les points 13 à 18 de la checklist sur le téléphone, et les tontines.
+2. Lot suivant : 8F (import SMS), selon `docs/phase8/00-INDEX.md`.
 3. Restent hors périmètre : `LocalAuthServiceTests` et `Phase5CameroonLocalizationTests` gardent le motif « connexion non fermée et `catch {}` vide » ; `Settings.razor` (chargement, enregistrement, réentraînement, purge) et `Profile.razor` affichent encore `ex.Message` (N10, lot 8H) ; avertissements Node.js 20 des actions `@v4`.
 
 ## Décisions prises
