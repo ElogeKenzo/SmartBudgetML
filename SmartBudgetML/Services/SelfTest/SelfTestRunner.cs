@@ -1,11 +1,16 @@
 #if SB_SELFTEST
 using System.Diagnostics;
 using SmartBudgetML.Models;
+using SmartBudgetML.Resources.Strings;
 using SmartBudgetML.Services.Auth;
+using SmartBudgetML.Services.Budget;
 using SmartBudgetML.Services.Data;
 using SmartBudgetML.Services.Database;
+using SmartBudgetML.Services.Localization;
 using SmartBudgetML.Services.ML;
+using SmartBudgetML.Services.ML.Models;
 using SmartBudgetML.Services.Security;
+using SmartBudgetML.Services.Tontines;
 
 namespace SmartBudgetML.Services.SelfTest;
 
@@ -75,6 +80,8 @@ public sealed class SelfTestRunner
         await StepAsync("export_csv", ExportCsvAsync);
         await StepAsync("password_backup", PasswordBackupAsync);
         await StepAsync("password_restore", PasswordRestoreAsync);
+        await StepAsync("tontine_contribution", TontineContributionAsync);
+        await StepAsync("irregular_envelope", IrregularEnvelopeAsync);
         await StepAsync("cleanup", CleanupAsync);
 
         _log($"{Tag}|DONE|{Passed}/{Total}");
@@ -256,6 +263,47 @@ public sealed class SelfTestRunner
         var expenses = await database.Expenses.GetAllAsync();
         Require(expenses.Count == 1 && expenses[0].Description == "Moto bendskin Akwa",
             $"restore gave {expenses.Count} expenses instead of the backed-up one");
+    }
+
+    // Tontine stored in the database; the same contribution recorded twice books one expense (lot 8E, N1).
+    private async Task TontineContributionAsync()
+    {
+        var database = RequireDatabase();
+        var service = new TontineService(database, new ResxStringLocalizer<AppStrings>());
+        var draft = new TontineDraft
+        {
+            Name = "Njangi selftest",
+            ContributionAmount = 5_000m,
+            Frequency = TontineFrequency.Weekly,
+            StartDate = DateTime.Today
+        };
+        draft.Members.Add(new TontineMemberDraft("Self Test", 1, IsCurrentUser: true));
+        draft.Members.Add(new TontineMemberDraft("Membre A", 2, IsCurrentUser: false));
+        var id = await service.CreateAsync(draft);
+
+        var me = (await service.GetDetailsAsync(id, DateTime.Today))?.CurrentUser
+            ?? throw new InvalidOperationException("tontine member 'me' missing");
+        await service.RecordContributionAsync(id, 1, me.Id, DateTime.Today);
+        var second = await service.RecordContributionAsync(id, 1, me.Id, DateTime.Today);
+        Require(second == TontineRecordOutcome.AlreadyRecorded, "second contribution was recorded again");
+
+        var linked = await database.Expenses.CountAsync(e => e.SourceType == ExpenseSources.TontineContribution);
+        Require(linked == 1, $"{linked} linked expenses instead of 1");
+    }
+
+    // Irregular income profile gives a weekly envelope from IrregularIncomePlanner (lot 8E, N14).
+    private async Task IrregularEnvelopeAsync()
+    {
+        var database = RequireDatabase();
+        var profile = (await database.UserProfiles.GetAllAsync()).FirstOrDefault()
+            ?? throw new InvalidOperationException("profile missing");
+        profile.IncomeProfile = IncomeProfileType.Irregular;
+        profile.VitalMinimumSpend = 50_000m;
+        await database.UserProfiles.UpdateAsync(profile);
+
+        var overview = await new BudgetPlanService(database, new BudgetForecastingService()).GetOverviewAsync(DateTime.Today, "XAF");
+        Require(overview.PeriodMode == BudgetPeriodMode.Weekly, $"period mode {overview.PeriodMode}");
+        Require(overview.CurrentWeek is not null && overview.CurrentWeek.Allocated > 0m, "no weekly envelope");
     }
 
     private async Task CleanupAsync()
